@@ -42,7 +42,7 @@ def get_optimized_headers(cookie: Optional[str] = None) -> Dict[str, str]:
     }
     if cookie:
         headers['Cookie'] = cookie
-    else:
+    elif Config.DEFAULT_COOKIE:
         # Cookie mínima de consentimiento
         headers['Cookie'] = Config.DEFAULT_COOKIE
     return headers
