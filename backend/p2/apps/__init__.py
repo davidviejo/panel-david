@@ -165,6 +165,10 @@ def create_app(config_class=Config):
     def get_alerts():
         return jsonify(GLOBAL_ALERTS)
 
+    @app.route('/api/health')
+    def health_check():
+        return jsonify({"status": "ok"})
+
     @app.route('/')
     def home():
         return render_template('portal.html')
