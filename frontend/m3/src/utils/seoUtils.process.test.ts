@@ -75,4 +75,52 @@ describe('processAnalysisResult', () => {
 
     expect(updates.checklist?.OPORTUNIDADES.autoData.gscQueries[0].keys[0]).toBe('existing');
   });
+
+  it('should sync LocalBusiness from DATOS_ESTRUCTURADOS to GEOLOCALIZACION when @type is a string', () => {
+    const result = {
+      pageId: 'page-1',
+      items: {
+        DATOS_ESTRUCTURADOS: {
+          autoData: {
+            schemasParsed: [{ '@type': 'LocalBusiness' }]
+          }
+        }
+      }
+    };
+
+    const updates = processAnalysisResult(mockPage, result);
+    expect(updates.checklist?.GEOLOCALIZACION?.autoData?.localBusiness).toBe(true);
+  });
+
+  it('should sync LocalBusiness from DATOS_ESTRUCTURADOS to GEOLOCALIZACION when @type is an array', () => {
+    const result = {
+      pageId: 'page-1',
+      items: {
+        DATOS_ESTRUCTURADOS: {
+          autoData: {
+            schemasParsed: [{ '@type': ['Store', 'LocalBusiness'] }]
+          }
+        }
+      }
+    };
+
+    const updates = processAnalysisResult(mockPage, result);
+    expect(updates.checklist?.GEOLOCALIZACION?.autoData?.localBusiness).toBe(true);
+  });
+
+  it('should not sync LocalBusiness if it is not present in DATOS_ESTRUCTURADOS', () => {
+    const result = {
+      pageId: 'page-1',
+      items: {
+        DATOS_ESTRUCTURADOS: {
+          autoData: {
+            schemasParsed: [{ '@type': 'Article' }]
+          }
+        }
+      }
+    };
+
+    const updates = processAnalysisResult(mockPage, result);
+    expect(updates.checklist?.GEOLOCALIZACION?.autoData?.localBusiness).toBeUndefined();
+  });
 });

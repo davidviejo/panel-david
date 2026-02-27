@@ -12,11 +12,19 @@ export const processAnalysisResult = (
   if (result.items) {
     const structData = result.items.DATOS_ESTRUCTURADOS?.autoData;
     if (structData?.schemasParsed && Array.isArray(structData.schemasParsed)) {
-      const hasLocalBusiness = structData.schemasParsed.some(
-        (s: any) =>
-          (typeof s === 'string' && s.includes('LocalBusiness')) ||
-          (typeof s === 'object' && s['@type'] && s['@type'].includes('LocalBusiness')),
-      );
+      const hasLocalBusiness = structData.schemasParsed.some((s: any) => {
+        if (typeof s === 'string') return s.includes('LocalBusiness');
+        if (typeof s === 'object' && s !== null && s['@type']) {
+          const type = s['@type'];
+          if (typeof type === 'string') {
+            return type.includes('LocalBusiness');
+          }
+          if (Array.isArray(type)) {
+            return type.some((t: any) => typeof t === 'string' && t.includes('LocalBusiness'));
+          }
+        }
+        return false;
+      });
 
       if (hasLocalBusiness) {
         if (!result.items.GEOLOCALIZACION) {
@@ -72,7 +80,15 @@ export const processAnalysisResult = (
   if (result.items) {
     Object.entries(result.items).forEach(([k, v]) => {
       const key = k as ChecklistKey;
-      if (updates.checklist && updates.checklist[key]) {
+      if (updates.checklist) {
+        if (!updates.checklist[key]) {
+           updates.checklist[key] = {
+             key: key,
+             label: key,
+             status_manual: 'NA',
+             notes_manual: '',
+           };
+        }
         // Deep merge of the checklist item is NOT done for autoData in the original code,
         // it replaced the properties spread from `v`.
         // `v` contains { autoData, recommendation, suggested_status }
