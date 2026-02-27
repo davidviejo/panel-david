@@ -1,13 +1,18 @@
 import { Mistral } from '@mistralai/mistralai';
 import { Task } from '../types';
 
+// Exported for testing purposes
+export const mistralConfig = {
+  getEnv: () => import.meta.env
+};
+
 // Initialize AI lazily to avoid crash if env var is missing during build/init
 /**
  * Inicializa el cliente de Mistral AI de forma perezosa.
  * @returns {Mistral | null} Instancia del cliente de Mistral o null si falta la API Key.
  */
 const getMistralClient = () => {
-  const apiKey = import.meta.env.VITE_MISTRAL_API_KEY;
+  const apiKey = mistralConfig.getEnv().VITE_MISTRAL_API_KEY;
   if (!apiKey) {
     console.warn('VITE_MISTRAL_API_KEY is missing. Mistral features will not work.');
     return null;
@@ -19,7 +24,7 @@ const getMistralClient = () => {
  * Verifica si la integración con Mistral está configurada (API Key presente).
  */
 export const isMistralConfigured = (): boolean => {
-  return !!import.meta.env.VITE_MISTRAL_API_KEY;
+  return !!mistralConfig.getEnv().VITE_MISTRAL_API_KEY;
 };
 
 /**
@@ -33,7 +38,8 @@ export const enhanceTaskWithMistral = async (task: Task, vertical: string): Prom
   const client = getMistralClient();
   if (!client) return 'Error: API Key de Mistral no configurada. Verifica VITE_MISTRAL_API_KEY.';
 
-  const model = 'mistral-tiny'; // Cost-effective and fast for this use case
+  const DEFAULT_MISTRAL_MODEL = 'mistral-tiny';
+  const model = mistralConfig.getEnv().VITE_MISTRAL_MODEL || DEFAULT_MISTRAL_MODEL;
 
   const verticalMap: Record<string, string> = {
     media: 'Medios de Comunicación',
