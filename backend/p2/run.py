@@ -7,13 +7,16 @@ app = create_app()
 allowed_origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5000",
+    "http://127.0.0.1:5000"
 ]
 
-# Permitir origen configurado en Render (recomendado)
+# Permitir origen configurado en variable de entorno (para producción)
 frontend_url = os.environ.get("FRONTEND_URL")
 if frontend_url:
     allowed_origins.append(frontend_url)
 
+# Configurar CORS para permitir credenciales y los orígenes definidos
 CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
 
 if __name__ == '__main__':

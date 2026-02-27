@@ -2,8 +2,9 @@ services:
   - type: web
     name: mediaflow-backend
     env: python
-    buildCommand: pip install -r backend/p2/requirements.txt && python -m spacy download es_core_news_sm
-    startCommand: gunicorn backend.p2.run:app --bind 0.0.0.0:$PORT
+    rootDir: backend/p2
+    buildCommand: pip install -r requirements.txt && python -m spacy download es_core_news_sm
+    startCommand: gunicorn run:app --bind 0.0.0.0:$PORT
     envVars:
       - key: FLASK_DEBUG
         value: false
@@ -17,6 +18,8 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: DATABASE_URL
+        sync: false
 
   - type: web
     name: mediaflow-frontend

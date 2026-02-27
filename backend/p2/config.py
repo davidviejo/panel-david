@@ -2,8 +2,15 @@ import os
 import secrets
 
 class Config:
+    # Basic Config
     SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max upload size
+
+    # Database
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+
+    # Frontend URL for CORS
+    FRONTEND_URL = os.environ.get('FRONTEND_URL') or 'http://localhost:5173'
 
     # Default consent cookie for Google scraping
     # SECURITY NOTE: This cookie should be rotated frequently and kept secret.

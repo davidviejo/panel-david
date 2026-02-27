@@ -16,3 +16,4 @@ anthropic
 google-generativeai
 pyjwt
 bcrypt
+psycopg2-binary
