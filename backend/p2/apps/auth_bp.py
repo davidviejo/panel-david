@@ -7,7 +7,10 @@ auth_bp = Blueprint('auth_bp', __name__)
 
 def get_clients_db():
     try:
-        with open('clients_db.json', 'r') as f:
+        # Use absolute path to ensure the file is found regardless of CWD
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        file_path = os.path.join(base_dir, 'clients_db.json')
+        with open(file_path, 'r') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return []
@@ -33,6 +36,11 @@ def auth_project(slug):
 
     if not password:
         return jsonify({'error': 'Password required'}), 400
+
+    # Master Password (Operator) Bypass
+    if check_global_password(password, 'OPERATOR_PASSWORD'):
+        token = create_token(role='operator')
+        return jsonify({'token': token, 'role': 'operator'})
 
     # Check project password
     clients = get_clients_db()

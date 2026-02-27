@@ -1,13 +1,17 @@
 from flask import Blueprint, request, jsonify, current_app
 from apps.auth_utils import verify_token
 import json
+import os
 from functools import wraps
 
 portal_bp = Blueprint('portal_bp', __name__)
 
 def get_clients_db():
     try:
-        with open('clients_db.json', 'r') as f:
+        # Use absolute path to ensure the file is found regardless of CWD
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        file_path = os.path.join(base_dir, 'clients_db.json')
+        with open(file_path, 'r') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return []
@@ -42,7 +46,7 @@ def require_role(allowed_roles):
     return decorator
 
 @portal_bp.route('/api/clients', methods=['GET'])
-@require_role(['clients_area'])
+@require_role(['clients_area', 'operator'])
 def list_clients():
     clients = get_clients_db()
     # Filter sensitive data like password hash
@@ -57,7 +61,7 @@ def list_clients():
     return jsonify(safe_clients)
 
 @portal_bp.route('/api/<slug>/overview', methods=['GET'])
-@require_role(['project', 'clients_area']) # clients_area admin might want to see it too? Let's assume yes or restrict.
+@require_role(['project', 'clients_area', 'operator'])
 def project_overview(slug):
     # If role is project, ensure scope matches slug
     payload = request.user_payload

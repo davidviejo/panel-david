@@ -1,17 +1,14 @@
 [
   {
-    "slug": "demo-project",
+    "slug": "diego-casas",
     "name": "Diego Casas",
     "status": "active",
-    "description": "A demo project.",
-    "project_password_hash": "$2b$12$"
-  }
-]
-
-[
+    "description": "Cliente de ejemplo Diego Casas.",
+    "project_password_hash": "$2b$12$QG2Nmk8m3ncKvxJskZkU6uCJ1yYMNzg9DhqwFccRBQKV5X.z5mjsy"
+  },
   {
-    "slug": "1",
-    "name": "Vericat",
+    "slug": "demo-project",
+    "name": "Demo Project",
     "status": "active",
     "description": "A demo project.",
     "project_password_hash": "$2b$12$"
