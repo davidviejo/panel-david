@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Search,
@@ -96,6 +96,8 @@ interface LayoutProps {
   onDeleteNote?: (noteId: string, type: 'project' | 'general') => void;
 }
 
+type TabType = 'estado' | 'analisis' | 'estrategia' | 'acciones';
+
 const Layout: React.FC<LayoutProps> = ({
   children,
   modules,
@@ -112,6 +114,8 @@ const Layout: React.FC<LayoutProps> = ({
   onDeleteNote = () => {},
 }) => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(
     () => localStorage.getItem('mediaflow_theme') === 'dark',
@@ -119,6 +123,7 @@ const Layout: React.FC<LayoutProps> = ({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [isEmergencyLoading, setIsEmergencyLoading] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('estado');
 
   useEffect(() => {
     if (darkMode) {
@@ -129,6 +134,42 @@ const Layout: React.FC<LayoutProps> = ({
       localStorage.setItem('mediaflow_theme', 'light');
     }
   }, [darkMode]);
+
+  // Sync Tab with URL
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/' || path === '/app' || path === '/app/' || path.startsWith('/app/completed-tasks')) {
+      setActiveTab('estado');
+    } else if (path.startsWith('/app/checklist') || path.startsWith('/app/challenge')) {
+      setActiveTab('analisis');
+    } else if (
+      path.startsWith('/app/client-roadmap') ||
+      path.startsWith('/app/ai-roadmap') ||
+      path.startsWith('/app/module')
+    ) {
+      setActiveTab('estrategia');
+    } else if (path.startsWith('/app/kanban') || path.startsWith('/app/settings')) {
+      setActiveTab('acciones');
+    }
+  }, [location.pathname]);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    switch (tab) {
+      case 'estado':
+        navigate('/app/');
+        break;
+      case 'analisis':
+        navigate('/app/checklist');
+        break;
+      case 'estrategia':
+        navigate('/app/client-roadmap');
+        break;
+      case 'acciones':
+        navigate('/app/kanban');
+        break;
+    }
+  };
 
   const handleEmergencyIndex = () => {
     if (
@@ -167,60 +208,150 @@ const Layout: React.FC<LayoutProps> = ({
     }
   };
 
+  const renderSidebarContent = () => {
+    switch (activeTab) {
+      case 'estado':
+        return (
+          <>
+            <NavItem
+              to="/app/"
+              icon={<LayoutDashboard size={20} />}
+              label={t('nav.dashboard')}
+              subLabel={t('nav.dashboard_sub')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <NavItem
+              to="/app/completed-tasks"
+              icon={<ClipboardList size={20} />}
+              label={t('nav.completed_tasks')}
+              subLabel={t('nav.completed_tasks_sub')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+          </>
+        );
+      case 'analisis':
+        return (
+          <>
+            <NavItem
+              to="/app/checklist"
+              icon={<ListChecks size={20} />}
+              label={t('nav.seo_checklist')}
+              subLabel={t('nav.seo_checklist_sub')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <NavItem
+              to="/app/challenge"
+              icon={<Zap size={20} />}
+              label={t('nav.breaking_sim')}
+              subLabel={t('nav.breaking_sim_sub')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+          </>
+        );
+      case 'estrategia':
+        return (
+          <>
+             <NavItem
+                to="/app/client-roadmap"
+                icon={<Map size={20} />}
+                label={t('nav.client_roadmap')}
+                subLabel={t('nav.client_roadmap_sub')}
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+              <NavItem
+                to="/app/ai-roadmap"
+                icon={<Sparkles size={20} />}
+                label={t('nav.ai_roadmap')}
+                subLabel={t('nav.ai_roadmap_sub')}
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+              <div className="my-4 border-t border-slate-100 dark:border-slate-800"></div>
+              <div className="px-4 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Módulos</div>
+              {modules.map((mod) => {
+                const isComplete =
+                  mod.tasks.length > 0 && mod.tasks.every((t) => t.status === 'completed');
+                return (
+                  <NavItem
+                    key={mod.id}
+                    to={`/app/module/${mod.id}`}
+                    icon={getIcon(mod.iconName)}
+                    label={`${t('nav.module_prefix')}${mod.id}: ${mod.title}`}
+                    subLabel={mod.levelRange}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    isComplete={isComplete}
+                  />
+                );
+              })}
+          </>
+        );
+      case 'acciones':
+        return (
+          <>
+             <NavItem
+                to="/app/kanban"
+                icon={<KanbanSquare size={20} />}
+                label={t('nav.kanban_board')}
+                subLabel={t('nav.kanban_board_sub')}
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+               <NavItem
+                to="/app/settings"
+                icon={<SettingsIcon size={20} />}
+                label={t('nav.settings')}
+                subLabel={t('nav.settings_sub')}
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden transition-colors duration-300">
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-0 left-0 w-full bg-white dark:bg-slate-900 z-50 px-4 py-3 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-            M
+      {/* Top Navigation Bar */}
+      <header className="fixed top-0 left-0 w-full h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-50 shadow-sm">
+        <div className="flex items-center gap-8">
+          {/* Logo */}
+          <div className="flex items-center gap-2 font-bold text-xl text-slate-900 dark:text-white">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+              M
+            </div>
+            <span className="hidden md:block">MediaFlow</span>
           </div>
-          <span className="font-bold text-slate-800 dark:text-white">MediaFlow</span>
+
+          {/* Tabs */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {(['estado', 'analisis', 'estrategia', 'acciones'] as TabType[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => handleTabChange(tab)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
+                  activeTab === tab
+                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 ring-1 ring-blue-100 dark:ring-blue-800'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </nav>
         </div>
+
+        {/* Mobile Menu Toggle */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="text-slate-600 dark:text-slate-300"
+          className="md:hidden text-slate-600 dark:text-slate-300"
         >
           {isMobileMenuOpen ? <X /> : <Menu />}
         </button>
-      </div>
 
-      {/* Sidebar */}
-      <aside
-        className={`
-        fixed inset-y-0 left-0 z-40 w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static flex flex-col
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}
-      >
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/20">
-                M
-              </div>
-              <div>
-                <h1 className="font-bold text-slate-800 dark:text-white text-lg leading-tight">
-                  {t('app.title')}
-                </h1>
-                <p className="text-xs text-slate-400 font-medium">{t('app.subtitle')}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher />
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors"
-              >
-                {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+        {/* Right Side Actions */}
+        <div className="hidden md:flex items-center gap-3">
           {clients && currentClientId && onSwitchClient && onAddClient && onDeleteClient && (
-            <div className="mb-4">
-              <ClientSwitcher
+            <div className="w-64">
+               <ClientSwitcher
                 clients={clients}
                 currentClientId={currentClientId}
                 onSwitchClient={onSwitchClient}
@@ -229,100 +360,81 @@ const Layout: React.FC<LayoutProps> = ({
               />
             </div>
           )}
+          <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+          <LanguageSwitcher />
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors"
+          >
+            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </div>
+      </header>
 
-          <div className="bg-slate-900 dark:bg-slate-800 rounded-2xl p-4 text-white relative overflow-hidden mb-6 border border-slate-800 dark:border-slate-700 shrink-0">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
-            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
-              {t('global_score')}
-            </p>
-            <div className="flex items-end gap-2">
-              <span className="text-4xl font-bold">{Math.round(globalScore)}</span>
-              <span className="text-slate-400 mb-1">/ 100</span>
-            </div>
-            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-blue-400 to-emerald-400 h-full rounded-full transition-all duration-1000"
-                style={{ width: `${globalScore}%` }}
-              ></div>
+      {/* Sidebar */}
+      <aside
+        className={`
+        fixed top-16 bottom-0 left-0 z-40 w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static flex flex-col pt-4
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:mt-16
+      `}
+      >
+        <div className="px-4 pb-4 flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+
+          {/* Mobile Client Switcher */}
+          <div className="md:hidden mb-4">
+            {clients && currentClientId && onSwitchClient && onAddClient && onDeleteClient && (
+               <ClientSwitcher
+                clients={clients}
+                currentClientId={currentClientId}
+                onSwitchClient={onSwitchClient}
+                onAddClient={onAddClient}
+                onDeleteClient={onDeleteClient}
+              />
+            )}
+
+            {/* Mobile Tabs */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+                 {(['estado', 'analisis', 'estrategia', 'acciones'] as TabType[]).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => {
+                        handleTabChange(tab);
+                        setIsMobileMenuOpen(false);
+                    }}
+                    className={`px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border ${
+                      activeTab === tab
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
             </div>
           </div>
 
+          {activeTab === 'estado' && (
+             <div className="bg-slate-900 dark:bg-slate-800 rounded-2xl p-4 text-white relative overflow-hidden mb-6 border border-slate-800 dark:border-slate-700 shrink-0">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+                <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
+                {t('global_score')}
+                </p>
+                <div className="flex items-end gap-2">
+                <span className="text-4xl font-bold">{Math.round(globalScore)}</span>
+                <span className="text-slate-400 mb-1">/ 100</span>
+                </div>
+                <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                <div
+                    className="bg-gradient-to-r from-blue-400 to-emerald-400 h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${globalScore}%` }}
+                ></div>
+                </div>
+            </div>
+          )}
+
           <nav className="space-y-1 pr-2">
-            <NavItem
-              to="/"
-              icon={<LayoutDashboard size={20} />}
-              label={t('nav.dashboard')}
-              subLabel={t('nav.dashboard_sub')}
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <div className="my-4 border-t border-slate-100 dark:border-slate-800"></div>
-            {modules.map((mod) => {
-              const isComplete =
-                mod.tasks.length > 0 && mod.tasks.every((t) => t.status === 'completed');
-              return (
-                <NavItem
-                  key={mod.id}
-                  to={`/module/${mod.id}`}
-                  icon={getIcon(mod.iconName)}
-                  label={`${t('nav.module_prefix')}${mod.id}: ${mod.title}`}
-                  subLabel={mod.levelRange}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  isComplete={isComplete}
-                />
-              );
-            })}
-
-            <div className="my-4 border-t border-slate-100 dark:border-slate-800"></div>
-
-            <NavItem
-              to="/client-roadmap"
-              icon={<Map size={20} />}
-              label={t('nav.client_roadmap')}
-              subLabel={t('nav.client_roadmap_sub')}
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <NavItem
-              to="/kanban"
-              icon={<KanbanSquare size={20} />}
-              label={t('nav.kanban_board')}
-              subLabel={t('nav.kanban_board_sub')}
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <NavItem
-              to="/checklist"
-              icon={<ListChecks size={20} />}
-              label={t('nav.seo_checklist')}
-              subLabel={t('nav.seo_checklist_sub')}
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <NavItem
-              to="/ai-roadmap"
-              icon={<Sparkles size={20} />}
-              label={t('nav.ai_roadmap')}
-              subLabel={t('nav.ai_roadmap_sub')}
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <NavItem
-              to="/settings"
-              icon={<SettingsIcon size={20} />}
-              label={t('nav.settings')}
-              subLabel={t('nav.settings_sub')}
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <NavItem
-              to="/challenge"
-              icon={<Zap size={20} />}
-              label={t('nav.breaking_sim')}
-              subLabel={t('nav.breaking_sim_sub')}
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <NavItem
-              to="/completed-tasks"
-              icon={<ClipboardList size={20} />}
-              label={t('nav.completed_tasks')}
-              subLabel={t('nav.completed_tasks_sub')}
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
+            {renderSidebarContent()}
           </nav>
 
           <div className="mt-auto pt-6 pb-2 space-y-3">
@@ -369,7 +481,7 @@ const Layout: React.FC<LayoutProps> = ({
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-900/50 w-full lg:pt-0 pt-16 relative">
+      <main className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-900/50 w-full pt-16 relative">
         <div className="max-w-7xl mx-auto p-4 lg:p-8">{children}</div>
 
         {/* Shortcuts Modal (Simple) */}
