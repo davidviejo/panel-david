@@ -29,7 +29,7 @@ import {
   Settings as SettingsIcon,
   KanbanSquare,
   ListChecks,
-  Tool,
+  Wrench as Tool,
 } from 'lucide-react';
 import { ModuleData, Client, ClientVertical, Note } from '../types';
 import ClientSwitcher from './ClientSwitcher';
