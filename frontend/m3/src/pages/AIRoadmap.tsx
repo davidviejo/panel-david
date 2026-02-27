@@ -16,6 +16,7 @@ import {
   BrainCircuit,
   Settings,
   ArrowDownCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { Spinner } from '../components/ui/Spinner';
 import { Link } from 'react-router-dom';
@@ -273,6 +274,17 @@ const AIRoadmap: React.FC = () => {
                                   <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-800">
                                     AI Custom
                                   </span>
+                                )}
+                                {modules.find(m => m.title === 'MIA: Fichas de IA') && (
+                                   <Link
+                                      to={`/app/module/${modules.find(m => m.title === 'MIA: Fichas de IA')?.id}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-[10px] font-medium text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 uppercase tracking-wider bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors"
+                                      title="Ir al Módulo MIA: Fichas de IA"
+                                    >
+                                      Módulo {modules.find(m => m.title === 'MIA: Fichas de IA')?.id}
+                                      <ExternalLink size={10} />
+                                    </Link>
                                 )}
                               </div>
                               <h3 className="font-semibold text-lg leading-tight mb-1 text-slate-800 dark:text-slate-200">

@@ -19,7 +19,9 @@ import {
   UserCheck,
   MessageSquare,
   Layers,
+  ExternalLink,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { DEFAULT_KANBAN_COLUMNS } from '../config/kanban';
 
 const KanbanBoard: React.FC = () => {
@@ -237,9 +239,15 @@ const KanbanBoard: React.FC = () => {
                               }`}
                             >
                               <div className="flex items-start justify-between gap-2 mb-3">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded-full">
+                                <Link
+                                  to={`/app/module/${item.moduleId}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-[10px] font-medium text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 uppercase tracking-wider bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors"
+                                  title={`Ir al Módulo ${item.moduleId}`}
+                                >
                                   Módulo {item.moduleId}
-                                </span>
+                                  <ExternalLink size={10} />
+                                </Link>
                                 <div className="text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <GripVertical size={16} />
                                 </div>

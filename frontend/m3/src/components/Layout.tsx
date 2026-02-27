@@ -29,6 +29,7 @@ import {
   Settings as SettingsIcon,
   KanbanSquare,
   ListChecks,
+  Tool,
 } from 'lucide-react';
 import { ModuleData, Client, ClientVertical, Note } from '../types';
 import ClientSwitcher from './ClientSwitcher';
@@ -301,6 +302,15 @@ const Layout: React.FC<LayoutProps> = ({
                 subLabel={t('nav.settings_sub')}
                 onClick={() => setIsMobileMenuOpen(false)}
               />
+              {sessionStorage.getItem('portal_role') === 'operator' && (
+                <NavItem
+                  to="/operator"
+                  icon={<Tool size={20} />}
+                  label="Herramientas Backend"
+                  subLabel="Acceso a Operador"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                />
+              )}
           </>
         );
       default:

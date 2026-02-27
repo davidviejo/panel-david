@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import ClientRoadmap from '../ClientRoadmap';
 import { ModuleData, Task } from '../../types';
 
@@ -81,7 +82,11 @@ describe('ClientRoadmap', () => {
   };
 
   it('renders tasks in the correct order', () => {
-    render(<ClientRoadmap {...defaultProps} />);
+    render(
+      <MemoryRouter>
+        <ClientRoadmap {...defaultProps} />
+      </MemoryRouter>
+    );
 
     const tasks = screen.getAllByRole('heading', { level: 3 });
     expect(tasks[0].textContent).toContain('Task 1');
@@ -93,7 +98,11 @@ describe('ClientRoadmap', () => {
       ...defaultProps,
       customRoadmapOrder: ['task-2', 'task-1'],
     };
-    render(<ClientRoadmap {...props} />);
+    render(
+      <MemoryRouter>
+        <ClientRoadmap {...props} />
+      </MemoryRouter>
+    );
 
     const tasks = screen.getAllByRole('heading', { level: 3 });
     expect(tasks[0].textContent).toContain('Task 2');
@@ -101,7 +110,11 @@ describe('ClientRoadmap', () => {
   });
 
   it('updates when customRoadmapOrder prop changes', () => {
-    const { rerender } = render(<ClientRoadmap {...defaultProps} />);
+    const { rerender } = render(
+      <MemoryRouter>
+        <ClientRoadmap {...defaultProps} />
+      </MemoryRouter>
+    );
 
     let tasks = screen.getAllByRole('heading', { level: 3 });
     expect(tasks[0].textContent).toContain('Task 1');
@@ -111,7 +124,11 @@ describe('ClientRoadmap', () => {
       customRoadmapOrder: ['task-2', 'task-1'],
     };
 
-    rerender(<ClientRoadmap {...newProps} />);
+    rerender(
+      <MemoryRouter>
+        <ClientRoadmap {...newProps} />
+      </MemoryRouter>
+    );
 
     tasks = screen.getAllByRole('heading', { level: 3 });
     expect(tasks[0].textContent).toContain('Task 2');

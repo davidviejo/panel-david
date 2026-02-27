@@ -13,7 +13,9 @@ import {
   HelpCircle,
   Bot,
   Circle,
+  ExternalLink,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useToast } from '../components/ui/ToastContext';
 import { Spinner } from '../components/ui/Spinner';
 
@@ -129,9 +131,15 @@ const RoadmapTaskItem: React.FC<RoadmapTaskItemProps> = memo(({
                 >
                   {item.task.impact} Impacto
                 </span>
-                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                <Link
+                  to={`/app/module/${item.moduleId}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-[10px] font-medium text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 uppercase tracking-wider bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors"
+                  title={`Ir al Módulo ${item.moduleId}`}
+                >
                   Módulo {item.moduleId}
-                </span>
+                  <ExternalLink size={10} />
+                </Link>
                 {item.task.category && (
                   <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded-full border border-slate-100 dark:border-slate-800">
                     {item.task.category}

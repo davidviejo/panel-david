@@ -1,6 +1,7 @@
 import React, { Profiler } from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import ClientRoadmap from '../ClientRoadmap';
 import { ModuleData, Task } from '../../types';
 
@@ -93,9 +94,11 @@ describe('ClientRoadmap Performance', () => {
     };
 
     render(
-      <Profiler id="ClientRoadmap" onRender={onRender}>
-        <ClientRoadmap {...props} />
-      </Profiler>
+      <MemoryRouter>
+        <Profiler id="ClientRoadmap" onRender={onRender}>
+          <ClientRoadmap {...props} />
+        </Profiler>
+      </MemoryRouter>
     );
 
     // Find the first task and click to expand
