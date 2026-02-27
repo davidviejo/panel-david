@@ -3,24 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { Linkedin, Twitter, Globe, CheckCircle, FolderOpen } from 'lucide-react';
 import { api } from '../../services/api';
 import { Spinner } from '../../components/ui/Spinner';
+import { useProject } from '../../context/ProjectContext';
 
-interface Client {
+interface DisplayClient {
   slug: string;
   name: string;
   status: string;
   description: string;
+  isLocal?: boolean;
 }
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const [clients, setClients] = useState<Client[]>([]);
+  const { clients: localProjects, switchClient } = useProject();
+  const [publicProjects, setPublicProjects] = useState<DisplayClient[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchClients = async () => {
       try {
         const data = await api.getPublicClients();
-        setClients(data);
+        setPublicProjects(data);
       } catch (err) {
         console.error('Error fetching public clients:', err);
       } finally {
@@ -29,6 +32,26 @@ const LandingPage: React.FC = () => {
     };
     fetchClients();
   }, []);
+
+  // Map local projects to DisplayClient format
+  const mappedLocalProjects: DisplayClient[] = localProjects.map((p) => ({
+    slug: p.id,
+    name: p.name,
+    status: 'active',
+    description: `Proyecto Local (${p.vertical}) - Creado el ${new Date(p.createdAt).toLocaleDateString()}`,
+    isLocal: true,
+  }));
+
+  const combinedClients = [...mappedLocalProjects, ...publicProjects];
+
+  const handleAccess = (client: DisplayClient) => {
+    if (client.isLocal) {
+      switchClient(client.slug);
+      navigate('/app/');
+    } else {
+      navigate(`/p/${client.slug}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-orange-500 selection:text-white">
@@ -193,14 +216,14 @@ const LandingPage: React.FC = () => {
           <div className="flex justify-center py-20">
             <Spinner size={32} className="text-slate-400" />
           </div>
-        ) : clients.length === 0 ? (
+        ) : combinedClients.length === 0 ? (
           <div className="text-center py-20 bg-slate-50 rounded-lg border border-slate-200 border-dashed">
              <FolderOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
              <p className="text-slate-500 font-medium">No hay proyectos activos visibles.</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clients.map((client) => (
+            {combinedClients.map((client) => (
               <div
                 key={client.slug}
                 className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between h-64 hover:border-blue-300 transition-colors"
@@ -225,7 +248,7 @@ const LandingPage: React.FC = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => navigate(`/p/${client.slug}`)}
+                  onClick={() => handleAccess(client)}
                   className="bg-[#FF8A65] hover:bg-[#FF7043] text-white py-2 px-6 rounded-full text-sm font-medium w-max transition-colors shadow-sm"
                 >
                   <span className="mr-1">›</span> Acceder
