@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: backend-p2
+    env: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install -r backend/p2/requirements.txt
+    startCommand: gunicorn --chdir backend/p2 run:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: CLIENTS_AREA_PASSWORD_HASH
+        sync: false
+      - key: OPERATOR_PASSWORD_HASH
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_URL
+        fromService:
+          type: static
+          name: frontend-m3
+          property: url
+
+  - type: static
+    name: frontend-m3
+    env: static
+    region: frankfurt
+    plan: free
+    buildCommand: cd frontend/m3 && npm install && npm run build
+    staticPublishPath: frontend/m3/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: backend-p2
+          property: url

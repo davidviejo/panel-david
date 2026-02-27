@@ -14,3 +14,6 @@ textblob
 openai
 anthropic
 google-generativeai
+PyJWT
+bcrypt
+flask-bcrypt

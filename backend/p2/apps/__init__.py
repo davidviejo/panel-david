@@ -73,6 +73,8 @@ from apps.snippet_tool import snippet_bp
 from apps.enhance_tool import enhance_bp
 from apps.ai_routes import ai_bp as ai_tools_bp
 from apps.api_engine import api_engine_bp
+from apps.auth import auth_bp
+from apps.portal import portal_bp
 
 def create_app(config_class=Config):
     # Inicializar base de datos
@@ -82,6 +84,8 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     # --- REGISTRO DE BLUEPRINTS ---
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(portal_bp)
     app.register_blueprint(autopilot_bp)
     app.register_blueprint(entity_bp)
     app.register_blueprint(schema_detector_bp)
