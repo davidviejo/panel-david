@@ -1,35 +1,40 @@
+from playwright.sync_api import sync_playwright
 
-import asyncio
-from playwright.async_api import async_playwright
+def verify_frontend():
+    with sync_playwright() as p:
+        # Launch browser
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
 
-async def run():
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page()
+        # 1. Landing Page
+        print("Visiting Landing Page...")
+        page.goto("http://localhost:5173/")
+        page.wait_for_selector("text=David Viejo")
+        page.screenshot(path="verification_landing.png")
+        print("Landing page screenshot saved.")
 
-        # Intercept and mock API calls to avoid backend dependency
-        await page.route("**/api/capabilities", lambda route: route.fulfill(
-            status=200,
-            content_type="application/json",
-            body='{"serpProviders": {"serpapi": true}, "costModel": {}, "limits": {}}'
-        ))
+        # 2. Clients Login
+        print("Visiting Clients Login...")
+        page.goto("http://localhost:5173/clientes")
+        page.wait_for_selector("text=Área de Clientes")
+        page.screenshot(path="verification_login.png")
+        print("Clients login screenshot saved.")
 
-        try:
-            # Navigate to the dashboard
-            await page.goto("http://localhost:5173", timeout=60000)
+        # 3. Project Login
+        print("Visiting Project Login...")
+        page.goto("http://localhost:5173/p/demo-project")
+        page.wait_for_selector("text=Acceso a Proyecto")
+        page.screenshot(path="verification_project_login.png")
+        print("Project login screenshot saved.")
 
-            # Wait for content to settle
-            await page.wait_for_timeout(5000)
+        # 4. Operator Page
+        print("Visiting Operator Page...")
+        page.goto("http://localhost:5173/operator")
+        page.wait_for_selector("text=Operator Access")
+        page.screenshot(path="verification_operator.png")
+        print("Operator page screenshot saved.")
 
-            # Take a screenshot
-            await page.screenshot(path="dashboard.png")
-            print("Dashboard screenshot saved to dashboard.png")
-
-        except Exception as e:
-            print(f"Error: {e}")
-            await page.screenshot(path="error.png")
-
-        await browser.close()
+        browser.close()
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    verify_frontend()

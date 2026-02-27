@@ -74,6 +74,10 @@ from apps.enhance_tool import enhance_bp
 from apps.ai_routes import ai_bp as ai_tools_bp
 from apps.api_engine import api_engine_bp
 
+# Portal Auth
+from apps.auth_bp import auth_bp
+from apps.portal_bp import portal_bp
+
 def create_app(config_class=Config):
     # Inicializar base de datos
     init_db()
@@ -150,6 +154,9 @@ def create_app(config_class=Config):
     app.register_blueprint(enhance_bp)
     app.register_blueprint(ai_tools_bp)
     app.register_blueprint(api_engine_bp)
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(portal_bp)
 
     # --- CONTEXT PROCESSOR ---
     @app.context_processor

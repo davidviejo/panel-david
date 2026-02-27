@@ -16,6 +16,14 @@ const AIRoadmap = lazy(() => import('./pages/AIRoadmap'));
 const SeoChecklistPage = lazy(() => import('./pages/SeoChecklistPage'));
 const Settings = lazy(() => import('./pages/Settings'));
 
+// Portal Pages
+const LandingPage = lazy(() => import('./pages/portal/LandingPage'));
+const ClientsLogin = lazy(() => import('./pages/portal/ClientsLogin'));
+const ProjectsList = lazy(() => import('./pages/portal/ProjectsList'));
+const ProjectLogin = lazy(() => import('./pages/portal/ProjectLogin'));
+const ProjectOverview = lazy(() => import('./pages/portal/ProjectOverview'));
+const OperatorPage = lazy(() => import('./pages/portal/OperatorPage'));
+
 const AppRoutes: React.FC = () => {
   const {
     modules,
@@ -43,7 +51,8 @@ const AppRoutes: React.FC = () => {
     deleteNote,
   } = useProject();
 
-  return (
+  // Wrap the internal layout in a component to keep routes clean
+  const InternalApp = (
     <Layout
       modules={modules}
       globalScore={globalScore}
@@ -58,14 +67,7 @@ const AppRoutes: React.FC = () => {
       onUpdateNote={updateNote}
       onDeleteNote={deleteNote}
     >
-      <Suspense
-        fallback={
-          <div className="flex justify-center p-8">
-            <Spinner size={48} />
-          </div>
-        }
-      >
-        <Routes>
+      <Routes>
           <Route
             path="/"
             element={
@@ -125,10 +127,35 @@ const AppRoutes: React.FC = () => {
               />
             }
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+          <Route path="*" element={<Navigate to="/app/" replace />} />
+      </Routes>
     </Layout>
+  );
+
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center p-8">
+          <Spinner size={48} />
+        </div>
+      }
+    >
+      <Routes>
+        {/* Public Portal Routes (No Layout) */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/clientes" element={<ClientsLogin />} />
+        <Route path="/clientes/dashboard" element={<ProjectsList />} />
+        <Route path="/p/:slug" element={<ProjectLogin />} />
+        <Route path="/c/:slug/overview" element={<ProjectOverview />} />
+        <Route path="/operator" element={<OperatorPage />} />
+
+        {/* Internal App Routes (With Layout) - Mounted under /app */}
+        <Route path="/app/*" element={InternalApp} />
+
+        {/* Catch all to redirect to landing or app depending on logic. For now landing. */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 };
 

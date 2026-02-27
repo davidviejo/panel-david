@@ -17,3 +17,8 @@ class Config:
     # DataForSEO Credentials
     DATAFORSEO_LOGIN = os.environ.get('DATAFORSEO_LOGIN')
     DATAFORSEO_PASSWORD = os.environ.get('DATAFORSEO_PASSWORD')
+
+    # Portal Auth
+    CLIENTS_AREA_PASSWORD = os.environ.get('CLIENTS_AREA_PASSWORD')
+    OPERATOR_PASSWORD = os.environ.get('OPERATOR_PASSWORD')
+    JWT_SECRET = os.environ.get('JWT_SECRET') or secrets.token_hex(32)
