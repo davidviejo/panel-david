@@ -77,6 +77,7 @@ from apps.api_engine import api_engine_bp
 # Portal Auth
 from apps.auth_bp import auth_bp
 from apps.portal_bp import portal_bp
+from apps.auth_utils import hash_password
 
 def create_app(config_class=Config):
     # Inicializar base de datos
@@ -84,6 +85,17 @@ def create_app(config_class=Config):
 
     app = Flask(__name__, template_folder='../templates', static_folder='../static')
     app.config.from_object(config_class)
+
+    # --- SECURITY: Auto-hash passwords if plain text ---
+    clients_pass = app.config.get('CLIENTS_AREA_PASSWORD')
+    if clients_pass and not clients_pass.startswith('$2'):
+        app.config['CLIENTS_AREA_PASSWORD'] = hash_password(clients_pass)
+        # print(f"DEBUG: Hashed CLIENTS_AREA_PASSWORD")
+
+    operator_pass = app.config.get('OPERATOR_PASSWORD')
+    if operator_pass and not operator_pass.startswith('$2'):
+        app.config['OPERATOR_PASSWORD'] = hash_password(operator_pass)
+        # print(f"DEBUG: Hashed OPERATOR_PASSWORD")
 
     # --- REGISTRO DE BLUEPRINTS ---
     app.register_blueprint(autopilot_bp)

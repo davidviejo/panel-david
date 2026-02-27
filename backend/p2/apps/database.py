@@ -1,9 +1,9 @@
 """
 Database Management Module
 
-This module handles the SQLite database connection, initialization, and CRUD
-operations for projects and clusters. It supports migration from a JSON file
-if the database is empty.
+This module handles the database connection (SQLite or PostgreSQL), initialization,
+and CRUD operations for projects and clusters. It supports migration from a JSON
+file if the database is empty.
 """
 import sqlite3
 import json
@@ -12,25 +12,106 @@ import logging
 import functools
 import uuid
 import datetime
+import re
 from typing import List, Dict, Optional, Any
+from urllib.parse import urlparse
 
 # Database Configuration
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_FILE = os.path.join(BASE_DIR, 'projects.db')
 JSON_SOURCE_FILE = os.path.join(BASE_DIR, 'projects_db.json')
 
+# Check environment variable for database URL
+DATABASE_URL = os.environ.get('DATABASE_URL')
+USE_POSTGRES = False
+if DATABASE_URL and DATABASE_URL.startswith("postgres"):
+    USE_POSTGRES = True
+    try:
+        import psycopg2
+        import psycopg2.extras
+    except ImportError:
+        logging.warning("psycopg2 not installed. PostgreSQL support disabled.")
+        USE_POSTGRES = False
 
-def get_db_connection() -> sqlite3.Connection:
-    """
-    Establishes a connection to the SQLite database.
 
-    Returns:
-        sqlite3.Connection: A connection object with row_factory set to
-                            sqlite3.Row.
+class PostgresCursorWrapper:
     """
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row
-    return conn
+    Wraps psycopg2 cursor to mimic sqlite3 cursor behavior.
+    """
+    def __init__(self, cursor):
+        self.cursor = cursor
+
+    def _replace_placeholders(self, query):
+        """
+        Replaces '?' with '%s' but ignores '?' inside single quotes.
+        This is a basic implementation and might not handle escaped quotes perfectly.
+        """
+        def replace(match):
+            # If it's a quoted string, return it as is
+            if match.group(1):
+                return match.group(1)
+            # If it's a question mark, replace with %s
+            return "%s"
+
+        # Regex: match single quoted string OR a question mark
+        # Group 1 captures the quoted string
+        pattern = r"('[^']*')|(\?)"
+        return re.sub(pattern, replace, query)
+
+    def execute(self, query, params=None):
+        query = self._replace_placeholders(query)
+        return self.cursor.execute(query, params)
+
+    def executemany(self, query, params_list):
+        query = self._replace_placeholders(query)
+        return self.cursor.executemany(query, params_list)
+
+    def fetchone(self):
+        return self.cursor.fetchone()
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+    def __getattr__(self, name):
+        return getattr(self.cursor, name)
+
+
+class PostgresConnectionWrapper:
+    """
+    Wraps psycopg2 connection to mimic sqlite3 connection behavior.
+    """
+    def __init__(self, conn):
+        self.conn = conn
+
+    def cursor(self):
+        return PostgresCursorWrapper(self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor))
+
+    def commit(self):
+        return self.conn.commit()
+
+    def rollback(self):
+        return self.conn.rollback()
+
+    def close(self):
+        return self.conn.close()
+
+
+def get_db_connection():
+    """
+    Establishes a connection to the database (SQLite or Postgres).
+    """
+    if USE_POSTGRES:
+        try:
+            conn = psycopg2.connect(DATABASE_URL)
+            return PostgresConnectionWrapper(conn)
+        except Exception as e:
+            logging.error(f"PostgreSQL connection failed: {e}")
+            # Fallback not implemented to prevent data inconsistency
+            raise e
+    else:
+        conn = sqlite3.connect(DB_FILE)
+        conn.row_factory = sqlite3.Row
+        return conn
 
 
 def init_db() -> None:
@@ -42,13 +123,19 @@ def init_db() -> None:
     conn = get_db_connection()
     c = conn.cursor()
 
-    # Enable foreign keys
-    c.execute("PRAGMA foreign_keys = ON;")
+    # Enable foreign keys (only needed for SQLite)
+    if not USE_POSTGRES:
+        c.execute("PRAGMA foreign_keys = ON;")
+
+    # Define types based on DB
+    # Fix: SERIAL implies integer and autoincrement, but explicit PRIMARY KEY is needed in standard SQL/Postgres for clarity and constraint
+    auto_inc_type = "SERIAL PRIMARY KEY" if USE_POSTGRES else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    text_pk = "TEXT PRIMARY KEY"
 
     # Projects Table
-    c.execute('''
+    c.execute(f'''
         CREATE TABLE IF NOT EXISTS projects (
-            id TEXT PRIMARY KEY,
+            id {text_pk},
             name TEXT NOT NULL,
             domain TEXT,
             geo TEXT,
@@ -61,9 +148,9 @@ def init_db() -> None:
     ''')
 
     # User Settings Table
-    c.execute('''
+    c.execute(f'''
         CREATE TABLE IF NOT EXISTS user_settings (
-            user_id TEXT PRIMARY KEY,
+            user_id {text_pk},
             default_model TEXT,
             privacy_mode INTEGER DEFAULT 0,
             openai_key TEXT,
@@ -77,9 +164,9 @@ def init_db() -> None:
     ''')
 
     # Clusters Table
-    c.execute('''
+    c.execute(f'''
         CREATE TABLE IF NOT EXISTS clusters (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {auto_inc_type},
             project_id TEXT NOT NULL,
             name TEXT,
             url TEXT,
@@ -89,9 +176,9 @@ def init_db() -> None:
     ''')
 
     # Analysis Jobs Table
-    c.execute('''
+    c.execute(f'''
         CREATE TABLE IF NOT EXISTS analysis_jobs (
-            job_id TEXT PRIMARY KEY,
+            job_id {text_pk},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             status TEXT DEFAULT 'queued',
@@ -108,9 +195,9 @@ def init_db() -> None:
     ''')
 
     # Analysis Job Items Table
-    c.execute('''
+    c.execute(f'''
         CREATE TABLE IF NOT EXISTS analysis_job_items (
-            item_id TEXT PRIMARY KEY,
+            item_id {text_pk},
             job_id TEXT NOT NULL,
             url TEXT NOT NULL,
             page_id TEXT,
@@ -125,13 +212,20 @@ def init_db() -> None:
     ''')
 
     # Check if item_metadata column exists (for migration of existing table)
+    # This logic is slightly more complex with Postgres, keeping it simple for now
     try:
         c.execute("SELECT item_metadata FROM analysis_job_items LIMIT 1")
-    except sqlite3.OperationalError:
+    except Exception: # Catch generic exception for both sqlite and pg
         try:
+            # Rollback needed for Postgres if previous query failed
+            if USE_POSTGRES:
+                conn.rollback()
             c.execute("ALTER TABLE analysis_job_items ADD COLUMN item_metadata TEXT")
+            conn.commit()
         except Exception as e:
             logging.error(f"Error adding item_metadata column: {e}")
+            if USE_POSTGRES:
+                conn.rollback()
 
     conn.commit()
     conn.close()
@@ -142,7 +236,7 @@ def init_db() -> None:
 
 def migrate_from_json() -> None:
     """
-    Migrate data from projects_db.json to SQLite if the database is empty
+    Migrate data from projects_db.json to SQLite/PG if the database is empty
     and the JSON source file exists.
     """
     if not os.path.exists(JSON_SOURCE_FILE):
@@ -538,7 +632,9 @@ def delete_project(project_id: str) -> None:
     """
     conn = get_db_connection()
     c = conn.cursor()
-    c.execute("PRAGMA foreign_keys = ON;")
+
+    if not USE_POSTGRES:
+        c.execute("PRAGMA foreign_keys = ON;")
 
     try:
         c.execute("DELETE FROM projects WHERE id = ?", (str(project_id),))
@@ -556,7 +652,8 @@ def reset_all_projects() -> None:
     """
     conn = get_db_connection()
     c = conn.cursor()
-    c.execute("PRAGMA foreign_keys = ON;")
+    if not USE_POSTGRES:
+        c.execute("PRAGMA foreign_keys = ON;")
     try:
         c.execute("DELETE FROM projects")
         conn.commit()

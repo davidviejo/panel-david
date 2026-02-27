@@ -4,6 +4,12 @@ import datetime
 import os
 from flask import current_app
 
+def hash_password(password):
+    """Hashes a password using bcrypt."""
+    if isinstance(password, str):
+        password = password.encode('utf-8')
+    return bcrypt.hashpw(password, bcrypt.gensalt()).decode('utf-8')
+
 def check_password_hash(password, hashed):
     """Checks a password against a bcrypt hash."""
     if not hashed:
