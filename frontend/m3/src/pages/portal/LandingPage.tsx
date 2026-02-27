@@ -1,252 +1,259 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Linkedin, Globe, CheckCircle, MapPin } from 'lucide-react';
+import { Linkedin, Twitter, Globe, CheckCircle } from 'lucide-react';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-200 font-sans selection:bg-[#FF7F50] selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-orange-500 selection:text-white">
       {/* Navbar */}
-      <nav className="fixed w-full bg-slate-900/90 backdrop-blur-md z-50 border-b border-slate-800">
+      <nav className="fixed w-full bg-white z-50 border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
+          <div className="flex justify-between h-20 items-center">
+            {/* Logo area */}
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-[#FF7F50] rounded-lg flex items-center justify-center text-white font-bold text-xl">D</div>
-              <span className="font-bold text-xl text-white tracking-tight">David Viejo</span>
+               <div className="w-4 h-4 bg-orange-500 rotate-45 transform"></div>
+               <span className="font-bold text-xl text-slate-900 tracking-tight">agenciaSEO.eu</span>
             </div>
-            <div className="hidden md:flex space-x-8 items-center text-sm font-medium text-slate-400">
-              <a href="#about" className="hover:text-[#FF7F50] transition-colors">Acerca de</a>
-              <a href="#experience" className="hover:text-[#FF7F50] transition-colors">Experiencia</a>
+
+            {/* Navigation */}
+            <div className="flex items-center space-x-8 text-sm font-semibold text-slate-500 uppercase tracking-wide">
+              <a href="#experience" className="hover:text-orange-500 transition-colors">Experiencia</a>
+              <a href="#projects" className="hover:text-orange-500 transition-colors">Proyectos</a>
               <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span className="text-green-500 font-semibold">Disponible</span>
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span className="text-green-500">Disponible</span>
               </div>
             </div>
-            <button
-              onClick={() => navigate('/clientes')}
-              className="bg-[#FF7F50] hover:bg-[#E66A3C] text-white px-5 py-2 rounded-full text-sm font-medium transition-all shadow-lg shadow-[#FF7F50]/20 hover:shadow-[#FF7F50]/30 flex items-center"
-            >
-              Acceso Clientes <ArrowRight className="ml-2 w-4 h-4" />
-            </button>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1 space-y-6">
-            <h1 className="text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-tight">
-              David Viejo <br/>
-              <span className="text-[#FF7F50]">Consultor SEO técnico & estratégico</span>
-            </h1>
-            <p className="text-xl text-slate-400 leading-relaxed max-w-2xl">
-              Resuelvo cuellos de botella SEO que frenan el crecimiento | AgenciaSEO.eu
-            </p>
+      <section className="pt-40 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row items-start gap-12">
 
-            <div className="flex items-center text-slate-500 text-sm">
-               <MapPin className="w-4 h-4 mr-2" />
-               Zaragoza, Aragón, España
+          {/* Avatar */}
+          <div className="flex-shrink-0">
+             <div className="w-48 h-48 md:w-64 md:h-64 rounded-full p-2 border-4 border-orange-100 shadow-lg relative overflow-hidden bg-white">
+                <div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center text-4xl text-slate-400 font-bold overflow-hidden">
+                   {/* Placeholder for real image */}
+                   <span className="uppercase">DV</span>
+                </div>
+             </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 space-y-6 pt-4">
+            <div>
+                 <h1 className="text-4xl md:text-5xl font-bold text-blue-900 tracking-tight leading-tight">
+                  David Viejo
+                </h1>
+                <p className="text-lg text-orange-500 font-medium mt-1">
+                  Consultor SEO — agenciaSEO.eu
+                </p>
             </div>
 
-            <div className="flex flex-wrap gap-3 pt-4">
-              {['SEO Técnico', 'Estrategia', 'Auditorías', 'IA para SEO', 'Dashboards'].map((skill) => (
-                <span key={skill} className="px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-sm font-medium border border-slate-700">
+            <p className="text-slate-600 leading-relaxed max-w-2xl text-base">
+              Consultor SEO especializado con más de 10 años de experiencia en posicionamiento web,
+              arquitectura de sitios y estrategia digital. Actualmente en agenciaSEO.eu, una de las
+              agencias de referencia en SEO a nivel nacional. Especializado en e-commerce, portales
+              de viajes y marketplaces de alto tráfico.
+            </p>
+
+            <div className="flex flex-wrap gap-2 pt-2">
+              {['SEO Técnico', 'Arquitectura Web', 'SEM', 'Web Analytics', 'E-commerce', 'Link Building', 'Content Strategy'].map((skill) => (
+                <span key={skill} className="px-4 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors">
                   {skill}
                 </span>
               ))}
             </div>
 
-            <div className="flex items-center space-x-4 pt-6">
-              <a href="https://www.linkedin.com/in/david-viejo/" target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-[#0A66C2] transition-colors border border-slate-800 rounded-lg hover:border-[#0A66C2]/50 bg-slate-900">
-                <Linkedin className="w-5 h-5" />
+            <div className="flex items-center space-x-3 pt-4">
+              <a href="https://www.linkedin.com/in/david-viejo/" target="_blank" rel="noopener noreferrer" className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                <Linkedin className="w-4 h-4 mr-2 text-[#0A66C2]" /> LinkedIn
               </a>
-              <a href="https://agenciaseo.eu" target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-[#FF7F50] transition-colors border border-slate-800 rounded-lg hover:border-[#FF7F50]/50 bg-slate-900">
-                <Globe className="w-5 h-5" />
+              <a href="#" className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                 <Twitter className="w-4 h-4 mr-2 text-slate-800" /> @DavidViejoSEO
+              </a>
+              <a href="https://agenciaseo.eu" target="_blank" rel="noopener noreferrer" className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                <Globe className="w-4 h-4 mr-2 text-blue-600" /> agenciaSEO.eu
               </a>
             </div>
-          </div>
-          <div className="flex-1 flex justify-center relative">
-            <div className="w-64 h-64 md:w-80 md:h-80 rounded-full bg-gradient-to-tr from-slate-800 to-slate-700 p-2 relative z-10">
-               {/* Placeholder for avatar */}
-               <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-6xl text-slate-700 border-4 border-slate-800 shadow-2xl overflow-hidden">
-                 DV
-               </div>
-            </div>
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-10 w-20 h-20 bg-[#FF7F50]/10 rounded-full blur-2xl"></div>
-            <div className="absolute bottom-0 left-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
           </div>
         </div>
       </section>
 
-      {/* About Section */}
-      <section id="about" className="py-20 bg-slate-800/50 border-y border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mx-auto space-y-8">
-                <div>
-                    <h2 className="text-3xl font-bold text-white mb-6">Acerca de</h2>
-                    <p className="text-slate-300 leading-relaxed mb-4">
-                        Tu web puede tener buen contenido, artículos semanales y diseño moderno… <br/>
-                        Pero si Google no lo rastrea, no lo interpreta o no lo prioriza, es como si no existiera.
-                    </p>
-                    <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 my-6">
-                        <p className="text-[#FF7F50] font-bold mb-2">💣 El mayor error en SEO: pensar que publicar ≡ posicionar.</p>
-                        <p className="text-slate-400 mb-2">📉 El resultado:</p>
-                        <ul className="list-disc list-inside text-slate-400 space-y-1 ml-4">
-                            <li>Páginas “descubiertas pero no indexadas”</li>
-                            <li>Trafico sin conversión</li>
-                            <li>Keywords bien elegidas, mal atacadas</li>
-                            <li>Equipos internos frustrados</li>
-                        </ul>
-                    </div>
-                    <p className="text-slate-300 leading-relaxed">
-                        🚧 <strong>Aquí es donde intervengo:</strong><br/>
-                        Soy David Viejo, consultor SEO técnico y estratégico. Trabajo con negocios que tienen potencial, pero están atascados.
-                    </p>
-                    <div className="flex flex-wrap gap-4 mt-4">
-                        <div className="flex items-center text-slate-300"><CheckCircle className="w-4 h-4 text-green-500 mr-2"/> +70 proyectos optimizados</div>
-                        <div className="flex items-center text-slate-300"><CheckCircle className="w-4 h-4 text-green-500 mr-2"/> Uso de IA y automatización</div>
-                        <div className="flex items-center text-slate-300"><CheckCircle className="w-4 h-4 text-green-500 mr-2"/> Dashboards de negocio</div>
-                    </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-8 pt-8">
-                    <div>
-                        <h3 className="text-xl font-bold text-white mb-4">¿QUÉ OFREZCO?</h3>
-                        <ul className="space-y-3">
-                            <li className="flex items-start"><span className="text-[#FF7F50] mr-2">💡</span> <span className="text-slate-300"><strong>1. Servicio SEO mensual</strong> → me encargo de todo.</span></li>
-                            <li className="flex items-start"><span className="text-[#FF7F50] mr-2">💡</span> <span className="text-slate-300"><strong>2. Auditoría única</strong> → detecta bloqueos y oportunidades.</span></li>
-                            <li className="flex items-start"><span className="text-[#FF7F50] mr-2">💡</span> <span className="text-slate-300"><strong>3. Consultoría externa</strong> → evalúa si tu agencia lo está haciendo bien.</span></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-bold text-white mb-4">¿CÓMO TRABAJO?</h3>
-                         <ul className="space-y-2 text-slate-300">
-                            <li>– Sin humo</li>
-                            <li>– Sin vender clicks</li>
-                            <li>– Solo foco en rentabilidad, rastreo y crecimiento sostenido</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-      </section>
+      <div className="w-full h-px bg-slate-200 max-w-7xl mx-auto my-8"></div>
 
       {/* Experience Section */}
-      <section id="experience" className="py-20 bg-slate-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-sm font-bold text-[#FF7F50] uppercase tracking-wider mb-12">Trayectoria Profesional</h2>
+      <section id="experience" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-8">Trayectoria Profesional</h2>
 
-          <div className="space-y-8 max-w-4xl mx-auto">
-
-            {/* Role 1 */}
-            <div className="group relative pl-8 border-l-2 border-slate-800 hover:border-[#FF7F50] transition-colors">
-                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-800 group-hover:bg-[#FF7F50] transition-colors border-2 border-slate-900"></div>
-                <div className="mb-1 text-sm text-[#FF7F50] font-semibold">sept. 2024 - actualidad</div>
-                <h3 className="text-2xl font-bold text-white">Consultor SEO Senior</h3>
-                <h4 className="text-lg text-slate-400 mb-4">agenciaSEO.eu · Remoto</h4>
-                <p className="text-slate-400 mb-4">
-                    Puedo ayudarte a entrar entre nuestros clientes TOP 📨 <br/>
-                    🥁 Clientes internacionales | 🥁 Clientes comprometidos | 💙 Clientes que confían en los resultados
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Card 1 */}
+            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="text-slate-800 font-bold text-lg">Consultor SEO Senior</h3>
+                <p className="text-orange-500 text-sm font-medium mb-1">agenciaSEO.eu</p>
+                <p className="text-slate-400 text-xs mb-4">sept. 2024 - actualidad • Remoto</p>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                   Consultoría SEO especializada en auditorías técnicas, arquitectura de sitios y estrategia
+                   de posicionamiento para grandes cuentas de e-commerce y servicios.
                 </p>
             </div>
 
-            {/* Role 2 */}
-             <div className="group relative pl-8 border-l-2 border-slate-800 hover:border-[#FF7F50] transition-colors">
-                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-800 group-hover:bg-[#FF7F50] transition-colors border-2 border-slate-900"></div>
-                <div className="mb-1 text-sm text-slate-500">dic. 2020 - actualidad</div>
-                <h3 className="text-2xl font-bold text-white">Consultor SEO • Posicionamiento SEO</h3>
-                <h4 className="text-lg text-slate-400 mb-4">Freelance · Zaragoza (Remoto)</h4>
-                <div className="text-slate-400 space-y-2">
-                    <p>🚨 Tu proyecto. Mi tiempo. Si quieres que sea tu consultor SEO, ¡háblame! Busco retos ambiciosos.</p>
-                    <p>✅ Haciéndote ganar dinero (con SEO)<br/>✅ Diseño web (con SEO)<br/>✅ Linkbuilding (mínimo 200€/mes)</p>
-                    <p className="italic text-slate-500">🏆 Hall of Fame: Inmobiliaria (Comunidad más grande de España), Escape Room (Pioneros), Armería (Liquidación de negocio).</p>
-                </div>
+            {/* Card 2 */}
+            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="text-slate-800 font-bold text-lg">Consultor SEO Freelance</h3>
+                <p className="text-orange-500 text-sm font-medium mb-1">David Viejo</p>
+                <p className="text-slate-400 text-xs mb-4">dic. 2020 - actualidad • Zaragoza</p>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                   Gestión integral de estrategia SEO para clientes propios. Diseño web optimizado,
+                   linkbuilding y optimización de ROI.
+                </p>
             </div>
 
-            {/* Role 3 */}
-            <div className="group relative pl-8 border-l-2 border-slate-800 hover:border-[#FF7F50] transition-colors">
-                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-800 group-hover:bg-[#FF7F50] transition-colors border-2 border-slate-900"></div>
-                <div className="mb-1 text-sm text-slate-500">oct. 2023 - sept. 2024</div>
-                <h3 className="text-xl font-bold text-white">Head of SEO | Siguiente Nivel ⏫</h3>
-                <h4 className="text-lg text-slate-400 mb-4">BirdCom · Zaragoza</h4>
-                <div className="text-slate-400 text-sm">
-                    <p className="mb-2"><strong>Gestión:</strong> Proyectos de ticket alto, Equipazo SEO (7) + Contenidos (4), Implementación de metodologías e IA.</p>
-                    <p className="mb-2"><strong>Tareas:</strong> Formación interna, Auditorias, Migraciones, Tendencias, Linkbuilding, Keyword Research, Roadmap.</p>
-                    <p><strong>Herramientas:</strong> Semrush, Screaming Frog + Logs, GSC, GA4, Looker Studio, SEOLyze, Dinorank.</p>
-                </div>
+             {/* Card 3 */}
+             <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="text-slate-800 font-bold text-lg">Head of SEO</h3>
+                <p className="text-orange-500 text-sm font-medium mb-1">BirdCom</p>
+                <p className="text-slate-400 text-xs mb-4">oct. 2023 - sept. 2024 • Zaragoza</p>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                   Liderazgo de equipo SEO (7 personas). Gestión de proyectos de alto ticket,
+                   formación interna y desarrollo de roadmap estratégico.
+                </p>
             </div>
 
-            {/* Role 4 */}
-            <div className="group relative pl-8 border-l-2 border-slate-800 hover:border-[#FF7F50] transition-colors">
-                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-800 group-hover:bg-[#FF7F50] transition-colors border-2 border-slate-900"></div>
-                <div className="mb-1 text-sm text-slate-500">ene. 2022 - oct. 2023</div>
-                <h3 className="text-xl font-bold text-white">Consultor SEO Manager</h3>
-                <h4 className="text-lg text-slate-400 mb-4">BirdCom · Zaragoza</h4>
-                <p className="text-slate-400 text-sm mb-2">Hasta 13 Proyectos Simultáneos | Implementación de AI</p>
-                <p className="text-slate-400 text-sm">¿95-99% de retención en clientes? Retención basada en talento y flexibilidad.</p>
+            {/* Card 4 */}
+            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="text-slate-800 font-bold text-lg">Consultor SEO Manager</h3>
+                <p className="text-orange-500 text-sm font-medium mb-1">BirdCom</p>
+                <p className="text-slate-400 text-xs mb-4">ene. 2022 - oct. 2023 • Zaragoza</p>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                    Gestión simultánea de hasta 13 proyectos. Implementación de IA en procesos SEO
+                    y alta retención de clientes.
+                </p>
             </div>
 
-             {/* Role 5 */}
-             <div className="group relative pl-8 border-l-2 border-slate-800 hover:border-[#FF7F50] transition-colors">
-                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-800 group-hover:bg-[#FF7F50] transition-colors border-2 border-slate-900"></div>
-                <div className="mb-1 text-sm text-slate-500">feb. 2021 - ene. 2022</div>
-                <h3 className="text-xl font-bold text-white">Especialista SEO</h3>
-                <h4 className="text-lg text-slate-400 mb-4">BirdCom · Zaragoza</h4>
-                <p className="text-slate-400 text-sm">Primer integrante del departamento SEO. Ejecución de estrategia, auditorías y linkbuilding.</p>
+             {/* Card 5 */}
+             <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="text-slate-800 font-bold text-lg">Especialista SEO</h3>
+                <p className="text-orange-500 text-sm font-medium mb-1">BirdCom</p>
+                <p className="text-slate-400 text-xs mb-4">feb. 2021 - ene. 2022 • Zaragoza</p>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                    Ejecución de estrategias SEO, auditorías técnicas y campañas de linkbuilding
+                    como primer integrante del departamento.
+                </p>
             </div>
-
-             {/* Role 6 */}
-             <div className="group relative pl-8 border-l-2 border-slate-800 hover:border-[#FF7F50] transition-colors">
-                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-800 group-hover:bg-[#FF7F50] transition-colors border-2 border-slate-900"></div>
-                <div className="mb-1 text-sm text-slate-500">jul. 2020 - dic. 2020</div>
-                <h3 className="text-xl font-bold text-white">Consultor SEO & Community Manager</h3>
-                <h4 className="text-lg text-slate-400 mb-4">Óptima Web · Zaragoza</h4>
-                <p className="text-slate-400 text-sm">Estrategias SEO, Diseño web, Redes Sociales. Prácticas Máster.</p>
+             {/* Card 6 */}
+             <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="text-slate-800 font-bold text-lg">SEO & CM</h3>
+                <p className="text-orange-500 text-sm font-medium mb-1">Óptima Web</p>
+                <p className="text-slate-400 text-xs mb-4">jul. 2020 - dic. 2020 • Zaragoza</p>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                    Prácticas de máster enfocadas en estrategias SEO, diseño web y gestión de redes sociales.
+                </p>
             </div>
-
-             {/* Role 7 */}
-             <div className="group relative pl-8 border-l-2 border-slate-800 hover:border-[#FF7F50] transition-colors">
-                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-slate-800 group-hover:bg-[#FF7F50] transition-colors border-2 border-slate-900"></div>
-                <div className="mb-1 text-sm text-slate-500">mar. 2020 - jun. 2020</div>
-                <h3 className="text-xl font-bold text-white">Responsable de Comunicación</h3>
-                <h4 className="text-lg text-slate-400 mb-4">Colegio Montessori · Zaragoza</h4>
-                <p className="text-slate-400 text-sm">Implantación y actualización del blog MontessoriNews. Planificación de contenidos RRSS.</p>
-            </div>
-
           </div>
-        </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 bg-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-           <div className="bg-slate-900 rounded-3xl p-12 text-center relative overflow-hidden border border-slate-800">
-             <div className="relative z-10">
-               <h2 className="text-3xl font-bold text-white mb-4">¿Hablamos?</h2>
-               <p className="text-slate-400 mb-8 max-w-lg mx-auto">Si no estás creciendo, hablemos. Porque el SEO que funciona… no es el que te han contado.</p>
-               <button
-                 onClick={() => navigate('/clientes')}
-                 className="bg-[#FF7F50] hover:bg-[#E66A3C] text-white px-8 py-3 rounded-full font-semibold transition-all shadow-lg shadow-[#FF7F50]/50"
-               >
-                 Entrar al Área de Clientes
-               </button>
-             </div>
+      <div className="w-full h-px bg-slate-200 max-w-7xl mx-auto my-8"></div>
 
-             {/* Abstract Background */}
-             <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-               <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#FF7F50] rounded-full blur-3xl"></div>
-               <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-600 rounded-full blur-3xl"></div>
-             </div>
+      {/* Clients Area - Proyectos Activos */}
+      <section id="projects" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+           <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-8">Proyectos Activos — Área de Clientes</h2>
+
+           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+              {/* Project Card 1 */}
+              <div className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between h-64 hover:border-blue-300 transition-colors">
+                 <div>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-blue-900">Proyecto 1</h3>
+                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Activo</span>
+                    </div>
+                    <p className="text-slate-500 text-sm">
+                        Proyecto de consultoría SEO en curso. Acceso restringido para el cliente.
+                    </p>
+                 </div>
+                 <button onClick={() => navigate('/clientes')} className="bg-[#FF8A65] hover:bg-[#FF7043] text-white py-2 px-6 rounded-full text-sm font-medium w-max transition-colors shadow-sm">
+                    <span className="mr-1">›</span> Acceder
+                 </button>
+              </div>
+
+               {/* Project Card 2 */}
+               <div className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between h-64 hover:border-blue-300 transition-colors">
+                 <div>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-blue-900">Proyecto 2</h3>
+                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Activo</span>
+                    </div>
+                    <p className="text-slate-500 text-sm">
+                        Proyecto de consultoría SEO en curso. Acceso restringido para el cliente.
+                    </p>
+                 </div>
+                 <button onClick={() => navigate('/clientes')} className="bg-[#FF8A65] hover:bg-[#FF7043] text-white py-2 px-6 rounded-full text-sm font-medium w-max transition-colors shadow-sm">
+                    <span className="mr-1">›</span> Acceder
+                 </button>
+              </div>
+
+               {/* Project Card 3 */}
+               <div className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between h-64 hover:border-blue-300 transition-colors">
+                 <div>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-blue-900">Proyecto 3</h3>
+                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Activo</span>
+                    </div>
+                    <p className="text-slate-500 text-sm">
+                         Proyecto de consultoría SEO en curso. Acceso restringido para el cliente.
+                    </p>
+                 </div>
+                 <button onClick={() => navigate('/clientes')} className="bg-[#FF8A65] hover:bg-[#FF7043] text-white py-2 px-6 rounded-full text-sm font-medium w-max transition-colors shadow-sm">
+                    <span className="mr-1">›</span> Acceder
+                 </button>
+              </div>
+
+               {/* Project Card 4 */}
+               <div className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between h-64 hover:border-blue-300 transition-colors">
+                 <div>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-blue-900">Proyecto 4</h3>
+                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Activo</span>
+                    </div>
+                    <p className="text-slate-500 text-sm">
+                        Proyecto de consultoría SEO en curso. Acceso restringido para el cliente.
+                    </p>
+                 </div>
+                 <button onClick={() => navigate('/clientes')} className="bg-[#FF8A65] hover:bg-[#FF7043] text-white py-2 px-6 rounded-full text-sm font-medium w-max transition-colors shadow-sm">
+                    <span className="mr-1">›</span> Acceder
+                 </button>
+              </div>
            </div>
-        </div>
       </section>
 
-      <footer className="bg-slate-950 border-t border-slate-900 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-600 text-sm">
-          <p>© {new Date().getFullYear()} David Viejo. Todos los derechos reservados.</p>
+      <div className="w-full h-px bg-slate-200 max-w-7xl mx-auto my-8"></div>
+
+      {/* Certifications */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">Certificaciones</h2>
+          <div className="flex flex-wrap gap-4">
+             <div className="bg-slate-100 px-4 py-2 rounded border border-slate-200 flex items-center text-slate-600 text-sm font-medium">
+                <CheckCircle className="w-4 h-4 text-orange-500 mr-2" /> Google Certified
+             </div>
+             <div className="bg-slate-100 px-4 py-2 rounded border border-slate-200 flex items-center text-slate-600 text-sm font-medium">
+                <CheckCircle className="w-4 h-4 text-orange-500 mr-2" /> HubSpot Certified
+             </div>
+             <div className="bg-slate-100 px-4 py-2 rounded border border-slate-200 flex items-center text-slate-600 text-sm font-medium">
+                <CheckCircle className="w-4 h-4 text-orange-500 mr-2" /> SEO Técnico Avanzado
+             </div>
+          </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-slate-50 border-t border-slate-200 py-12 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-500 text-sm">
+          <p>© {new Date().getFullYear()} David Viejo — agenciaSEO.eu · Todos los derechos reservados</p>
         </div>
       </footer>
     </div>
