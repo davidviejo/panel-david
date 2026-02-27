@@ -61,12 +61,18 @@ def classify():
         return jsonify({'error': 'Límite excedido: Máximo 500 keywords por petición'}), 400
 
     results = [classify_keyword(k) for k in keywords]
-    stats = {
-        'trans': len([x for x in results if 'Transaccional' in x['intent']]),
-        'comm': len([x for x in results if 'Comercial' in x['intent']]),
-        'info': len([x for x in results if 'Informacional' in x['intent']]),
-        'nav': len([x for x in results if 'Navegacional' in x['intent']]),
-    }
+    stats = {'trans': 0, 'comm': 0, 'info': 0, 'nav': 0}
+    for x in results:
+        intent = x.get('intent', '')
+        if 'Transaccional' in intent:
+            stats['trans'] += 1
+        elif 'Comercial' in intent:
+            stats['comm'] += 1
+        elif 'Informacional' in intent:
+            stats['info'] += 1
+        elif 'Navegacional' in intent:
+            stats['nav'] += 1
+
     return jsonify({'status': 'ok', 'data': results, 'stats': stats})
 
 @kw_intent_bp.route('/download', methods=['POST'])
