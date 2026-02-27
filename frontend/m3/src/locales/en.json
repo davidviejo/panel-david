@@ -1,0 +1,30 @@
+{
+  "app": {
+    "title": "MediaFlow",
+    "subtitle": "SEO Maturity"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "dashboard_sub": "Summary",
+    "module_prefix": "M",
+    "client_roadmap": "Client Roadmap",
+    "client_roadmap_sub": "Customized",
+    "kanban_board": "Kanban Board",
+    "kanban_board_sub": "Workflow",
+    "ai_roadmap": "AI Roadmap",
+    "ai_roadmap_sub": "Generative Strategy",
+    "settings": "Settings",
+    "settings_sub": "Configuration",
+    "breaking_sim": "Breaking Sim",
+    "breaking_sim_sub": "Training",
+    "completed_tasks": "Completed Tasks",
+    "completed_tasks_sub": "History",
+    "seo_checklist": "SEO Checklist",
+    "seo_checklist_sub": "URLs",
+    "notes": "Notes",
+    "shortcuts": "Shortcuts",
+    "emergency_index": "EMERGENCY INDEX",
+    "indexing": "INDEXING..."
+  },
+  "global_score": "Global Score"
+}

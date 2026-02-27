@@ -1,0 +1,14 @@
+beautifulsoup4
+duckduckgo-search>=5.0
+flask
+lxml
+openpyxl
+pandas
+playwright
+pytest
+requests
+spacy
+textblob
+openai
+anthropic
+google-generativeai

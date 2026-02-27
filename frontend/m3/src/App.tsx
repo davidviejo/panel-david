@@ -1,0 +1,149 @@
+import React, { Suspense, lazy } from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Layout from './components/Layout';
+import { ToastProvider } from './components/ui/ToastContext';
+import { ProjectProvider, useProject } from './context/ProjectContext';
+import { SettingsProvider } from './context/SettingsContext';
+import { Spinner } from './components/ui/Spinner';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const ModuleDetail = lazy(() => import('./pages/ModuleDetail'));
+const SpeedChallenge = lazy(() => import('./pages/SpeedChallenge'));
+const CompletedTasks = lazy(() => import('./pages/CompletedTasks'));
+const ClientRoadmap = lazy(() => import('./pages/ClientRoadmap'));
+const KanbanBoard = lazy(() => import('./pages/KanbanBoard'));
+const AIRoadmap = lazy(() => import('./pages/AIRoadmap'));
+const SeoChecklistPage = lazy(() => import('./pages/SeoChecklistPage'));
+const Settings = lazy(() => import('./pages/Settings'));
+
+const AppRoutes: React.FC = () => {
+  const {
+    modules,
+    globalScore,
+    clients,
+    currentClientId,
+    currentClient,
+    generalNotes,
+    switchClient,
+    addClient,
+    deleteClient,
+    resetCurrentProject,
+    addTask,
+    deleteTask,
+    toggleTask,
+    updateTaskNotes,
+    updateTaskImpact,
+    toggleTaskCommunicated,
+    toggleCustomRoadmapTask,
+    handleReorderRoadmap,
+    addManualCompletedTask,
+    deleteCompletedTaskLog,
+    addNote,
+    updateNote,
+    deleteNote,
+  } = useProject();
+
+  return (
+    <Layout
+      modules={modules}
+      globalScore={globalScore}
+      clients={clients}
+      currentClientId={currentClientId}
+      onSwitchClient={switchClient}
+      onAddClient={addClient}
+      onDeleteClient={deleteClient}
+      generalNotes={generalNotes}
+      projectNotes={currentClient?.notes || []}
+      onAddNote={addNote}
+      onUpdateNote={updateNote}
+      onDeleteNote={deleteNote}
+    >
+      <Suspense
+        fallback={
+          <div className="flex justify-center p-8">
+            <Spinner size={48} />
+          </div>
+        }
+      >
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <Dashboard
+                modules={modules}
+                globalScore={globalScore}
+                onReset={resetCurrentProject}
+              />
+            }
+          />
+          <Route
+            path="/module/:id"
+            element={
+              <ModuleDetail
+                modules={modules}
+                onToggleTask={toggleTask}
+                onAddTask={addTask}
+                onDeleteTask={deleteTask}
+                onUpdateTaskNotes={updateTaskNotes}
+                onUpdateTaskImpact={updateTaskImpact}
+                clientVertical={currentClient?.vertical || 'media'}
+                clientName={currentClient?.name || 'Cliente'}
+                onToggleCustomRoadmap={toggleCustomRoadmapTask}
+                onToggleTaskCommunicated={toggleTaskCommunicated}
+              />
+            }
+          />
+          <Route
+            path="/client-roadmap"
+            element={
+              <ClientRoadmap
+                modules={modules}
+                customRoadmapOrder={currentClient?.customRoadmapOrder}
+                onReorder={handleReorderRoadmap}
+                onToggleTask={toggleTask}
+                onRemoveFromRoadmap={toggleCustomRoadmapTask}
+                onUpdateTaskNotes={updateTaskNotes}
+                onUpdateTaskImpact={updateTaskImpact}
+                clientVertical={currentClient?.vertical || 'media'}
+                clientName={currentClient?.name || 'Cliente'}
+                onToggleTaskCommunicated={toggleTaskCommunicated}
+              />
+            }
+          />
+          <Route path="/kanban" element={<KanbanBoard />} />
+          <Route path="/checklist" element={<SeoChecklistPage />} />
+          <Route path="/ai-roadmap" element={<AIRoadmap />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/challenge" element={<SpeedChallenge />} />
+          <Route
+            path="/completed-tasks"
+            element={
+              <CompletedTasks
+                completedTasks={currentClient?.completedTasksLog || []}
+                onAddManualTask={addManualCompletedTask}
+                onDeleteLogEntry={deleteCompletedTaskLog}
+              />
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </Layout>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ToastProvider>
+      <SettingsProvider>
+        <ProjectProvider>
+          <HashRouter>
+            <AppRoutes />
+          </HashRouter>
+        </ProjectProvider>
+      </SettingsProvider>
+    </ToastProvider>
+  );
+};
+
+export default App;

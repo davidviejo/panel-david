@@ -1,0 +1,30 @@
+{
+  "app": {
+    "title": "MediaFlow",
+    "subtitle": "Madurez SEO"
+  },
+  "nav": {
+    "dashboard": "Panel de Control",
+    "dashboard_sub": "Resumen",
+    "module_prefix": "M",
+    "client_roadmap": "Roadmap Cliente",
+    "client_roadmap_sub": "Personalizado",
+    "kanban_board": "Tablero Kanban",
+    "kanban_board_sub": "Flujo de Trabajo",
+    "ai_roadmap": "Roadmap IA",
+    "ai_roadmap_sub": "Estrategia Generativa",
+    "settings": "Ajustes",
+    "settings_sub": "Configuración",
+    "breaking_sim": "Simulador Breaking",
+    "breaking_sim_sub": "Entrenamiento",
+    "completed_tasks": "Tareas Realizadas",
+    "completed_tasks_sub": "Historial",
+    "seo_checklist": "Checklist SEO",
+    "seo_checklist_sub": "URLs",
+    "notes": "Notas",
+    "shortcuts": "Atajos",
+    "emergency_index": "INDEX DE EMERGENCIA",
+    "indexing": "INDEXANDO..."
+  },
+  "global_score": "Puntuación Global"
+}

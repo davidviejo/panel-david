@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📈 Tendencias en Tiempo Real</h2>
+        <span class="badge bg-success">Live (Últimas 24h)</span>
+    </div>
+
+    <div class="row">
+        <!-- CONFIGURACIÓN -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-primary text-white">
+                    <h6 class="m-0 fw-bold"><i class="fas fa-sliders-h"></i> Configuración</h6>
+                </div>
+                <div class="card-body">
+                    <form id="trendsForm">
+                        <div class="mb-3">
+                            <label for="geoInput" class="form-label fw-bold">País</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                                <!-- AQUÍ LA MAGIA: AUTO-RELLENADO CON EL PROYECTO ACTUAL -->
+                                <input class="form-control" list="geoOptions" name="geo" id="geoInput"
+                                       value="{{ current_project.geo or 'ES' }}"
+                                       placeholder="ES, US, MX...">
+                                <datalist id="geoOptions">
+                                    <option value="ES">España</option>
+                                    <option value="US">Estados Unidos</option>
+                                    <option value="MX">México</option>
+                                    <option value="AR">Argentina</option>
+                                </datalist>
+                            </div>
+                            <div class="form-text text-muted">Código de 2 letras (ISO).</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="catInput" class="form-label fw-bold">Categoría</label>
+                            <select class="form-select" name="category" id="catInput">
+                                <option value="h" selected>⚡ Todo (General)</option>
+                                <option value="b">💰 Economía / Negocios</option>
+                                <option value="m">🏥 Salud (Health)</option>
+                                <option value="t">🤖 Sci / Tech</option>
+                                <option value="s">⚽ Deportes</option>
+                                <option value="e">🎬 Entretenimiento</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="apiKeyInput" class="form-label small text-muted">API Key SerpApi (Opcional)</label>
+                            <input type="password" class="form-control form-control-sm" name="api_key" id="apiKeyInput" placeholder="Sólo si tienes clave...">
+                        </div>
+
+                        <button type="button" id="analyzeBtn" class="btn btn-success w-100 fw-bold py-2" onclick="startTrends()">
+                            <i class="fas fa-bolt"></i> ANALIZAR AHORA
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4 d-none" id="logSection">
+                <div class="card-header py-1 bg-dark text-white"><small>Log</small></div>
+                <div class="card-body bg-black text-info font-monospace p-2 small" style="height: 150px; overflow-y: auto;">
+                    <div id="logContent">> Esperando...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULTADOS -->
+        <div class="col-lg-8">
+            <!-- ERROR ALERT -->
+            <div id="errorAlert" class="alert alert-danger d-none" role="alert">
+                <span id="errorMsg">Ha ocurrido un error.</span>
+                <button type="button" class="btn btn-sm btn-outline-danger float-end" onclick="resetUI()">Reintentar</button>
+            </div>
+
+            <div id="progressSection" class="d-none mb-3">
+                <div class="progress" style="height: 10px;">
+                    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
+                </div>
+                <small id="statusText" class="text-muted">Conectando...</small>
+            </div>
+
+            <div id="resultsSection" class="d-none">
+                <div class="card shadow border-0">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="m-0 text-dark fw-bold">🔥 Hot Trends</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%">#</th>
+                                    <th width="25%">Tema</th>
+                                    <th width="45%">Contexto</th>
+                                    <th width="25%">Fuente</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody"></tbody>
+                        </table>
+                    </div>
+                    <!-- EMPTY STATE MSG -->
+                    <div id="emptyState" class="d-none p-4 text-center text-muted">
+                        <i class="fas fa-search fa-2x mb-2"></i><br>
+                        Sin resultados. Prueba otra categoría o país.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let intervalId;
+    let currentJobId = null;
+
+    function resetUI() {
+        // Re-enable inputs
+        document.getElementById('geoInput').disabled = false;
+        document.getElementById('catInput').disabled = false;
+        document.getElementById('apiKeyInput').disabled = false;
+
+        // Re-enable button
+        const btn = document.getElementById('analyzeBtn');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-bolt"></i> ANALIZAR AHORA';
+
+        // Hide progress (keep log if wanted, but stop animation)
+        document.getElementById('progressSection').classList.add('d-none');
+    }
+
+    function showLoading() {
+        document.getElementById('geoInput').disabled = true;
+        document.getElementById('catInput').disabled = true;
+        document.getElementById('apiKeyInput').disabled = true;
+
+        const btn = document.getElementById('analyzeBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analizando...';
+
+        document.getElementById('resultsSection').classList.add('d-none');
+        document.getElementById('errorAlert').classList.add('d-none');
+        document.getElementById('emptyState').classList.add('d-none');
+
+        document.getElementById('progressSection').classList.remove('d-none');
+        document.getElementById('logSection').classList.remove('d-none');
+        document.getElementById('progressBar').style.width = '10%';
+        document.getElementById('logContent').innerHTML = '> Iniciando...';
+    }
+
+    function showError(msg) {
+        document.getElementById('errorMsg').textContent = msg || "Ha ocurrido un error desconocido.";
+        document.getElementById('errorAlert').classList.remove('d-none');
+        document.getElementById('progressSection').classList.add('d-none');
+        resetUI(); // Allow retry
+    }
+
+    async function startTrends() {
+        const geoInput = document.getElementById('geoInput');
+        let geoVal = geoInput.value.trim().toUpperCase();
+        geoInput.value = geoVal; // Update input with trimmed value
+
+        // Validation
+        if (geoVal.length !== 2) {
+            alert("El código de país debe tener exactamente 2 letras (ej: ES, US).");
+            return;
+        }
+
+        const formData = new FormData(document.getElementById('trendsForm'));
+
+        showLoading();
+
+        try {
+            const req = await fetch('/trends/start', { method: 'POST', body: formData });
+            const resp = await req.json();
+            if (resp.status === 'started') {
+                currentJobId = resp.job_id;
+                if(intervalId) clearInterval(intervalId);
+                intervalId = setInterval(checkStatus, 1000);
+            } else {
+                showError("No se pudo iniciar el análisis.");
+            }
+        } catch (e) {
+            showError("Error de conexión: " + e);
+        }
+    }
+
+    async function checkStatus() {
+        if (!currentJobId) return;
+
+        try {
+            const res = await fetch(`/trends/status?job_id=${currentJobId}`);
+            if (!res.ok) {
+                console.error("Network response was not ok");
+                clearInterval(intervalId);
+                showError("Error de red al consultar estado.");
+                return;
+            }
+
+            const data = await res.json();
+
+            // Job Not Found or severe error
+            if (data.error && !data.log) {
+                 clearInterval(intervalId);
+                 showError(data.error);
+                 return;
+            }
+
+            // Update Log
+            if(data.log && data.log.length > 0) {
+                // Keep the last few logs or all? Previous impl joined all.
+                // Assuming data.log is the full log array.
+                const logHtml = data.log.map(l => `<div>> ${l}</div>`).join('');
+                const logContainer = document.getElementById('logContent');
+                logContainer.innerHTML = logHtml;
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+
+            // Update Progress
+            document.getElementById('progressBar').style.width = data.progress + '%';
+
+            // Completion check
+            if (!data.active) {
+                clearInterval(intervalId);
+                resetUI();
+
+                if (data.error) {
+                    showError(data.error);
+                } else if (data.data && data.data.length > 0) {
+                    renderTable(data.data);
+                } else {
+                    // Empty success
+                    document.getElementById('resultsSection').classList.remove('d-none');
+                    document.getElementById('emptyState').classList.remove('d-none');
+                    document.querySelector('#resultsSection table').classList.add('d-none');
+                }
+            }
+        } catch (e) {
+            clearInterval(intervalId);
+            showError("Error al procesar estado: " + e);
+        }
+    }
+
+    function renderTable(items) {
+        const tbody = document.getElementById('resultsBody');
+        tbody.innerHTML = '';
+        items.forEach(item => {
+            tbody.innerHTML += `
+                <tr>
+                    <td class="fw-bold">${item.rank}</td>
+                    <td class="fw-bold text-primary">${item.topic}</td>
+                    <td class="small">${item.context}</td>
+                    <td>
+                        <small class="d-block text-muted mb-1" style="font-size: 0.75rem;">${item.traffic}</small>
+                        <a href="${item.google_link}" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>
+                    </td>
+                </tr>`;
+        });
+        document.getElementById('resultsSection').classList.remove('d-none');
+        document.getElementById('emptyState').classList.add('d-none');
+        document.querySelector('#resultsSection table').classList.remove('d-none');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}SEO Frameworks{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">📚 SEO Frameworks <span class="badge bg-info text-dark fs-6">Protocolos</span></h2>
+    <p class="text-muted mb-4">Guías paso a paso para utilizar esta suite en situaciones reales de consultoría.</p>
+
+    <div class="row g-4">
+        
+        <!-- 1. AUDITORÍA -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 border-0 border-top border-4 border-primary">
+                <div class="card-body">
+                    <h4 class="fw-bold text-primary mb-3"><i class="bi bi-speedometer2"></i> Auditoría Express</h4>
+                    <p class="small text-muted">Para detectar errores técnicos graves en los primeros 10 minutos.</p>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>1. Busca fugas de indexación y hackeos</span>
+                            <a href="/dorks" class="btn btn-sm btn-outline-primary py-0">Google Dorks</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>2. Comprueba si Googlebot puede entrar</span>
+                            <a href="/robots" class="btn btn-sm btn-outline-primary py-0">Robots.txt</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>3. Verifica códigos de estado (404/500)</span>
+                            <a href="/fast" class="btn btn-sm btn-outline-primary py-0">Fast Status</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>4. Revisa SSL y Caché</span>
+                            <a href="/headers" class="btn btn-sm btn-outline-primary py-0">Headers</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CONTENIDOS -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 border-0 border-top border-4 border-success">
+                <div class="card-body">
+                    <h4 class="fw-bold text-success mb-3"><i class="bi bi-pen"></i> Estrategia Editorial</h4>
+                    <p class="small text-muted">Flujo para crear calendarios de contenido que posicionan.</p>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>1. Encuentra ideas long-tail</span>
+                            <a href="/suggest" class="btn btn-sm btn-outline-success py-0">Discovery</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>2. Agrupa por intención (Cluster)</span>
+                            <a href="/seo" class="btn btn-sm btn-outline-success py-0">SEO Suite</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>3. ¿Canibalización? (Mismo resultado SERP)</span>
+                            <a href="/overlap" class="btn btn-sm btn-outline-success py-0">Overlap</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>4. Roba los encabezados del líder</span>
+                            <a href="/structure" class="btn btn-sm btn-outline-success py-0">Header Map</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. MIGRACIÓN -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 border-0 border-top border-4 border-warning">
+                <div class="card-body">
+                    <h4 class="fw-bold text-warning text-dark mb-3"><i class="bi bi-arrow-left-right"></i> Migración Web</h4>
+                    <p class="small text-muted">Protocolo de seguridad al cambiar de dominio o diseño.</p>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>1. Compara HTML Staging vs Live</span>
+                            <a href="/diff" class="btn btn-sm btn-outline-warning text-dark py-0">Diff Checker</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>2. Genera reglas .htaccess 301</span>
+                            <a href="/migration" class="btn btn-sm btn-outline-warning text-dark py-0">Migration</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>3. Evita cadenas de redirección</span>
+                            <a href="/redirect" class="btn btn-sm btn-outline-warning text-dark py-0">Redirect Tracer</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>4. Verifica que se indexan</span>
+                            <a href="/indexer" class="btn btn-sm btn-outline-warning text-dark py-0">Index Check</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. LIMPIEZA (PRUNING) -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 border-0 border-top border-4 border-danger">
+                <div class="card-body">
+                    <h4 class="fw-bold text-danger mb-3"><i class="bi bi-trash"></i> Content Pruning</h4>
+                    <p class="small text-muted">Limpieza de contenido tóxico o antiguo.</p>
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>1. Detectar posts caducados</span>
+                            <a href="/decay" class="btn btn-sm btn-outline-danger py-0">Decay</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>2. Detectar canibalización de títulos</span>
+                            <a href="/cannibal" class="btn btn-sm btn-outline-danger py-0">Cannibal</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>3. Detectar páginas huérfanas</span>
+                            <a href="/orphan" class="btn btn-sm btn-outline-danger py-0">Orphan</a>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>4. Detectar Thin Content / Code Bloat</span>
+                            <a href="/ratio" class="btn btn-sm btn-outline-danger py-0">Code Ratio</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
