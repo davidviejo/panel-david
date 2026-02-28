@@ -11,7 +11,7 @@ import requests
 import concurrent.futures
 from urllib.parse import urljoin, urlparse
 from typing import Dict, Any
-from apps.database import get_all_projects
+from apps.core.database import get_all_projects
 from apps.utils import is_safe_url
 
 def mask_url_credentials(url: str) -> str:

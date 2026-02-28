@@ -1,7 +1,7 @@
 import pytest
-from apps.readability_tool import count_syllables, analyze_text_visual
-from apps.nlp_tool import get_ngrams
-from apps.schema_detector import extract_types_recursive
+from apps.web.blueprints.readability_tool import count_syllables, analyze_text_visual
+from apps.web.blueprints.nlp_tool import get_ngrams
+from apps.web.blueprints.schema_detector import extract_types_recursive
 
 # --- apps.readability_tool.count_syllables ---
 

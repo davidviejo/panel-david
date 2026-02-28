@@ -1,7 +1,7 @@
 import pytest
-from apps.kw_intent import classify_keyword
-from apps.migration_tool import slugify
-from apps.ctr_tool import score_title
+from apps.web.blueprints.kw_intent import classify_keyword
+from apps.web.blueprints.migration_tool import slugify
+from apps.web.blueprints.ctr_tool import score_title
 
 # --- Tests for apps/kw_intent.py ---
 

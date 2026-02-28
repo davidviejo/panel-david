@@ -1,7 +1,7 @@
 import pytest
-from apps.migration_tool import slugify
-from apps.ctr_tool import score_title
-from apps.log_tool import analyze
+from apps.web.blueprints.migration_tool import slugify
+from apps.web.blueprints.ctr_tool import score_title
+from apps.web.blueprints.log_tool import analyze
 
 # --- Tests for apps/migration_tool.py ---
 

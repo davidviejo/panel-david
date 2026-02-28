@@ -7,7 +7,7 @@ def test_ratio_analyze_success(client):
     html_content = b"<html><body><script>var x=1;</script><p>Hello World</p></body></html>"
     # Text extracted should be "Hello World" -> 11 bytes
 
-    with patch('apps.ratio_tool.requests.get') as mock_get:
+    with patch('apps.web.blueprints.ratio_tool.requests.get') as mock_get:
         mock_response = MagicMock()
         mock_response.content = html_content
         mock_get.return_value = mock_response
@@ -25,7 +25,7 @@ def test_ratio_analyze_success(client):
 
 def test_ratio_analyze_exception(client):
     """Test graceful handling of request exceptions."""
-    with patch('apps.ratio_tool.requests.get') as mock_get:
+    with patch('apps.web.blueprints.ratio_tool.requests.get') as mock_get:
         mock_get.side_effect = Exception("Connection refused")
 
         response = client.post('/ratio/analyze', json={'urls': ['http://fail.com']})
@@ -37,7 +37,7 @@ def test_ratio_analyze_exception(client):
 
 def test_ratio_analyze_empty_html(client):
     """Test handling of empty HTML response."""
-    with patch('apps.ratio_tool.requests.get') as mock_get:
+    with patch('apps.web.blueprints.ratio_tool.requests.get') as mock_get:
         mock_response = MagicMock()
         mock_response.content = b""
         mock_get.return_value = mock_response

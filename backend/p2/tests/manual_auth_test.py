@@ -9,7 +9,7 @@ import json
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from apps import create_app
+from apps.web import create_app
 
 def test_manual_auth():
     # Setup test app

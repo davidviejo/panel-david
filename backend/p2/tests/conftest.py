@@ -6,8 +6,8 @@ os.environ['SECRET_KEY'] = 'test-secret-key-for-conftest'
 os.environ['JWT_SECRET'] = 'test-jwt-secret-for-conftest'
 os.environ['GOOGLE_DEFAULT_COOKIE'] = 'test-cookie-for-conftest'
 
-from apps import create_app
-from config import Config
+from apps.web import create_app
+from apps.core.config import Config
 
 class TestConfig(Config):
     TESTING = True

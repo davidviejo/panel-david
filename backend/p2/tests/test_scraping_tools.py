@@ -1,14 +1,14 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from apps.link_graph import get_links
-from apps.anchor_tool import scan
-from apps.headers_tool import analyze_headers
+from apps.web.blueprints.link_graph import get_links
+from apps.web.blueprints.anchor_tool import scan
+from apps.web.blueprints.headers_tool import analyze_headers
 
 class TestScrapingTools(unittest.TestCase):
 
     # --- apps.link_graph.get_links ---
-    @patch('apps.link_graph.requests.get')
-    @patch('apps.link_graph.is_safe_url')
+    @patch('apps.web.blueprints.link_graph.requests.get')
+    @patch('apps.web.blueprints.link_graph.is_safe_url')
     def test_get_links_normal(self, mock_is_safe, mock_get):
         mock_is_safe.return_value = True
         mock_resp = MagicMock()
@@ -32,8 +32,8 @@ class TestScrapingTools(unittest.TestCase):
         # Ensure external is not there
         self.assertFalse(any("google.com" in l for l in links))
 
-    @patch('apps.link_graph.requests.get')
-    @patch('apps.link_graph.is_safe_url')
+    @patch('apps.web.blueprints.link_graph.requests.get')
+    @patch('apps.web.blueprints.link_graph.is_safe_url')
     def test_get_links_edge_error(self, mock_is_safe, mock_get):
         mock_is_safe.return_value = True
         mock_get.side_effect = Exception("Network")
@@ -41,7 +41,7 @@ class TestScrapingTools(unittest.TestCase):
         self.assertEqual(links, [])
 
     # --- apps.anchor_tool.scan ---
-    @patch('apps.anchor_tool.requests.get')
+    @patch('apps.web.blueprints.anchor_tool.requests.get')
     def test_scan_normal(self, mock_get):
         mock_resp = MagicMock()
         mock_resp.content = b'''
@@ -63,7 +63,7 @@ class TestScrapingTools(unittest.TestCase):
         targets = [r['target'] for r in results]
         self.assertTrue(any("http://example.com/p1" in t for t in targets))
 
-    @patch('apps.anchor_tool.requests.get')
+    @patch('apps.web.blueprints.anchor_tool.requests.get')
     def test_scan_edge_empty(self, mock_get):
         mock_resp = MagicMock()
         mock_resp.content = b'<html></html>'
@@ -72,8 +72,8 @@ class TestScrapingTools(unittest.TestCase):
         self.assertEqual(results, [])
 
     # --- apps.headers_tool.analyze_headers ---
-    @patch('apps.headers_tool.requests.head')
-    @patch('apps.headers_tool.is_safe_url')
+    @patch('apps.web.blueprints.headers_tool.requests.head')
+    @patch('apps.web.blueprints.headers_tool.is_safe_url')
     def test_analyze_headers_normal_http(self, mock_is_safe, mock_head):
         mock_is_safe.return_value = True
         mock_resp = MagicMock()
@@ -88,8 +88,8 @@ class TestScrapingTools(unittest.TestCase):
         # SSL should be empty for http
         self.assertEqual(data['ssl'], {})
 
-    @patch('apps.headers_tool.requests.head')
-    @patch('apps.headers_tool.is_safe_url')
+    @patch('apps.web.blueprints.headers_tool.requests.head')
+    @patch('apps.web.blueprints.headers_tool.is_safe_url')
     def test_analyze_headers_edge_error(self, mock_is_safe, mock_head):
         mock_is_safe.return_value = True
         mock_head.side_effect = Exception("Timeout")

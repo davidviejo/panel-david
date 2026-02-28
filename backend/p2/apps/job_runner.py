@@ -6,12 +6,12 @@ import traceback
 import concurrent.futures
 from typing import Dict, Any, List
 
-from apps.database import (
+from apps.core.database import (
     get_next_queued_job, update_job_status, get_job_items_by_status,
     update_item_status, update_job_progress, get_job
 )
-from apps.api_engine.seo_checklist_orchestrator import run_orchestrated_checklist
-from config import Config
+from apps.web.blueprints.api_engine.seo_checklist_orchestrator import run_orchestrated_checklist
+from apps.core.config import Config
 
 _RUNNER_STARTED = False
 _RUNNER_LOCK = threading.Lock()

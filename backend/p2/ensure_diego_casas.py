@@ -6,7 +6,7 @@ import logging
 # Add the parent directory to sys.path to allow imports from apps
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from apps.database import init_db, upsert_project, replace_clusters, get_project
+from apps.core.database import init_db, upsert_project, replace_clusters, get_project
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

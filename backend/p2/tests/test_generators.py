@@ -1,7 +1,7 @@
 import pytest
-from apps.pixel_tool import get_px
+from apps.web.blueprints.pixel_tool import get_px
 
-# --- Tests for apps/pixel_tool.py ---
+# --- Tests for apps.web.blueprints.pixel_tool.py ---
 
 def test_get_px_normal():
     # "Hola" -> 4 chars * 9 = 36 pixels (approx)

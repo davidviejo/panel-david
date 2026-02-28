@@ -6,19 +6,19 @@ from unittest.mock import patch, MagicMock
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from apps.api_engine.seo_checklist_orchestrator import run_orchestrated_checklist
+from apps.web.blueprints.api_engine.seo_checklist_orchestrator import run_orchestrated_checklist
 
 class TestOrchestrator(unittest.TestCase):
 
-    @patch('apps.api_engine.seo_checklist_orchestrator.fetch_url_hybrid')
-    @patch('apps.api_engine.seo_checklist_orchestrator.check_url_compliance')
-    @patch('apps.api_engine.seo_checklist_orchestrator.check_px')
-    @patch('apps.api_engine.seo_checklist_orchestrator.get_struct')
-    @patch('apps.api_engine.seo_checklist_orchestrator.check_wpo')
-    @patch('apps.api_engine.seo_checklist_orchestrator.detect_schemas')
-    @patch('apps.api_engine.seo_checklist_orchestrator.scan_imgs')
-    @patch('apps.api_engine.seo_checklist_orchestrator.analyze_text_visual')
-    @patch('apps.api_engine.seo_checklist_orchestrator.classify_keyword')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.fetch_url_hybrid')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_url_compliance')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_px')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.get_struct')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_wpo')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.detect_schemas')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.scan_imgs')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.analyze_text_visual')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.classify_keyword')
     def test_run_orchestrator(self, mock_classify, mock_readability, mock_imgs, mock_schema, mock_wpo, mock_struct, mock_px, mock_checklist, mock_fetch):
 
         # Setup mocks
@@ -100,15 +100,15 @@ class TestOrchestrator(unittest.TestCase):
 
         print("\nSuccess test passed! Result keys verified.")
 
-    @patch('apps.api_engine.seo_checklist_orchestrator.fetch_url_hybrid')
-    @patch('apps.api_engine.seo_checklist_orchestrator.check_url_compliance')
-    @patch('apps.api_engine.seo_checklist_orchestrator.check_px')
-    @patch('apps.api_engine.seo_checklist_orchestrator.get_struct')
-    @patch('apps.api_engine.seo_checklist_orchestrator.check_wpo')
-    @patch('apps.api_engine.seo_checklist_orchestrator.detect_schemas')
-    @patch('apps.api_engine.seo_checklist_orchestrator.scan_imgs')
-    @patch('apps.api_engine.seo_checklist_orchestrator.analyze_text_visual')
-    @patch('apps.api_engine.seo_checklist_orchestrator.classify_keyword')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.fetch_url_hybrid')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_url_compliance')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_px')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.get_struct')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_wpo')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.detect_schemas')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.scan_imgs')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.analyze_text_visual')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.classify_keyword')
     def test_tool_failure(self, mock_classify, mock_readability, mock_imgs, mock_schema, mock_wpo, mock_struct, mock_px, mock_checklist, mock_fetch):
         # Mock fetch
         mock_fetch.return_value = {'content': '<html></html>'}

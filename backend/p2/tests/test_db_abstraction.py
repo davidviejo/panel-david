@@ -5,7 +5,7 @@ import sqlite3
 import sys
 import re
 
-# Ensure backend/p2 is in path so we can import apps.database directly
+# Ensure backend/p2 is in path so we can import apps.core.database directly
 # as the code in database.py uses relative imports or assumes specific path structure
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -15,7 +15,7 @@ sys.modules['psycopg2.extras'] = MagicMock()
 
 # Import the module now
 import importlib.util
-spec = importlib.util.spec_from_file_location("database", os.path.join(os.path.dirname(__file__), '../apps/database.py'))
+spec = importlib.util.spec_from_file_location("database", os.path.join(os.path.dirname(__file__), '../apps/core/database.py'))
 database = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(database)
 

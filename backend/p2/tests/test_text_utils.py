@@ -1,8 +1,8 @@
 import unittest
-from apps.readability_tool import count_syllables
+from apps.web.blueprints.readability_tool import count_syllables
 from apps.utils import normalize
-from apps.kw_intent import classify_keyword
-from apps.nlp_tool import get_ngrams
+from apps.web.blueprints.kw_intent import classify_keyword
+from apps.web.blueprints.nlp_tool import get_ngrams
 
 class TestTextUtils(unittest.TestCase):
 

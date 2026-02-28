@@ -2,7 +2,7 @@ import os
 import json
 from flask import jsonify, request, Blueprint
 from apps.utils import safe_get_json
-from apps.database import (
+from apps.core.database import (
     create_job, get_job, get_job_items, get_job_item_result,
     update_job_status, get_user_settings
 )

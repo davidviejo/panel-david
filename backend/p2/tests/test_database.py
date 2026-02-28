@@ -1,14 +1,14 @@
 import unittest
 import os
 import tempfile
-from apps.database import (
+from apps.core.database import (
     init_db,
     upsert_project,
     get_project,
     replace_clusters,
     delete_project
 )
-import apps.database
+import apps.core.database
 
 class TestDatabase(unittest.TestCase):
     def setUp(self):
@@ -16,8 +16,8 @@ class TestDatabase(unittest.TestCase):
         self.db_fd, self.db_path = tempfile.mkstemp()
 
         # Monkey patch the database module to use the temporary DB file
-        self.original_db_file = apps.database.DB_FILE
-        apps.database.DB_FILE = self.db_path
+        self.original_db_file = apps.core.database.DB_FILE
+        apps.core.database.DB_FILE = self.db_path
 
         # Initialize the test database
         init_db()
@@ -27,7 +27,7 @@ class TestDatabase(unittest.TestCase):
         os.close(self.db_fd)
 
         # Restore the original DB file path
-        apps.database.DB_FILE = self.original_db_file
+        apps.core.database.DB_FILE = self.original_db_file
 
         # Remove the temporary database file
         if os.path.exists(self.db_path):

@@ -8,7 +8,7 @@ from contextlib import contextmanager
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import apps.database
+import apps.core.database
 
 # Configuration for benchmark
 NUM_PROJECTS = 500
@@ -16,20 +16,20 @@ CLUSTERS_PER_PROJECT = 20
 
 @contextmanager
 def patch_db_file():
-    """Creates a temp DB file and patches apps.database.DB_FILE"""
+    """Creates a temp DB file and patches apps.core.database.DB_FILE"""
     fd, temp_path = tempfile.mkstemp(suffix='.db')
     os.close(fd)
 
-    original_db_file = apps.database.DB_FILE
-    apps.database.DB_FILE = temp_path
+    original_db_file = apps.core.database.DB_FILE
+    apps.core.database.DB_FILE = temp_path
 
     # Initialize schema
-    apps.database.init_db()
+    apps.core.database.init_db()
 
     try:
         yield temp_path
     finally:
-        apps.database.DB_FILE = original_db_file
+        apps.core.database.DB_FILE = original_db_file
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
@@ -88,14 +88,14 @@ def run_benchmark():
         conn.close()
 
         # Warmup (optional, but good for caching effects if any)
-        apps.database.get_all_projects()
+        apps.core.database.get_all_projects()
 
         # Benchmark
         iterations = 10
         start_time = time.time()
 
         for _ in range(iterations):
-            projects = apps.database.get_all_projects()
+            projects = apps.core.database.get_all_projects()
 
         end_time = time.time()
         total_time = end_time - start_time

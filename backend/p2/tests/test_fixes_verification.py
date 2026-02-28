@@ -2,9 +2,9 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from flask import Flask
-from apps.pixel_tool import pixel_bp, check_px
-from apps.status_fast import fast_bp
-from apps.local_tool import local_bp
+from apps.web.blueprints.pixel_tool import pixel_bp, check_px
+from apps.web.blueprints.status_fast import fast_bp
+from apps.web.blueprints.local_tool import local_bp
 
 @pytest.fixture
 def app():

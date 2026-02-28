@@ -1,11 +1,11 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from apps.content_gap import get_text_content
-from apps.meta_gen import gen
-from apps.image_audit import scan_imgs
-from apps.hreflang_tool import check_hreflang
+from apps.web.blueprints.content_gap import get_text_content
+from apps.web.blueprints.meta_gen import gen
+from apps.web.blueprints.image_audit import scan_imgs
+from apps.web.blueprints.hreflang_tool import check_hreflang
 from apps.scraper_core import _fetch_with_requests, _fetch_with_playwright
-from apps.bot_sim import _fetch as bot_fetch, check as bot_check
+from apps.web.blueprints.bot_sim import _fetch as bot_fetch, check as bot_check
 
 class TestSecurityBasic(unittest.TestCase):
 
@@ -28,7 +28,7 @@ class TestSecurityBasic(unittest.TestCase):
         # My implementation: return d (which has images=[]) if unsafe.
 
     def test_hreflang_error_suppression(self):
-        with patch('apps.hreflang_tool.requests.get') as mock_get:
+        with patch('apps.web.blueprints.hreflang_tool.requests.get') as mock_get:
             mock_get.side_effect = Exception("Internal DB Connection Failed")
             result = check_hreflang("http://example.com")
             self.assertEqual(result['error'], "Error procesando URL", "Should return generic error message")
@@ -47,7 +47,7 @@ class TestSecurityBasic(unittest.TestCase):
             self.assertEqual(result['error'], "Error de navegación", "Should return generic navigation error")
 
     def test_bot_sim_error_suppression(self):
-        with patch('apps.bot_sim.session.get') as mock_get:
+        with patch('apps.web.blueprints.bot_sim.session.get') as mock_get:
             # Need to import requests to raise the correct exception
             import requests
             mock_get.side_effect = requests.exceptions.RequestException("Sensitive data in exception")

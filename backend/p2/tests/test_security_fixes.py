@@ -1,6 +1,6 @@
 import pytest
 import io
-from apps import create_app
+from apps.web import create_app
 from apps.utils import validate_url
 
 def test_validate_url():

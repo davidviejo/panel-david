@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 # Import AFTER mocking
 from apps.scraper_core import smart_serp_search
-from config import Config
+from apps.core.config import Config
 
 class TestDataForSEOIntegration(unittest.TestCase):
 
@@ -41,8 +41,8 @@ class TestDataForSEOIntegration(unittest.TestCase):
         self.mock_post_patcher.stop()
         self.mock_google_patcher.stop()
 
-    @patch('config.Config.DATAFORSEO_LOGIN', 'test_user')
-    @patch('config.Config.DATAFORSEO_PASSWORD', 'test_pass')
+    @patch('apps.core.config.Config.DATAFORSEO_LOGIN', 'test_user')
+    @patch('apps.core.config.Config.DATAFORSEO_PASSWORD', 'test_pass')
     def test_smart_serp_search_uses_dataforseo_auto(self):
         # Mock DataForSEO response
         mock_response = MagicMock()
@@ -80,8 +80,8 @@ class TestDataForSEOIntegration(unittest.TestCase):
         self.assertEqual(results[0]['url'], 'https://example.com')
         self.assertEqual(results[0]['title'], 'Example Title')
 
-    @patch('config.Config.DATAFORSEO_LOGIN', 'test_user')
-    @patch('config.Config.DATAFORSEO_PASSWORD', 'test_pass')
+    @patch('apps.core.config.Config.DATAFORSEO_LOGIN', 'test_user')
+    @patch('apps.core.config.Config.DATAFORSEO_PASSWORD', 'test_pass')
     def test_smart_serp_search_explicit_mode(self):
         # Mock DataForSEO response
         mock_response = MagicMock()
@@ -98,7 +98,7 @@ class TestDataForSEOIntegration(unittest.TestCase):
 
     def test_smart_serp_search_fallback_google(self):
         # Ensure DFS creds are None for this test via patching Config inside the context manager
-        with patch('config.Config.DATAFORSEO_LOGIN', None):
+        with patch('apps.core.config.Config.DATAFORSEO_LOGIN', None):
             smart_serp_search("test", config={'mode': 'google_api_official', 'cse_key': 'k', 'cse_cx': 'c'})
             self.mock_google.assert_called_once()
 

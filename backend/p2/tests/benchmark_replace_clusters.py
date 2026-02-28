@@ -9,24 +9,24 @@ from contextlib import contextmanager
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import apps.database
+import apps.core.database
 
 @contextmanager
 def patch_db_file():
-    """Creates a temp DB file and patches apps.database.DB_FILE"""
+    """Creates a temp DB file and patches apps.core.database.DB_FILE"""
     fd, temp_path = tempfile.mkstemp(suffix='.db')
     os.close(fd)
 
-    original_db_file = apps.database.DB_FILE
-    apps.database.DB_FILE = temp_path
+    original_db_file = apps.core.database.DB_FILE
+    apps.core.database.DB_FILE = temp_path
 
     # Initialize schema
-    apps.database.init_db()
+    apps.core.database.init_db()
 
     try:
         yield temp_path
     finally:
-        apps.database.DB_FILE = original_db_file
+        apps.core.database.DB_FILE = original_db_file
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
@@ -53,7 +53,7 @@ def run_benchmark():
     with patch_db_file() as db_path:
         # Create a dummy project
         project_id = str(uuid.uuid4())
-        apps.database.upsert_project({
+        apps.core.database.upsert_project({
             "id": project_id,
             "name": "Benchmark Project",
             "domain": "example.com",
@@ -67,7 +67,7 @@ def run_benchmark():
             total_time = 0
             for i in range(iterations):
                 start_time = time.time()
-                apps.database.replace_clusters(project_id, clusters)
+                apps.core.database.replace_clusters(project_id, clusters)
                 end_time = time.time()
                 total_time += (end_time - start_time)
 

@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from apps.ctr_tool import score_title
-from apps.expired_tool import check_dns
-from apps.meta_gen import gen
+from apps.web.blueprints.ctr_tool import score_title
+from apps.web.blueprints.expired_tool import check_dns
+from apps.web.blueprints.meta_gen import gen
 
 # --- Tests for apps/ctr_tool.py ---
 
@@ -35,13 +35,13 @@ def test_score_title_low():
 
 def test_check_dns_active():
     # Simulate domain resolving
-    with patch('apps.expired_tool.socket.gethostbyname') as mock_dns:
+    with patch('apps.web.blueprints.expired_tool.socket.gethostbyname') as mock_dns:
         mock_dns.return_value = "1.1.1.1"
         assert check_dns("example.com") == "Active"
 
 def test_check_dns_available():
     # Simulate domain not resolving (raising exception)
-    with patch('apps.expired_tool.socket.gethostbyname') as mock_dns:
+    with patch('apps.web.blueprints.expired_tool.socket.gethostbyname') as mock_dns:
         mock_dns.side_effect = Exception("NXDOMAIN")
         assert check_dns("nonexistent.com") == "AVAILABLE"
 
@@ -49,8 +49,8 @@ def test_check_dns_available():
 
 def test_gen_success():
     # Simulate safe URL and valid HTML response
-    with patch('apps.meta_gen.is_safe_url', return_value=True), \
-         patch('apps.meta_gen.requests.get') as mock_get:
+    with patch('apps.web.blueprints.meta_gen.is_safe_url', return_value=True), \
+         patch('apps.web.blueprints.meta_gen.requests.get') as mock_get:
 
         mock_resp = MagicMock()
         mock_resp.content = b'<html><body><h1>My Title</h1><p>First paragraph content.</p></body></html>'
@@ -70,6 +70,6 @@ def test_gen_success():
 
 def test_gen_unsafe():
     # Simulate unsafe URL
-    with patch('apps.meta_gen.is_safe_url', return_value=False):
+    with patch('apps.web.blueprints.meta_gen.is_safe_url', return_value=False):
         res = gen("http://unsafe.local", "", "")
         assert res['status'] == 'URL no permitida'

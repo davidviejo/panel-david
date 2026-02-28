@@ -12,7 +12,7 @@ from flask import Flask
 # We need to ensure we can import the blueprint.
 # Depending on how apps is structured, this might trigger other imports.
 try:
-    from apps.api_engine import api_engine_bp
+    from apps.web.blueprints.api_engine import api_engine_bp
 except ImportError:
     # If apps package is not straightforward, we might need to mock some things
     # But let's assume it works for now as we are in the repo root.
@@ -23,13 +23,13 @@ class TestCapabilitiesAndLimits(unittest.TestCase):
     def setUp(self):
         self.app = Flask(__name__)
         try:
-            from apps.api_engine import api_engine_bp
+            from apps.web.blueprints.api_engine import api_engine_bp
             self.app.register_blueprint(api_engine_bp)
         except Exception as e:
             print(f"Failed to register blueprint: {e}")
         self.client = self.app.test_client()
 
-    @patch('apps.api_engine.routes.get_user_settings')
+    @patch('apps.web.blueprints.api_engine.routes.get_user_settings')
     @patch.dict(os.environ, {}, clear=True)
     def test_capabilities_defaults(self, mock_settings):
         mock_settings.return_value = {}
@@ -46,7 +46,7 @@ class TestCapabilitiesAndLimits(unittest.TestCase):
         self.assertEqual(data['limits']['maxCompetitorsPerKeyword'], 5)
         self.assertEqual(data['limits']['maxUrlsPerBatch'], 100)
 
-    @patch('apps.api_engine.routes.get_user_settings')
+    @patch('apps.web.blueprints.api_engine.routes.get_user_settings')
     @patch.dict(os.environ, {
         'SERPAPI_KEY': 'env_key',
         'ENGINE_MAX_KEYWORDS_PER_URL': '50'
@@ -59,9 +59,9 @@ class TestCapabilitiesAndLimits(unittest.TestCase):
         self.assertTrue(data['serpProviders']['serpapi'])
         self.assertEqual(data['limits']['maxKeywordsPerUrl'], 50)
 
-    @patch('apps.api_engine.seo_checklist_orchestrator.get_user_settings')
-    @patch('apps.api_engine.seo_checklist_orchestrator.fetch_url_hybrid')
-    @patch('apps.api_engine.seo_checklist_orchestrator.check_url_compliance')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.get_user_settings')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.fetch_url_hybrid')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_url_compliance')
     def test_analyze_limits(self, mock_compliance, mock_fetch, mock_settings):
         # Mock basics
         mock_fetch.return_value = {'content': '<html></html>'}
@@ -82,15 +82,15 @@ class TestCapabilitiesAndLimits(unittest.TestCase):
             }
         }
 
-        with patch('apps.api_engine.seo_checklist_orchestrator.check_px') as m_px, \
-             patch('apps.api_engine.seo_checklist_orchestrator.get_struct') as m_struct, \
-             patch('apps.api_engine.seo_checklist_orchestrator.check_wpo') as m_wpo, \
-             patch('apps.api_engine.seo_checklist_orchestrator.detect_schemas') as m_schema, \
-             patch('apps.api_engine.seo_checklist_orchestrator.scan_imgs') as m_imgs, \
-             patch('apps.api_engine.seo_checklist_orchestrator.analyze_text_visual') as m_readability, \
-             patch('apps.api_engine.seo_checklist_orchestrator.classify_keyword') as m_intent, \
-             patch('apps.api_engine.seo_checklist_orchestrator.dispatcher') as m_dispatcher, \
-             patch('apps.api_engine.seo_checklist_orchestrator.scrape_page') as m_scrape:
+        with patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_px') as m_px, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.get_struct') as m_struct, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_wpo') as m_wpo, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.detect_schemas') as m_schema, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.scan_imgs') as m_imgs, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.analyze_text_visual') as m_readability, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.classify_keyword') as m_intent, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.dispatcher') as m_dispatcher, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.scrape_page') as m_scrape:
 
             m_px.return_value = {}
             m_struct.return_value = {}
@@ -120,8 +120,8 @@ class TestCapabilitiesAndLimits(unittest.TestCase):
                 self.assertEqual(data.get('providerUsed'), 'serpapi')
                 self.assertTrue(data.get('advancedExecuted'))
 
-    @patch('apps.api_engine.seo_checklist_orchestrator.get_user_settings')
-    @patch('apps.api_engine.seo_checklist_orchestrator.fetch_url_hybrid')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.get_user_settings')
+    @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.fetch_url_hybrid')
     def test_analyze_block_missing_creds(self, mock_fetch, mock_settings):
         mock_fetch.return_value = {'content': '<html></html>'}
         mock_settings.return_value = {} # No keys
@@ -139,14 +139,14 @@ class TestCapabilitiesAndLimits(unittest.TestCase):
         }
 
         # Need to mock tools again
-        with patch('apps.api_engine.seo_checklist_orchestrator.check_url_compliance') as m_check, \
-             patch('apps.api_engine.seo_checklist_orchestrator.check_px') as m_px, \
-             patch('apps.api_engine.seo_checklist_orchestrator.get_struct') as m_struct, \
-             patch('apps.api_engine.seo_checklist_orchestrator.check_wpo') as m_wpo, \
-             patch('apps.api_engine.seo_checklist_orchestrator.detect_schemas') as m_schema, \
-             patch('apps.api_engine.seo_checklist_orchestrator.scan_imgs') as m_imgs, \
-             patch('apps.api_engine.seo_checklist_orchestrator.analyze_text_visual') as m_readability, \
-             patch('apps.api_engine.seo_checklist_orchestrator.classify_keyword') as m_intent:
+        with patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_url_compliance') as m_check, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_px') as m_px, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.get_struct') as m_struct, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.check_wpo') as m_wpo, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.detect_schemas') as m_schema, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.scan_imgs') as m_imgs, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.analyze_text_visual') as m_readability, \
+             patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.classify_keyword') as m_intent:
 
              m_check.return_value = {}
              m_px.return_value = {}

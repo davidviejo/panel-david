@@ -2,7 +2,7 @@ import os
 from flask import jsonify, request
 from datetime import datetime
 from apps.utils import safe_get_json, clean_url, is_safe_url
-from apps.database import get_user_settings
+from apps.core.database import get_user_settings
 from . import api_engine_bp
 from .seo_checklist_orchestrator import run_orchestrated_checklist
 

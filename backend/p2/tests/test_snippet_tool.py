@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from apps.snippet_tool import analyze_snippet
+from apps.web.blueprints.snippet_tool import analyze_snippet
 
 def test_analyze_snippet_success():
     mock_html = """
@@ -11,7 +11,7 @@ def test_analyze_snippet_success():
         </body>
     </html>
     """
-    with patch('apps.snippet_tool.is_safe_url', return_value=True):
+    with patch('apps.web.blueprints.snippet_tool.is_safe_url', return_value=True):
         with patch('requests.get') as mock_get:
             mock_resp = MagicMock()
             mock_resp.content = mock_html.encode('utf-8')
@@ -26,7 +26,7 @@ def test_analyze_snippet_success():
 
 def test_analyze_snippet_not_found():
     mock_html = "<html><body><h1>Hola Mundo</h1></body></html>"
-    with patch('apps.snippet_tool.is_safe_url', return_value=True):
+    with patch('apps.web.blueprints.snippet_tool.is_safe_url', return_value=True):
         with patch('requests.get') as mock_get:
             mock_resp = MagicMock()
             mock_resp.content = mock_html.encode('utf-8')
@@ -37,7 +37,7 @@ def test_analyze_snippet_not_found():
 
 def test_snippet_route(client):
     # Mocking is_safe_url to bypass DNS checks
-    with patch('apps.snippet_tool.is_safe_url', return_value=True):
+    with patch('apps.web.blueprints.snippet_tool.is_safe_url', return_value=True):
         with patch('requests.get') as mock_get:
             mock_resp = MagicMock()
             mock_resp.content = b"<html><h2>Test KW</h2><p>Contenido de prueba.</p></html>"

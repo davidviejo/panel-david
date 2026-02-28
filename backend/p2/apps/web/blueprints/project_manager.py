@@ -9,7 +9,7 @@ import pandas as pd
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import logging
-from apps.database import (
+from apps.core.database import (
     get_all_projects,
     get_project,
     upsert_project,

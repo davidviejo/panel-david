@@ -1,13 +1,13 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from apps.local_nap import check as check_nap
-from apps.intent_tool import classify as classify_intent
-from apps.link_health import check as check_health
+from apps.web.blueprints.local_nap import check as check_nap
+from apps.web.blueprints.intent_tool import classify as classify_intent
+from apps.web.blueprints.link_health import check as check_health
 
 class TestSimpleTools(unittest.TestCase):
 
-    @patch('apps.local_nap.is_safe_url')
-    @patch('apps.local_nap.requests.get')
+    @patch('apps.web.blueprints.local_nap.is_safe_url')
+    @patch('apps.web.blueprints.local_nap.requests.get')
     def test_nap_check_success(self, mock_get, mock_is_safe):
         mock_is_safe.return_value = True
 
@@ -24,14 +24,14 @@ class TestSimpleTools(unittest.TestCase):
         self.assertIn('Teléfono', result['matches'])
         self.assertTrue(result['score'] >= 70)
 
-    @patch('apps.local_nap.is_safe_url')
+    @patch('apps.web.blueprints.local_nap.is_safe_url')
     def test_nap_unsafe_url(self, mock_is_safe):
         mock_is_safe.return_value = False
         result = check_nap('http://unsafe.com', 'Name', 'Phone', 'Address')
         self.assertEqual(result['status'], 'URL no permitida')
 
-    @patch('apps.intent_tool.is_safe_url')
-    @patch('apps.intent_tool.requests.get')
+    @patch('apps.web.blueprints.intent_tool.is_safe_url')
+    @patch('apps.web.blueprints.intent_tool.requests.get')
     def test_intent_classify_transitional(self, mock_get, mock_is_safe):
         mock_is_safe.return_value = True
 
@@ -43,8 +43,8 @@ class TestSimpleTools(unittest.TestCase):
         self.assertEqual(result['type'], 'Transaccional')
         self.assertGreater(result['confidence'], 0)
 
-    @patch('apps.intent_tool.is_safe_url')
-    @patch('apps.intent_tool.requests.get')
+    @patch('apps.web.blueprints.intent_tool.is_safe_url')
+    @patch('apps.web.blueprints.intent_tool.requests.get')
     def test_intent_classify_error(self, mock_get, mock_is_safe):
         mock_is_safe.return_value = True
         mock_get.side_effect = Exception("Network error")
@@ -54,8 +54,8 @@ class TestSimpleTools(unittest.TestCase):
         self.assertEqual(result['type'], '?')
         self.assertEqual(result['confidence'], 0)
 
-    @patch('apps.link_health.is_safe_url')
-    @patch('apps.link_health.requests.head')
+    @patch('apps.web.blueprints.link_health.is_safe_url')
+    @patch('apps.web.blueprints.link_health.requests.head')
     def test_health_check_ok(self, mock_head, mock_is_safe):
         mock_is_safe.return_value = True
         mock_head.return_value.status_code = 200
@@ -63,8 +63,8 @@ class TestSimpleTools(unittest.TestCase):
         result = check_health('http://ok.com')
         self.assertEqual(result['status'], 200)
 
-    @patch('apps.link_health.is_safe_url')
-    @patch('apps.link_health.requests.head')
+    @patch('apps.web.blueprints.link_health.is_safe_url')
+    @patch('apps.web.blueprints.link_health.requests.head')
     def test_health_check_fail(self, mock_head, mock_is_safe):
         mock_is_safe.return_value = True
         mock_head.side_effect = Exception("Boom")

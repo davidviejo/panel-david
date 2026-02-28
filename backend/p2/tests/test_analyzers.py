@@ -2,15 +2,15 @@
 from unittest.mock import patch, MagicMock
 
 # Imports of functions to test
-from apps.tech_detector import detect
-from apps.prominence_tool import check_prominence
-from apps.snippet_tool import analyze_snippet
-from apps.meta_gen import gen
-from apps.social_tool import check as check_social
+from apps.web.blueprints.tech_detector import detect
+from apps.web.blueprints.prominence_tool import check_prominence
+from apps.web.blueprints.snippet_tool import analyze_snippet
+from apps.web.blueprints.meta_gen import gen
+from apps.web.blueprints.social_tool import check as check_social
 
 # --- apps.tech_detector.detect ---
 
-@patch('apps.tech_detector.requests.get')
+@patch('apps.web.blueprints.tech_detector.requests.get')
 def test_tech_detector_detect_normal(mock_get):
     """Test standard detection of WordPress and Yoast."""
     mock_resp = MagicMock()
@@ -25,7 +25,7 @@ def test_tech_detector_detect_normal(mock_get):
     assert result['seo'] == 'Yoast'
     assert result['server'] == 'Apache'
 
-@patch('apps.tech_detector.requests.get')
+@patch('apps.web.blueprints.tech_detector.requests.get')
 def test_tech_detector_detect_edge(mock_get):
     """Test network failure handling."""
     mock_get.side_effect = Exception("Network Down")
@@ -39,7 +39,7 @@ def test_tech_detector_detect_edge(mock_get):
 
 # --- apps.prominence_tool.check_prominence ---
 
-@patch('apps.prominence_tool.requests.get')
+@patch('apps.web.blueprints.prominence_tool.requests.get')
 def test_prominence_tool_check_prominence_normal(mock_get):
     """Test prominence calculation with keyword present."""
     mock_resp = MagicMock()
@@ -55,7 +55,7 @@ def test_prominence_tool_check_prominence_normal(mock_get):
     assert result['checks']['H1'] is True
     assert result['score'] > 0
 
-@patch('apps.prominence_tool.requests.get')
+@patch('apps.web.blueprints.prominence_tool.requests.get')
 def test_prominence_tool_check_prominence_edge(mock_get):
     """Test 404 handling."""
     mock_resp = MagicMock()
@@ -66,9 +66,9 @@ def test_prominence_tool_check_prominence_edge(mock_get):
 
     assert 'Status 404' in result['error']
 
-# --- apps.snippet_tool.analyze_snippet ---
+# --- apps.web.blueprints.snippet_tool.analyze_snippet ---
 
-@patch('apps.snippet_tool.requests.get')
+@patch('apps.web.blueprints.snippet_tool.requests.get')
 def test_snippet_tool_analyze_snippet_normal(mock_get):
     """Test snippet extraction when keyword found."""
     mock_resp = MagicMock()
@@ -80,7 +80,7 @@ def test_snippet_tool_analyze_snippet_normal(mock_get):
     assert result['found'] is True
     assert "Python is a programming language" in result['text']
 
-@patch('apps.snippet_tool.requests.get')
+@patch('apps.web.blueprints.snippet_tool.requests.get')
 def test_snippet_tool_analyze_snippet_edge(mock_get):
     """Test when keyword is not found."""
     mock_resp = MagicMock()
@@ -94,7 +94,7 @@ def test_snippet_tool_analyze_snippet_edge(mock_get):
 
 # --- apps.meta_gen.gen ---
 
-@patch('apps.meta_gen.requests.get')
+@patch('apps.web.blueprints.meta_gen.requests.get')
 def test_meta_gen_gen_normal(mock_get):
     """Test meta generation with templates."""
     mock_resp = MagicMock()
@@ -108,7 +108,7 @@ def test_meta_gen_gen_normal(mock_get):
     assert "My Header" in result['gen_title']
     assert "Intro paragraph" in result['gen_desc']
 
-@patch('apps.meta_gen.requests.get')
+@patch('apps.web.blueprints.meta_gen.requests.get')
 def test_meta_gen_gen_edge(mock_get):
     """Test handling of missing elements (no H1)."""
     mock_resp = MagicMock()
@@ -124,7 +124,7 @@ def test_meta_gen_gen_edge(mock_get):
 
 # --- apps.social_tool.check ---
 
-@patch('apps.social_tool.requests.get')
+@patch('apps.web.blueprints.social_tool.requests.get')
 def test_social_tool_check_normal(mock_get):
     """Test social check with valid OG tags."""
     mock_resp = MagicMock()
@@ -138,7 +138,7 @@ def test_social_tool_check_normal(mock_get):
     assert result['og']['image'] == "img.jpg"
     assert len(result['warnings']) == 0
 
-@patch('apps.social_tool.requests.get')
+@patch('apps.web.blueprints.social_tool.requests.get')
 def test_social_tool_check_edge(mock_get):
     """Test social check with missing tags."""
     mock_resp = MagicMock()

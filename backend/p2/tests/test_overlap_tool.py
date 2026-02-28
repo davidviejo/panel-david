@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from apps.overlap_tool import get_urls
+from apps.web.blueprints.overlap_tool import get_urls
 
 def test_get_urls_serpapi():
     kw = "test keyword"

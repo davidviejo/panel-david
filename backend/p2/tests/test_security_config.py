@@ -28,7 +28,8 @@ os.environ['SECRET_KEY'] = 'test-secret-key'
 os.environ['JWT_SECRET'] = 'test-jwt-secret'
 os.environ['GOOGLE_DEFAULT_COOKIE'] = 'test-cookie'
 
-from apps import create_app, database
+from apps.web import create_app
+from apps.core import database
 
 class TestSecurityConfig(unittest.TestCase):
     def test_password_auto_hashing(self):
@@ -50,8 +51,8 @@ class TestSecurityConfig(unittest.TestCase):
 
         # We need to mock database.init_db as well, which is called inside create_app
         # Also mock start_monitor which is conditional on TESTING config, but better be safe
-        with patch('apps.init_db') as mock_init_db, \
-             patch('apps.start_monitor') as mock_monitor:
+        with patch('apps.web.init_db') as mock_init_db, \
+             patch('apps.web.start_monitor') as mock_monitor:
 
             # Since create_app expects a class, we pass TestConfig
             app = create_app(TestConfig)

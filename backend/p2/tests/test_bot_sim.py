@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, Mock
 import requests
-from apps.bot_sim import check
+from apps.web.blueprints.bot_sim import check
 
 class TestBotSim:
 
@@ -11,15 +11,15 @@ class TestBotSim:
         assert check(None)['status'] == 'URL_VACIA'
         assert check("   ")['status'] == 'URL_VACIA'
 
-    @patch('apps.bot_sim.is_safe_url')
+    @patch('apps.web.blueprints.bot_sim.is_safe_url')
     def test_check_url_no_permitida(self, mock_is_safe):
         """Test that an unsafe URL returns URL_NO_PERMITIDA status."""
         mock_is_safe.return_value = False
         result = check("http://unsafe.com")
         assert result['status'] == 'URL_NO_PERMITIDA'
 
-    @patch('apps.bot_sim.is_safe_url')
-    @patch('apps.bot_sim.session.get')
+    @patch('apps.web.blueprints.bot_sim.is_safe_url')
+    @patch('apps.web.blueprints.bot_sim.session.get')
     def test_check_error_ambos(self, mock_get, mock_is_safe):
         """Test that connection errors for both agents return ERROR_AMBOS."""
         mock_is_safe.return_value = True
@@ -28,8 +28,8 @@ class TestBotSim:
         result = check("http://example.com")
         assert result['status'] == 'ERROR_AMBOS'
 
-    @patch('apps.bot_sim.is_safe_url')
-    @patch('apps.bot_sim.session.get')
+    @patch('apps.web.blueprints.bot_sim.is_safe_url')
+    @patch('apps.web.blueprints.bot_sim.session.get')
     def test_check_error_user(self, mock_get, mock_is_safe):
         """Test that connection error for user agent only returns ERROR_USER."""
         mock_is_safe.return_value = True
@@ -47,8 +47,8 @@ class TestBotSim:
         result = check("http://example.com")
         assert result['status'] == 'ERROR_USER'
 
-    @patch('apps.bot_sim.is_safe_url')
-    @patch('apps.bot_sim.session.get')
+    @patch('apps.web.blueprints.bot_sim.is_safe_url')
+    @patch('apps.web.blueprints.bot_sim.session.get')
     def test_check_error_bot(self, mock_get, mock_is_safe):
         """Test that connection error for bot agent only returns ERROR_BOT."""
         mock_is_safe.return_value = True
@@ -66,8 +66,8 @@ class TestBotSim:
         result = check("http://example.com")
         assert result['status'] == 'ERROR_BOT'
 
-    @patch('apps.bot_sim.is_safe_url')
-    @patch('apps.bot_sim.session.get')
+    @patch('apps.web.blueprints.bot_sim.is_safe_url')
+    @patch('apps.web.blueprints.bot_sim.session.get')
     def test_check_bloqueado(self, mock_get, mock_is_safe):
         """Test detection of blocking (User 200, Bot != 200)."""
         mock_is_safe.return_value = True
@@ -86,8 +86,8 @@ class TestBotSim:
         result = check("http://example.com")
         assert result['status'] == 'BLOQUEADO'
 
-    @patch('apps.bot_sim.is_safe_url')
-    @patch('apps.bot_sim.session.get')
+    @patch('apps.web.blueprints.bot_sim.is_safe_url')
+    @patch('apps.web.blueprints.bot_sim.session.get')
     def test_check_diferente(self, mock_get, mock_is_safe):
         """Test detection of different content (Length difference > 50%)."""
         mock_is_safe.return_value = True
@@ -106,8 +106,8 @@ class TestBotSim:
         result = check("http://example.com")
         assert result['status'] == 'DIFERENTE'
 
-    @patch('apps.bot_sim.is_safe_url')
-    @patch('apps.bot_sim.session.get')
+    @patch('apps.web.blueprints.bot_sim.is_safe_url')
+    @patch('apps.web.blueprints.bot_sim.session.get')
     def test_check_ok(self, mock_get, mock_is_safe):
         """Test happy path (Similar content)."""
         mock_is_safe.return_value = True

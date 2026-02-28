@@ -4,7 +4,7 @@ import concurrent.futures
 from unittest.mock import MagicMock, patch
 
 # Import the actual function to test
-from apps.monitor_daemon import check_target
+from apps.web.blueprints.monitor_daemon import check_target
 
 # --- Simulation Config ---
 NUM_URLS = 50
@@ -27,8 +27,8 @@ def run_parallel():
     start_time = time.time()
 
     # Patching requests.head and add_alert where they are used
-    with patch('apps.monitor_daemon.requests.head', side_effect=mocked_requests_head), \
-         patch('apps.monitor_daemon.add_alert'):
+    with patch('apps.web.blueprints.monitor_daemon.requests.head', side_effect=mocked_requests_head), \
+         patch('apps.web.blueprints.monitor_daemon.add_alert'):
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
              executor.map(lambda t: check_target(t, project['name']), urls_to_check)

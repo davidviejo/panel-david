@@ -18,8 +18,8 @@ from urllib.parse import urlparse
 
 # Database Configuration
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_FILE = os.path.join(BASE_DIR, 'projects.db')
-JSON_SOURCE_FILE = os.path.join(BASE_DIR, 'projects_db.json')
+DB_FILE = os.path.join(BASE_DIR, '..', 'data', 'projects.db')
+JSON_SOURCE_FILE = os.path.join(BASE_DIR, '..', 'data', 'projects_db.json')
 
 # Check environment variable for database URL
 DATABASE_URL = os.environ.get('DATABASE_URL')

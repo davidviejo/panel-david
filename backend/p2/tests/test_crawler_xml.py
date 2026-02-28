@@ -1,6 +1,6 @@
 
 import pytest
-from apps.crawler_tool import crawler_bp
+from apps.web.blueprints.crawler_tool import crawler_bp
 
 def test_download_xml(client):
     urls = ['http://example.com/page1', 'http://example.com/page2']

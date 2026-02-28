@@ -1,7 +1,7 @@
 import pytest
 import logging
 from unittest.mock import patch, MagicMock
-from apps import create_app
+from apps.web import create_app
 
 # Disable logging during tests to keep output clean
 logging.getLogger('apps').setLevel(logging.CRITICAL)
@@ -12,7 +12,7 @@ def client():
     app.config['TESTING'] = True
 
     # Mock database to prevent side effects
-    with patch('apps.database.get_db_connection'):
+    with patch('apps.core.database.get_db_connection'):
         with app.test_client() as client:
             yield client
 
@@ -115,7 +115,7 @@ def test_llm_service_verbose_error(client):
 # --- NEW UNIT TESTS ---
 
 def test_fetch_sitemap_urls_ssrf_direct():
-    from apps.audit_tool import fetch_sitemap_urls
+    from apps.web.blueprints.audit_tool import fetch_sitemap_urls
     with patch('requests.get') as mock_get:
         url = "http://127.0.0.1/sitemap.xml"
         result = fetch_sitemap_urls(url)
@@ -131,7 +131,7 @@ def test_fetch_url_hybrid_ssrf_direct():
         assert result['error'] == 'URL no permitida'
 
 def test_autopilot_verbose_error_direct():
-    from apps.autopilot import audit_url_comprehensive
+    from apps.web.blueprints.autopilot import audit_url_comprehensive
     with patch('requests.get') as mock_get:
         mock_get.side_effect = Exception("Connection refused to internal DB 192.168.1.5")
         # We need a safe URL to pass the first check

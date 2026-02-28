@@ -1,13 +1,13 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from apps.structure_tool import get_struct
-from apps.hreflang_tool import check_hreflang
-from apps.schema_tool import extract
+from apps.web.blueprints.structure_tool import get_struct
+from apps.web.blueprints.hreflang_tool import check_hreflang
+from apps.web.blueprints.schema_tool import extract
 
 class TestExtractionTools(unittest.TestCase):
 
     # --- Tests for apps.structure_tool.get_struct ---
-    @patch('apps.structure_tool.requests.get')
+    @patch('apps.web.blueprints.structure_tool.requests.get')
     def test_get_struct_normal(self, mock_get):
         # Setup mock response
         mock_resp = MagicMock()
@@ -27,7 +27,7 @@ class TestExtractionTools(unittest.TestCase):
         self.assertEqual(result['headers'][1]['tag'], 'H3')
         self.assertEqual(result['headers'][1]['txt'], 'Subtitle')
 
-    @patch('apps.structure_tool.requests.get')
+    @patch('apps.web.blueprints.structure_tool.requests.get')
     def test_get_struct_edge_error(self, mock_get):
         # Setup mock to raise exception
         mock_get.side_effect = Exception("Connection Refused")
@@ -41,7 +41,7 @@ class TestExtractionTools(unittest.TestCase):
 
 
     # --- Tests for apps.hreflang_tool.check_hreflang ---
-    @patch('apps.hreflang_tool.requests.get')
+    @patch('apps.web.blueprints.hreflang_tool.requests.get')
     def test_check_hreflang_normal(self, mock_get):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -59,7 +59,7 @@ class TestExtractionTools(unittest.TestCase):
         self.assertTrue(result['x_default'])
         self.assertIsNone(result['error'])
 
-    @patch('apps.hreflang_tool.requests.get')
+    @patch('apps.web.blueprints.hreflang_tool.requests.get')
     def test_check_hreflang_edge_error(self, mock_get):
         mock_get.side_effect = Exception("Timeout")
 
@@ -71,7 +71,7 @@ class TestExtractionTools(unittest.TestCase):
 
 
     # --- Tests for apps.schema_tool.extract ---
-    @patch('apps.schema_tool.requests.get')
+    @patch('apps.web.blueprints.schema_tool.requests.get')
     def test_schema_extract_normal(self, mock_get):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -94,7 +94,7 @@ class TestExtractionTools(unittest.TestCase):
         self.assertIn("Organization", result['types'])
         self.assertEqual(len(result['raw']), 1)
 
-    @patch('apps.schema_tool.requests.get')
+    @patch('apps.web.blueprints.schema_tool.requests.get')
     def test_schema_extract_edge_invalid_json(self, mock_get):
         mock_resp = MagicMock()
         mock_resp.status_code = 200

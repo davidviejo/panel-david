@@ -8,7 +8,7 @@ usage_bp = Blueprint('usage', __name__, url_prefix='/usage')
 
 # RUTA ABSOLUTA AL ARCHIVO DB (En la misma carpeta apps o en la raíz)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_FILE = os.path.join(BASE_DIR, 'api_usage.db')
+DB_FILE = os.path.join(BASE_DIR, '..', '..', 'data', 'api_usage.db')
 
 def init_db():
     """Inicializa la tabla"""

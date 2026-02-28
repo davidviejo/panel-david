@@ -1,6 +1,6 @@
 # apps/gsc_tool.py
 from flask import Blueprint, render_template, jsonify
-from apps.project_manager import get_active_project
+from apps.web.blueprints.project_manager import get_active_project
 import random
 import os
 import logging

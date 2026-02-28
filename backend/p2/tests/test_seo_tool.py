@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from apps.seo_tool import dispatcher
+from apps.web.blueprints.seo_tool import dispatcher
 
 def test_dispatcher_serpapi_success():
     kw = "test keyword"

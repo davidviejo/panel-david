@@ -1,9 +1,9 @@
 import time
-from apps.migration_tool import slugify
-from apps.autopilot import classify_intent, analyze_performance_sim
-from apps.ctr_tool import score_title
-from apps.serp_scanner import is_valid_url
-from apps.schema_detector import extract_types_recursive
+from apps.web.blueprints.migration_tool import slugify
+from apps.web.blueprints.autopilot import classify_intent, analyze_performance_sim
+from apps.web.blueprints.ctr_tool import score_title
+from apps.web.blueprints.serp_scanner import is_valid_url
+from apps.web.blueprints.schema_detector import extract_types_recursive
 
 # --- apps.migration_tool.slugify ---
 def test_slugify_normal():

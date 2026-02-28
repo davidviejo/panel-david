@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from apps import create_app
+from apps.web import create_app
 import logging
 
 # Disable logging
@@ -10,7 +10,7 @@ logging.getLogger('apps').setLevel(logging.CRITICAL)
 def client():
     app = create_app()
     app.config['TESTING'] = True
-    with patch('apps.database.get_db_connection'):
+    with patch('apps.core.database.get_db_connection'):
         with app.test_client() as client:
             yield client
 

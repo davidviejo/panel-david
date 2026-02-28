@@ -14,7 +14,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from werkzeug.utils import secure_filename
-from apps.project_manager import get_active_project
+from apps.web.blueprints.project_manager import get_active_project
 from apps.scraper_core import smart_serp_search
 from apps.utils import is_safe_url
 

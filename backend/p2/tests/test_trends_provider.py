@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from apps.trends_provider import (
+from apps.web.blueprints.trends_provider import (
     SerpApiProvider,
     GoogleInternalProvider,
     DataForSEOProvider,
@@ -9,7 +9,7 @@ from apps.trends_provider import (
 
 class TestTrendsProvider(unittest.TestCase):
 
-    @patch('apps.trends_provider.requests.get')
+    @patch('apps.web.blueprints.trends_provider.requests.get')
     def test_serpapi_provider(self, mock_get):
         # Mock SerpApi response
         mock_resp = MagicMock()
@@ -28,7 +28,7 @@ class TestTrendsProvider(unittest.TestCase):
         self.assertEqual(results[0]['traffic'], "10K+")
         self.assertIn("google.com/search?q=Test Topic", results[0]['google_link'])
 
-    @patch('apps.trends_provider.requests.get')
+    @patch('apps.web.blueprints.trends_provider.requests.get')
     def test_google_internal_provider(self, mock_get):
         # Mock Google Internal response
         mock_resp = MagicMock()
@@ -43,7 +43,7 @@ class TestTrendsProvider(unittest.TestCase):
         self.assertEqual(results[0]['topic'], "Internal Topic")
         self.assertEqual(results[0]['context'], "Context")
 
-    @patch('apps.trends_provider.requests.post')
+    @patch('apps.web.blueprints.trends_provider.requests.post')
     def test_dataforseo_provider(self, mock_post):
         # Mock DataForSEO response
         mock_resp = MagicMock()
@@ -66,12 +66,12 @@ class TestTrendsProvider(unittest.TestCase):
         self.assertEqual(results[0]['topic'], "DFS Topic")
         self.assertEqual(results[0]['traffic'], "5000 vol")
 
-    @patch('apps.trends_provider.SerpApiProvider.fetch_trends')
+    @patch('apps.web.blueprints.trends_provider.SerpApiProvider.fetch_trends')
     def test_strategy_serpapi(self, mock_fetch):
         fetch_trends_strategy("US", "h", provider_name="serpapi", api_key="key")
         mock_fetch.assert_called_once()
 
-    @patch('apps.trends_provider.DataForSEOProvider.fetch_trends')
+    @patch('apps.web.blueprints.trends_provider.DataForSEOProvider.fetch_trends')
     def test_strategy_dataforseo(self, mock_fetch):
         fetch_trends_strategy("US", "h", provider_name="dataforseo", login="u", password="p")
         mock_fetch.assert_called_once()

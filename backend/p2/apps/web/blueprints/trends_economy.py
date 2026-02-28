@@ -13,8 +13,8 @@ import sqlite3
 import uuid
 import os
 
-from apps.trends_provider import fetch_trends_strategy
-from apps.database import get_user_settings
+from apps.web.blueprints.trends_provider import fetch_trends_strategy
+from apps.core.database import get_user_settings
 
 trends_bp = Blueprint('trends_bp', __name__)
 

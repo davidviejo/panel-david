@@ -1,5 +1,5 @@
 import pytest
-from apps.kw_intent import classify_keyword
+from apps.web.blueprints.kw_intent import classify_keyword
 
 def test_classify_keyword():
     res1 = classify_keyword("comprar zapatos")
@@ -18,7 +18,7 @@ def test_classify_keyword():
     assert res5['intent'] == "Ambiguo / General"
 
 def test_classify_endpoint():
-    from apps import create_app
+    from apps.web import create_app
     app = create_app()
     app.config['TESTING'] = True
     client = app.test_client()

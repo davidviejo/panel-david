@@ -1,7 +1,7 @@
 import time
 from unittest.mock import patch
 from flask import Flask
-from apps.content_gap import gap_bp
+from apps.web.blueprints.content_gap import gap_bp
 
 # Setup app
 app = Flask(__name__)
@@ -20,7 +20,7 @@ def mock_requests_get(url, **kwargs):
 
 def benchmark():
     # Patch where it is used
-    with patch('apps.content_gap.requests.get', side_effect=mock_requests_get):
+    with patch('apps.web.blueprints.content_gap.requests.get', side_effect=mock_requests_get):
         start_time = time.time()
 
         # 10 competitor URLs + 1 my_url = 11 requests

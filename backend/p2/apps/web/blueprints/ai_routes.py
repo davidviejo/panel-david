@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session, render_template
 from apps.ai_hub import AI_MODELS, execute_ai_task, generate_ai_image
-from apps.database import get_user_settings, upsert_user_settings
+from apps.core.database import get_user_settings, upsert_user_settings
 import logging
 
 logger = logging.getLogger(__name__)

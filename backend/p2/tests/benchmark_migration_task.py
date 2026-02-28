@@ -9,7 +9,7 @@ from contextlib import contextmanager
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import apps.database
+import apps.core.database
 
 # Configuration for benchmark
 NUM_PROJECTS = 500
@@ -17,24 +17,24 @@ CLUSTERS_PER_PROJECT = 20
 
 @contextmanager
 def patch_env():
-    """Creates temp DB and JSON files and patches apps.database"""
+    """Creates temp DB and JSON files and patches apps.core.database"""
     db_fd, db_path = tempfile.mkstemp(suffix='.db')
     os.close(db_fd)
 
     json_fd, json_path = tempfile.mkstemp(suffix='.json')
     os.close(json_fd)
 
-    original_db_file = apps.database.DB_FILE
-    original_json_file = apps.database.JSON_SOURCE_FILE
+    original_db_file = apps.core.database.DB_FILE
+    original_json_file = apps.core.database.JSON_SOURCE_FILE
 
-    apps.database.DB_FILE = db_path
-    apps.database.JSON_SOURCE_FILE = json_path
+    apps.core.database.DB_FILE = db_path
+    apps.core.database.JSON_SOURCE_FILE = json_path
 
     try:
         yield db_path, json_path
     finally:
-        apps.database.DB_FILE = original_db_file
-        apps.database.JSON_SOURCE_FILE = original_json_file
+        apps.core.database.DB_FILE = original_db_file
+        apps.core.database.JSON_SOURCE_FILE = original_json_file
         if os.path.exists(db_path):
             os.remove(db_path)
         if os.path.exists(json_path):
@@ -105,7 +105,7 @@ def run_benchmark():
 
         print("Starting migration...")
         start_time = time.time()
-        apps.database.migrate_from_json()
+        apps.core.database.migrate_from_json()
         end_time = time.time()
 
         total_time = end_time - start_time

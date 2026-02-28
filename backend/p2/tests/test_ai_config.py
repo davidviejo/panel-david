@@ -1,6 +1,6 @@
 import unittest
 from flask import Flask, session
-from apps.ai_routes import ai_bp
+from apps.web.blueprints.ai_routes import ai_bp
 from apps.scraper_core import smart_serp_search
 import os
 

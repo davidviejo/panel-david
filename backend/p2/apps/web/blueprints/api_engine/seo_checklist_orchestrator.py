@@ -11,17 +11,17 @@ from urllib.parse import urlparse, urljoin
 
 # Tools imports
 from apps.scraper_core import fetch_url_hybrid
-from apps.checklist_tool import check_url_compliance
-from apps.pixel_tool import check_px
-from apps.structure_tool import get_struct
-from apps.wpo_tool import check_wpo
-from apps.schema_detector import detect_schemas
-from apps.image_audit import scan_imgs
-from apps.readability_tool import analyze_text_visual
-from apps.kw_intent import classify_keyword
-from apps.seo_tool import scrape_page, text_similarity, dispatcher, classify_intent, cluster_serp_results, get_domain
-from apps.database import get_user_settings
-from apps.schema_tool import analyze_structured_data_detailed
+from apps.web.blueprints.checklist_tool import check_url_compliance
+from apps.web.blueprints.pixel_tool import check_px
+from apps.web.blueprints.structure_tool import get_struct
+from apps.web.blueprints.wpo_tool import check_wpo
+from apps.web.blueprints.schema_detector import detect_schemas
+from apps.web.blueprints.image_audit import scan_imgs
+from apps.web.blueprints.readability_tool import analyze_text_visual
+from apps.web.blueprints.kw_intent import classify_keyword
+from apps.web.blueprints.seo_tool import scrape_page, text_similarity, dispatcher, classify_intent, cluster_serp_results, get_domain
+from apps.core.database import get_user_settings
+from apps.web.blueprints.schema_tool import analyze_structured_data_detailed
 
 def safe_execute(func, *args, **kwargs):
     try:

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from apps.seo_tool import dispatcher
+from apps.web.blueprints.seo_tool import dispatcher
 
 def test_dispatcher_dataforseo_pass_params():
     kw = "test keyword"
@@ -14,7 +14,7 @@ def test_dispatcher_dataforseo_pass_params():
     }
 
     # Mock smart_serp_search
-    with patch('apps.seo_tool.smart_serp_search') as mock_smart_search:
+    with patch('apps.web.blueprints.seo_tool.smart_serp_search') as mock_smart_search:
         mock_smart_search.return_value = [{'url': 'http://example.com', 'title': 'Test', 'rank': 1}]
 
         results = dispatcher(kw, cfg)

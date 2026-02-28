@@ -15,12 +15,12 @@ logging.basicConfig(level=logging.ERROR)
 # Mock dependencies to avoid loading apps/__init__.py and missing deps
 sys.modules['flask'] = MagicMock()
 sys.modules['apps.trends_provider'] = MagicMock()
-sys.modules['apps.database'] = MagicMock()
+sys.modules['apps.core.database'] = MagicMock()
 sys.modules['apps'] = MagicMock()
 
-# Load apps/trends_economy.py directly
+# Load backend/p2/apps/web/blueprints/trends_economy.py directly
 module_name = "apps.trends_economy"
-file_path = "apps/trends_economy.py"
+file_path = "backend/p2/apps/web/blueprints/trends_economy.py"
 
 spec = importlib.util.spec_from_file_location(module_name, file_path)
 trends_economy = importlib.util.module_from_spec(spec)

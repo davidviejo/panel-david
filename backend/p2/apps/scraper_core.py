@@ -10,8 +10,8 @@ from playwright.sync_api import sync_playwright
 import urllib.parse
 from typing import List, Dict, Optional, Any, Union
 from flask import session, has_request_context
-from apps.usage_tracker import increment_api_usage
-from config import Config
+from apps.web.blueprints.usage_tracker import increment_api_usage
+from apps.core.config import Config
 from apps.utils import is_safe_url, sanitize_log_message
 
 class GoogleAPIError(Exception):

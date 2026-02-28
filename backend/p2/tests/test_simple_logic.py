@@ -1,11 +1,11 @@
 import pytest
 from unittest.mock import patch
-from apps.pixel_tool import get_px
-from apps.serp_scanner import is_valid_url
+from apps.web.blueprints.pixel_tool import get_px
+from apps.web.blueprints.serp_scanner import is_valid_url
 from apps.core_monitor import update_global, reset_global, GLOBAL_STATE
-from apps.ai_fixer import generate_with_gpt
+from apps.ai_hub import execute_ai_task
 
-# --- Tests for apps/pixel_tool.py ---
+# --- Tests for apps.web.blueprints.pixel_tool.py ---
 
 def test_get_px_normal():
     # "test" length is 4. Scale 1. 4 * 9 * 1 = 36
@@ -60,14 +60,14 @@ def test_monitor_state_flow():
 
 # --- Tests for apps/ai_fixer.py ---
 
-def test_generate_with_gpt_simulation():
+def test_execute_ai_task_simulation():
     # Mock query_llm to simulate response
-    with patch('apps.ai_fixer.query_llm') as mock_query:
+    with patch('apps.web.blueprints.ai_hub._query_openai_direct') as mock_query:
         mock_query.return_value = "[SIMULACIÓN AI] Fix this text"
 
         prompt = "Fix this text"
-        response = generate_with_gpt(prompt)
+        response = execute_ai_task(prompt, 'gpt-4o')
 
-        assert isinstance(response, str)
-        assert "[SIMULACIÓN AI]" in response
-        assert "Fix this text" in response
+        assert isinstance(response, dict)
+        assert "[SIMULACIÓN AI]" in response['content']
+        assert "Fix this text" in response['content']

@@ -7,7 +7,7 @@ from flask import Flask
 # Ensure apps is in path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from apps.crawler_tool import crawl_site
+from apps.web.blueprints.crawler_tool import crawl_site
 import logging
 
 # Suppress Flask logging

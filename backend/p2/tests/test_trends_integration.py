@@ -5,7 +5,7 @@ import json
 
 # Mock dependencies
 sys.modules['flask'] = MagicMock()
-sys.modules['apps.database'] = MagicMock()
+sys.modules['apps.core.database'] = MagicMock()
 
 # Load module manually to avoid apps/__init__.py
 import importlib.util
@@ -18,14 +18,14 @@ sys.modules['werkzeug'] = MagicMock()
 sys.modules['werkzeug.utils'] = MagicMock()
 
 # Load trends_provider manually first
-spec_provider = importlib.util.spec_from_file_location("apps.trends_provider", "apps/trends_provider.py")
+spec_provider = importlib.util.spec_from_file_location("apps.trends_provider", "backend/p2/apps/web/blueprints/trends_provider.py")
 trends_provider = importlib.util.module_from_spec(spec_provider)
 sys.modules["apps.trends_provider"] = trends_provider
 # We don't need to exec it if we just want it to exist, but exec is safer if it has exports
 spec_provider.loader.exec_module(trends_provider)
 
 # Now load trends_economy
-spec = importlib.util.spec_from_file_location("apps.trends_economy", "apps/trends_economy.py")
+spec = importlib.util.spec_from_file_location("apps.trends_economy", "backend/p2/apps/web/blueprints/trends_economy.py")
 trends_economy = importlib.util.module_from_spec(spec)
 sys.modules["apps.trends_economy"] = trends_economy
 spec.loader.exec_module(trends_economy)
@@ -34,8 +34,8 @@ worker_realtime_trends = trends_economy.worker_realtime_trends
 
 class TestTrendsIntegration(unittest.TestCase):
 
-    @patch('apps.trends_economy.sqlite3.connect')
-    @patch('apps.trends_economy.fetch_trends_strategy')
+    @patch('apps.web.blueprints.trends_economy.sqlite3.connect')
+    @patch('apps.web.blueprints.trends_economy.fetch_trends_strategy')
     def test_worker_uses_api_key(self, mock_fetch, mock_connect):
         # Mock DB
         mock_conn = MagicMock()
@@ -59,10 +59,10 @@ class TestTrendsIntegration(unittest.TestCase):
         # Verify DB Updates (active=0 at end)
         self.assertTrue(mock_cursor.execute.called)
 
-    @patch('apps.trends_economy.sqlite3.connect')
-    @patch('apps.trends_economy.fetch_trends_strategy')
-    @patch('apps.trends_economy.get_user_settings')
-    @patch('apps.trends_economy.os.getenv')
+    @patch('apps.web.blueprints.trends_economy.sqlite3.connect')
+    @patch('apps.web.blueprints.trends_economy.fetch_trends_strategy')
+    @patch('apps.web.blueprints.trends_economy.get_user_settings')
+    @patch('apps.web.blueprints.trends_economy.os.getenv')
     def test_worker_uses_dataforseo_env(self, mock_getenv, mock_settings, mock_fetch, mock_connect):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -85,10 +85,10 @@ class TestTrendsIntegration(unittest.TestCase):
 
         mock_fetch.assert_called_with("US", "b", provider_name="dataforseo", login="env_login", password="env_pass")
 
-    @patch('apps.trends_economy.sqlite3.connect')
-    @patch('apps.trends_economy.fetch_trends_strategy')
-    @patch('apps.trends_economy.get_user_settings')
-    @patch('apps.trends_economy.os.getenv')
+    @patch('apps.web.blueprints.trends_economy.sqlite3.connect')
+    @patch('apps.web.blueprints.trends_economy.fetch_trends_strategy')
+    @patch('apps.web.blueprints.trends_economy.get_user_settings')
+    @patch('apps.web.blueprints.trends_economy.os.getenv')
     def test_worker_uses_internal_fallback(self, mock_getenv, mock_settings, mock_fetch, mock_connect):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()

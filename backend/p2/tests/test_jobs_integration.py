@@ -3,15 +3,15 @@ import json
 import time
 import os
 from unittest.mock import patch, MagicMock
-from apps import create_app
-from apps.database import init_db, get_db_connection
+from apps.web import create_app
+from apps.core.database import init_db, get_db_connection
 
 class TestJobsIntegration(unittest.TestCase):
     def setUp(self):
         # Use a temporary DB
         self.db_path = 'test_projects.db'
-        # Patch the DB_FILE in apps.database
-        self.patcher = patch('apps.database.DB_FILE', self.db_path)
+        # Patch the DB_FILE in apps.core.database
+        self.patcher = patch('apps.core.database.DB_FILE', self.db_path)
         self.patcher.start()
 
         # Initialize app
@@ -66,7 +66,7 @@ class TestJobsIntegration(unittest.TestCase):
 
         # Manually trigger runner loop step
         from apps.job_runner import JobRunner
-        from apps.database import get_next_queued_job
+        from apps.core.database import get_next_queued_job
 
         job = get_next_queued_job()
         self.assertIsNotNone(job)
@@ -109,7 +109,7 @@ class TestJobsIntegration(unittest.TestCase):
         }
 
         # Mock settings to return keys. Note: patching where it is used.
-        with patch('apps.api_engine.job_routes.get_user_settings', return_value={'serpapi_key': 'test'}):
+        with patch('apps.web.blueprints.api_engine.job_routes.get_user_settings', return_value={'serpapi_key': 'test'}):
             # Patch environment variable for max cost
             with patch.dict(os.environ, {'ENGINE_MAX_ESTIMATED_COST_PER_BATCH': '1.0'}):
                  response = self.client.post('/api/jobs', json=payload)

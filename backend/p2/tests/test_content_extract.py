@@ -1,11 +1,11 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from apps.content_extract import clean
+from apps.web.blueprints.content_extract import clean
 
 class TestContentExtract(unittest.TestCase):
 
-    @patch('apps.content_extract.requests.get')
-    @patch('apps.content_extract.is_safe_url')
+    @patch('apps.web.blueprints.content_extract.requests.get')
+    @patch('apps.web.blueprints.content_extract.is_safe_url')
     def test_clean_normal(self, mock_is_safe, mock_get):
         mock_is_safe.return_value = True
         mock_resp = MagicMock()
@@ -37,8 +37,8 @@ class TestContentExtract(unittest.TestCase):
         # Script should be excluded
         self.assertNotIn("console.log", markdown)
 
-    @patch('apps.content_extract.requests.get')
-    @patch('apps.content_extract.is_safe_url')
+    @patch('apps.web.blueprints.content_extract.requests.get')
+    @patch('apps.web.blueprints.content_extract.is_safe_url')
     def test_clean_unsafe_url(self, mock_is_safe, mock_get):
         mock_is_safe.return_value = False
 
@@ -47,8 +47,8 @@ class TestContentExtract(unittest.TestCase):
         self.assertEqual(result['error'], "URL no permitida")
         self.assertEqual(result['markdown'], "")
 
-    @patch('apps.content_extract.requests.get')
-    @patch('apps.content_extract.is_safe_url')
+    @patch('apps.web.blueprints.content_extract.requests.get')
+    @patch('apps.web.blueprints.content_extract.is_safe_url')
     def test_clean_error(self, mock_is_safe, mock_get):
         mock_is_safe.return_value = True
         mock_get.side_effect = Exception("Network Error")

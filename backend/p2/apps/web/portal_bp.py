@@ -10,7 +10,7 @@ def get_clients_db():
     try:
         # Use absolute path to ensure the file is found regardless of CWD
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        file_path = os.path.join(base_dir, 'clients_db.json')
+        file_path = os.path.join(base_dir, '..', 'data', 'clients_db.json')
         with open(file_path, 'r') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
