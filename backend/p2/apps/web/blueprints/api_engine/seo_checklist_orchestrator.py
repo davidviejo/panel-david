@@ -4,6 +4,7 @@ import concurrent.futures
 import re
 import json
 import requests
+from flask import current_app
 from typing import Dict, Any, List, Optional
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -92,8 +93,8 @@ def run_orchestrated_checklist(
                 provider_used = provider
 
                 # Apply Limits
-                max_kw_env = int(os.environ.get('ENGINE_MAX_KEYWORDS_PER_URL', 20))
-                max_comp_env = int(os.environ.get('ENGINE_MAX_COMPETITORS_PER_KEYWORD', 5))
+                max_kw_env = current_app.config.get('ENGINE_MAX_KEYWORDS_PER_URL', 20)
+                max_comp_env = current_app.config.get('ENGINE_MAX_COMPETITORS_PER_KEYWORD', 5)
 
                 req_kw = int(serp_section.get('maxKeywordsPerUrl', 20))
                 req_comp = int(serp_section.get('maxCompetitorsPerKeyword', 5))
@@ -119,8 +120,8 @@ def run_orchestrated_checklist(
         if analyze_competitors or serp_api_confirmed:
             advanced_mode = True
             # Apply defaults for legacy calls too
-            max_kw_env = int(os.environ.get('ENGINE_MAX_KEYWORDS_PER_URL', 20))
-            max_comp_env = int(os.environ.get('ENGINE_MAX_COMPETITORS_PER_KEYWORD', 5))
+            max_kw_env = current_app.config.get('ENGINE_MAX_KEYWORDS_PER_URL', 20)
+            max_comp_env = current_app.config.get('ENGINE_MAX_COMPETITORS_PER_KEYWORD', 5)
 
             serp_cfg = {
                 'provider': serp_provider or 'auto',

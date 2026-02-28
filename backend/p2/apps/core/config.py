@@ -41,3 +41,8 @@ class Config:
     # Job Runner Configuration
     JOBS_CONCURRENCY_LIMIT = int(os.environ.get('JOBS_CONCURRENCY_LIMIT', 2))
     JOBS_POLL_INTERVAL = int(os.environ.get('JOBS_POLL_INTERVAL', 5))
+
+    # API Engine Limits
+    ENGINE_MAX_KEYWORDS_PER_URL = int(os.environ.get('ENGINE_MAX_KEYWORDS_PER_URL', 20))
+    ENGINE_MAX_COMPETITORS_PER_KEYWORD = int(os.environ.get('ENGINE_MAX_COMPETITORS_PER_KEYWORD', 5))
+    ENGINE_MAX_URLS_PER_BATCH = int(os.environ.get('ENGINE_MAX_URLS_PER_BATCH', 100))
