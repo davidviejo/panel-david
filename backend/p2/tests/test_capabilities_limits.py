@@ -48,11 +48,11 @@ class TestCapabilitiesAndLimits(unittest.TestCase):
 
     @patch('apps.web.blueprints.api_engine.routes.get_user_settings')
     @patch.dict(os.environ, {
-        'SERPAPI_KEY': 'env_key',
-        'ENGINE_MAX_KEYWORDS_PER_URL': '50'
+        'SERPAPI_KEY': 'env_key'
     }, clear=True)
     def test_capabilities_env(self, mock_settings):
         mock_settings.return_value = {}
+        self.app.config['ENGINE_MAX_KEYWORDS_PER_URL'] = 50
         response = self.client.get('/api/capabilities')
         data = response.json
 
@@ -102,23 +102,22 @@ class TestCapabilitiesAndLimits(unittest.TestCase):
             m_dispatcher.return_value = [] # Return empty list to avoid processing
             m_scrape.return_value = {}
 
-            # Set ENV limits
-            with patch.dict(os.environ, {
-                'ENGINE_MAX_KEYWORDS_PER_URL': '30',
-                'ENGINE_MAX_COMPETITORS_PER_KEYWORD': '4'
-            }):
-                response = self.client.post('/api/analyze', json=payload)
-                self.assertEqual(response.status_code, 200)
-                data = response.json
+            # Set App Config limits
+            self.app.config['ENGINE_MAX_KEYWORDS_PER_URL'] = 30
+            self.app.config['ENGINE_MAX_COMPETITORS_PER_KEYWORD'] = 4
 
-                self.assertIn('appliedLimits', data)
-                # Should be min(100, 30) = 30
-                self.assertEqual(data['appliedLimits']['maxKeywordsPerUrl'], 30)
-                # Should be min(10, 4) = 4
-                self.assertEqual(data['appliedLimits']['maxCompetitorsPerKeyword'], 4)
+            response = self.client.post('/api/analyze', json=payload)
+            self.assertEqual(response.status_code, 200)
+            data = response.json
 
-                self.assertEqual(data.get('providerUsed'), 'serpapi')
-                self.assertTrue(data.get('advancedExecuted'))
+            self.assertIn('appliedLimits', data)
+            # Should be min(100, 30) = 30
+            self.assertEqual(data['appliedLimits']['maxKeywordsPerUrl'], 30)
+            # Should be min(10, 4) = 4
+            self.assertEqual(data['appliedLimits']['maxCompetitorsPerKeyword'], 4)
+
+            self.assertEqual(data.get('providerUsed'), 'serpapi')
+            self.assertTrue(data.get('advancedExecuted'))
 
     @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.get_user_settings')
     @patch('apps.web.blueprints.api_engine.seo_checklist_orchestrator.fetch_url_hybrid')

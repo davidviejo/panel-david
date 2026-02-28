@@ -1,5 +1,5 @@
 import os
-from flask import jsonify, request
+from flask import jsonify, request, current_app
 from datetime import datetime
 from apps.utils import safe_get_json, clean_url, is_safe_url
 from apps.core.database import get_user_settings
@@ -83,10 +83,10 @@ def capabilities():
         "internal": True
     }
 
-    # Hard limits from Env or defaults
-    max_kw = int(os.environ.get('ENGINE_MAX_KEYWORDS_PER_URL', 20))
-    max_comp = int(os.environ.get('ENGINE_MAX_COMPETITORS_PER_KEYWORD', 5))
-    max_urls = int(os.environ.get('ENGINE_MAX_URLS_PER_BATCH', 100))
+    # Hard limits from Config
+    max_kw = current_app.config.get('ENGINE_MAX_KEYWORDS_PER_URL', 20)
+    max_comp = current_app.config.get('ENGINE_MAX_COMPETITORS_PER_KEYWORD', 5)
+    max_urls = current_app.config.get('ENGINE_MAX_URLS_PER_BATCH', 100)
 
     limits = {
         "maxKeywordsPerUrl": max_kw,
