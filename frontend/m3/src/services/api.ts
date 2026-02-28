@@ -99,10 +99,10 @@ export const api = {
   },
 
   runOperatorTool: async (tool: string) => {
-     const res = await fetch(`${API_URL}/api/tools/run/${tool}`, {
+    const res = await fetch(`${API_URL}/api/tools/run/${tool}`, {
       method: 'POST',
       headers: api.getHeaders(),
     });
     return res.json();
-  }
+  },
 };

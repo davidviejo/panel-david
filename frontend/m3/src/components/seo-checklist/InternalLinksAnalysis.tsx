@@ -82,18 +82,22 @@ export const InternalLinksAnalysis: React.FC<Props> = ({ internal_links }) => {
           <div className="text-xs text-slate-400 font-bold uppercase">Destinos Únicos</div>
         </div>
 
-         <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700 flex flex-col justify-center">
-             <div className="flex items-center gap-2 mb-2 text-xs font-bold text-slate-500 uppercase">
-                 <Type size={14} /> Top Anchors
-             </div>
-             <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
-                 {topAnchors.map(([anchor, count], i) => (
-                     <li key={i} className="flex justify-between items-center">
-                         <span className="truncate max-w-[120px]" title={anchor}>{anchor}</span>
-                         <span className="font-mono bg-slate-200 dark:bg-slate-700 px-1.5 rounded text-[10px]">{count}</span>
-                     </li>
-                 ))}
-             </ul>
+        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700 flex flex-col justify-center">
+          <div className="flex items-center gap-2 mb-2 text-xs font-bold text-slate-500 uppercase">
+            <Type size={14} /> Top Anchors
+          </div>
+          <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+            {topAnchors.map(([anchor, count], i) => (
+              <li key={i} className="flex justify-between items-center">
+                <span className="truncate max-w-[120px]" title={anchor}>
+                  {anchor}
+                </span>
+                <span className="font-mono bg-slate-200 dark:bg-slate-700 px-1.5 rounded text-[10px]">
+                  {count}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
@@ -105,7 +109,9 @@ export const InternalLinksAnalysis: React.FC<Props> = ({ internal_links }) => {
               <th className="px-3 py-2">Anchor</th>
               <th className="px-3 py-2">URL Destino</th>
               <th className="px-3 py-2 text-center">Rel</th>
-              <th className="px-3 py-2 text-center" title="Target Blank">Blank</th>
+              <th className="px-3 py-2 text-center" title="Target Blank">
+                Blank
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-900">
@@ -120,18 +126,18 @@ export const InternalLinksAnalysis: React.FC<Props> = ({ internal_links }) => {
                 <td className="px-3 py-2 text-center">
                   <span
                     className={`inline-block px-2 py-0.5 rounded-[4px] text-[10px] font-bold border uppercase tracking-wide ${getTypeStyle(
-                      link.type
+                      link.type,
                     )}`}
                   >
                     {link.type}
                   </span>
                 </td>
                 <td className="px-3 py-2 text-center">
-                    {link.target_blank ? (
-                        <Check size={16} className="text-emerald-500 mx-auto" />
-                    ) : (
-                        <span className="text-slate-300">-</span>
-                    )}
+                  {link.target_blank ? (
+                    <Check size={16} className="text-emerald-500 mx-auto" />
+                  ) : (
+                    <span className="text-slate-300">-</span>
+                  )}
                 </td>
               </tr>
             ))}

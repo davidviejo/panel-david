@@ -28,16 +28,21 @@ vi.mock('../../services/openaiService', () => ({
 // Mock DnD to render children directly
 vi.mock('@hello-pangea/dnd', () => ({
   DragDropContext: ({ children }: any) => <div>{children}</div>,
-  Droppable: ({ children }: any) => children({
-    draggableProps: {},
-    innerRef: vi.fn(),
-    placeholder: null,
-  }),
-  Draggable: ({ children, draggableId, index }: any) => children({
-    draggableProps: { 'data-testid': `draggable-${draggableId}` },
-    dragHandleProps: {},
-    innerRef: vi.fn(),
-  }, { isDragging: false }),
+  Droppable: ({ children }: any) =>
+    children({
+      draggableProps: {},
+      innerRef: vi.fn(),
+      placeholder: null,
+    }),
+  Draggable: ({ children, draggableId, index }: any) =>
+    children(
+      {
+        draggableProps: { 'data-testid': `draggable-${draggableId}` },
+        dragHandleProps: {},
+        innerRef: vi.fn(),
+      },
+      { isDragging: false },
+    ),
 }));
 
 // Create a large dataset
@@ -51,18 +56,20 @@ const generateModules = (count: number): ModuleData[] => {
     isInCustomRoadmap: true,
     userNotes: '',
     communicated: false,
-    category: 'General'
+    category: 'General',
   }));
 
-  return [{
-    id: 1,
-    title: 'Module 1',
-    tasks: tasks,
-  } as any];
+  return [
+    {
+      id: 1,
+      title: 'Module 1',
+      tasks: tasks,
+    } as any,
+  ];
 };
 
 const modules = generateModules(50); // 50 items to make it significant
-const customRoadmapOrder = modules[0].tasks.map(t => t.id);
+const customRoadmapOrder = modules[0].tasks.map((t) => t.id);
 
 describe('ClientRoadmap Performance', () => {
   it('measures re-render performance when expanding a task', async () => {
@@ -73,7 +80,7 @@ describe('ClientRoadmap Performance', () => {
       actualDuration: number,
       baseDuration: number,
       startTime: number,
-      commitTime: number
+      commitTime: number,
     ) => {
       if (phase === 'update') {
         renderTimes.push(actualDuration);
@@ -98,7 +105,7 @@ describe('ClientRoadmap Performance', () => {
         <Profiler id="ClientRoadmap" onRender={onRender}>
           <ClientRoadmap {...props} />
         </Profiler>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // Find the first task and click to expand

@@ -34,8 +34,7 @@ interface Props {
 const STATUS_COLORS: Record<ChecklistStatus, string> = {
   SI: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800',
   NO: 'text-red-600 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
-  PARCIAL:
-    'text-amber-600 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800',
+  PARCIAL: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800',
   NA: 'text-slate-400 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700',
 };
 
@@ -81,11 +80,7 @@ const JsonViewer = ({ data, title }: { data: any; title?: string }) => {
             className="text-slate-500 hover:text-blue-600 transition-colors"
             title="Copiar"
           >
-            {copied ? (
-              <CheckCircle2 size={14} className="text-emerald-500" />
-            ) : (
-              <Copy size={14} />
-            )}
+            {copied ? <CheckCircle2 size={14} className="text-emerald-500" /> : <Copy size={14} />}
           </button>
         </div>
       </div>
@@ -232,7 +227,7 @@ export const ChecklistItem: React.FC<Props> = ({ item, onChange }) => {
           {/* Client Block */}
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700 space-y-4">
             <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
-               <Target size={14} /> Cliente
+              <Target size={14} /> Cliente
             </div>
             <div>
               <span className="text-xs text-slate-500 font-semibold uppercase block mb-2">
@@ -277,53 +272,65 @@ export const ChecklistItem: React.FC<Props> = ({ item, onChange }) => {
           </div>
 
           {/* Competitors Accordion */}
-          {competitorSchemas && Array.isArray(competitorSchemas) && competitorSchemas.length > 0 && (
+          {competitorSchemas &&
+            Array.isArray(competitorSchemas) &&
+            competitorSchemas.length > 0 && (
               <details className="group bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <summary className="flex items-center gap-2 p-3 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase cursor-pointer select-none">
-                      <ChevronRight size={16} className="transition-transform group-open:rotate-90" />
-                      <Target size={14} /> Competidores ({competitorSchemas.length})
-                  </summary>
-                  <div className="p-3 pt-0 border-t border-slate-200 dark:border-slate-700 mt-2 space-y-4">
-                      {competitorSchemas.map((comp: any, index: number) => (
-                          <div key={index} className="border-b border-slate-200 dark:border-slate-700 last:border-0 pb-4 last:pb-0">
-                              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2 truncate" title={comp.url}>
-                                  {comp.domain || comp.url}
-                              </h4>
-                              {comp.schemasParsed && comp.schemasParsed.length > 0 ? (
-                                  <details className="group/inner mb-2">
-                                      <summary className="text-[10px] text-blue-600 dark:text-blue-400 cursor-pointer select-none">
-                                          Ver {comp.schemasParsed.length} schemas
-                                      </summary>
-                                      <div className="flex flex-wrap gap-2 mt-2 pl-2">
-                                          {comp.schemasParsed.map((s: any, j: number) => {
-                                             const label = typeof s === 'string' ? s : s?.['@type'] || JSON.stringify(s);
-                                             return (
-                                              <span key={j} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[10px] text-slate-600 dark:text-slate-400">
-                                                  {label}
-                                              </span>
-                                             )
-                                          })}
-                                      </div>
-                                  </details>
-                              ) : (
-                                  <div className="text-[10px] text-slate-400 italic">Sin schemas válidos</div>
-                              )}
-
-                              {comp.parseErrors && comp.parseErrors.length > 0 && (
-                                  <div className="mt-1">
-                                      <span className="text-[10px] text-red-500 font-bold">Errores:</span>
-                                      <ul className="list-disc list-inside text-[10px] text-red-400 pl-1">
-                                          {comp.parseErrors.map((e: string, k: number) => (
-                                              <li key={k}>{e}</li>
-                                          ))}
-                                      </ul>
-                                  </div>
-                              )}
+                <summary className="flex items-center gap-2 p-3 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase cursor-pointer select-none">
+                  <ChevronRight size={16} className="transition-transform group-open:rotate-90" />
+                  <Target size={14} /> Competidores ({competitorSchemas.length})
+                </summary>
+                <div className="p-3 pt-0 border-t border-slate-200 dark:border-slate-700 mt-2 space-y-4">
+                  {competitorSchemas.map((comp: any, index: number) => (
+                    <div
+                      key={index}
+                      className="border-b border-slate-200 dark:border-slate-700 last:border-0 pb-4 last:pb-0"
+                    >
+                      <h4
+                        className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2 truncate"
+                        title={comp.url}
+                      >
+                        {comp.domain || comp.url}
+                      </h4>
+                      {comp.schemasParsed && comp.schemasParsed.length > 0 ? (
+                        <details className="group/inner mb-2">
+                          <summary className="text-[10px] text-blue-600 dark:text-blue-400 cursor-pointer select-none">
+                            Ver {comp.schemasParsed.length} schemas
+                          </summary>
+                          <div className="flex flex-wrap gap-2 mt-2 pl-2">
+                            {comp.schemasParsed.map((s: any, j: number) => {
+                              const label =
+                                typeof s === 'string' ? s : s?.['@type'] || JSON.stringify(s);
+                              return (
+                                <span
+                                  key={j}
+                                  className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[10px] text-slate-600 dark:text-slate-400"
+                                >
+                                  {label}
+                                </span>
+                              );
+                            })}
                           </div>
-                      ))}
-                  </div>
+                        </details>
+                      ) : (
+                        <div className="text-[10px] text-slate-400 italic">Sin schemas válidos</div>
+                      )}
+
+                      {comp.parseErrors && comp.parseErrors.length > 0 && (
+                        <div className="mt-1">
+                          <span className="text-[10px] text-red-500 font-bold">Errores:</span>
+                          <ul className="list-disc list-inside text-[10px] text-red-400 pl-1">
+                            {comp.parseErrors.map((e: string, k: number) => (
+                              <li key={k}>{e}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </details>
-          )}
+            )}
 
           {/* Always show robust JSON viewer */}
           <JsonViewer data={item.autoData} title="Bruto del Análisis" />
@@ -455,11 +462,11 @@ export const ChecklistItem: React.FC<Props> = ({ item, onChange }) => {
 
           {/* Clustering Analysis with Warning if not executed */}
           {clustering && clustering.executed === false ? (
-              <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400 italic text-center">
-                  Clustering no ejecutado: {clustering.reason || 'Razón desconocida'}
-              </div>
+            <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400 italic text-center">
+              Clustering no ejecutado: {clustering.reason || 'Razón desconocida'}
+            </div>
           ) : (
-             <ClusteringAnalysis data={item.autoData} />
+            <ClusteringAnalysis data={item.autoData} />
           )}
 
           {/* Zero Click Opportunities */}
@@ -515,24 +522,26 @@ export const ChecklistItem: React.FC<Props> = ({ item, onChange }) => {
                 <List size={14} /> Términos Competidores
               </div>
               <div className="flex flex-wrap gap-2">
-                {competitorTerms.slice(0, 15).map((item: string | { term: string; count: number }, i: number) => {
-                  let display = '';
-                  if (typeof item === 'string') {
-                     // Legacy: remove trailing digits for display if terminos3 format
-                     display = item.replace(/\s\d+$/, '');
-                  } else if (item && typeof item === 'object') {
-                     display = `${item.term} (${item.count})`;
-                  }
+                {competitorTerms
+                  .slice(0, 15)
+                  .map((item: string | { term: string; count: number }, i: number) => {
+                    let display = '';
+                    if (typeof item === 'string') {
+                      // Legacy: remove trailing digits for display if terminos3 format
+                      display = item.replace(/\s\d+$/, '');
+                    } else if (item && typeof item === 'object') {
+                      display = `${item.term} (${item.count})`;
+                    }
 
-                  return (
-                    <span
-                      key={i}
-                      className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs text-slate-600 dark:text-slate-300"
-                    >
-                      {display}
-                    </span>
-                  );
-                })}
+                    return (
+                      <span
+                        key={i}
+                        className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-xs text-slate-600 dark:text-slate-300"
+                      >
+                        {display}
+                      </span>
+                    );
+                  })}
               </div>
             </div>
           )}
@@ -543,22 +552,24 @@ export const ChecklistItem: React.FC<Props> = ({ item, onChange }) => {
                 <BrainCircuit size={14} /> Gap Semántico (Sugeridos)
               </div>
               <div className="flex flex-wrap gap-2">
-                {semanticGapTerms.slice(0, 15).map((item: string | { term: string; count: number }, i: number) => {
-                   let display = '';
-                   if (typeof item === 'string') {
+                {semanticGapTerms
+                  .slice(0, 15)
+                  .map((item: string | { term: string; count: number }, i: number) => {
+                    let display = '';
+                    if (typeof item === 'string') {
                       display = item.replace(/\s\d+$/, '');
-                   } else if (item && typeof item === 'object') {
+                    } else if (item && typeof item === 'object') {
                       display = `${item.term} (${item.count})`;
-                   }
-                  return (
-                    <span
-                      key={i}
-                      className="px-2 py-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded text-xs text-indigo-700 dark:text-indigo-300 font-medium"
-                    >
-                      {display}
-                    </span>
-                  );
-                })}
+                    }
+                    return (
+                      <span
+                        key={i}
+                        className="px-2 py-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded text-xs text-indigo-700 dark:text-indigo-300 font-medium"
+                      >
+                        {display}
+                      </span>
+                    );
+                  })}
               </div>
             </div>
           )}

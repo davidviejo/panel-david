@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
-import { SeoPage, ChecklistItem, CHECKLIST_POINTS, Capabilities, AnalysisConfigPayload } from '../../types/seoChecklist';
+import {
+  SeoPage,
+  ChecklistItem,
+  CHECKLIST_POINTS,
+  Capabilities,
+  AnalysisConfigPayload,
+} from '../../types/seoChecklist';
 import {
   Trash2,
   ExternalLink,
@@ -66,7 +72,7 @@ export const SeoUrlList: React.FC<Props> = ({
   const totalPages = Math.ceil(filteredPages.length / itemsPerPage);
   const displayedPages = filteredPages.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   const handleFilterChange = (val: string) => {
@@ -198,9 +204,9 @@ export const SeoUrlList: React.FC<Props> = ({
       const wsClusters = XLSX.utils.aoa_to_sheet([clusterHeaders, ...clusterRows]);
       XLSX.utils.book_append_sheet(wb, wsClusters, 'Clusterización (Intenciones)');
     } else {
-        // Create empty sheet with headers if no data
-        const wsClusters = XLSX.utils.aoa_to_sheet([clusterHeaders]);
-        XLSX.utils.book_append_sheet(wb, wsClusters, 'Clusterización (Intenciones)');
+      // Create empty sheet with headers if no data
+      const wsClusters = XLSX.utils.aoa_to_sheet([clusterHeaders]);
+      XLSX.utils.book_append_sheet(wb, wsClusters, 'Clusterización (Intenciones)');
     }
 
     XLSX.writeFile(wb, `SEO_Checklist_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -239,11 +245,11 @@ export const SeoUrlList: React.FC<Props> = ({
     const currentLimits = {
       maxKeywordsPerUrl: Math.min(
         settings.serp.maxKeywordsPerUrl,
-        capabilities?.limits.maxKeywordsPerUrl ?? Infinity
+        capabilities?.limits.maxKeywordsPerUrl ?? Infinity,
       ),
       maxCompetitorsPerKeyword: Math.min(
         settings.serp.maxCompetitorsPerKeyword,
-        capabilities?.limits.maxCompetitorsPerKeyword ?? Infinity
+        capabilities?.limits.maxCompetitorsPerKeyword ?? Infinity,
       ),
     };
 
@@ -303,11 +309,11 @@ export const SeoUrlList: React.FC<Props> = ({
     const currentLimits = {
       maxKeywordsPerUrl: Math.min(
         settings.serp.maxKeywordsPerUrl,
-        capabilities?.limits.maxKeywordsPerUrl ?? Infinity
+        capabilities?.limits.maxKeywordsPerUrl ?? Infinity,
       ),
       maxCompetitorsPerKeyword: Math.min(
         settings.serp.maxCompetitorsPerKeyword,
-        capabilities?.limits.maxCompetitorsPerKeyword ?? Infinity
+        capabilities?.limits.maxCompetitorsPerKeyword ?? Infinity,
       ),
     };
 
@@ -364,10 +370,7 @@ export const SeoUrlList: React.FC<Props> = ({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
         <div className="relative flex-1 w-full">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            size={18}
-          />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
             placeholder="Filtrar por URL, Keyword o Cluster..."
@@ -478,14 +481,14 @@ export const SeoUrlList: React.FC<Props> = ({
             </button>
 
             {onRunBatch && (
-                <button
+              <button
                 onClick={handleServerBatch}
                 disabled={isAnalyzing}
                 className="flex items-center gap-2 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
-                >
+              >
                 <Server size={14} />
                 Run Batch Analysis
-                </button>
+              </button>
             )}
 
             <button
@@ -516,9 +519,7 @@ export const SeoUrlList: React.FC<Props> = ({
                 <th className="px-6 py-4 w-10">
                   <input
                     type="checkbox"
-                    checked={
-                      selectedIds.size === filteredPages.length && filteredPages.length > 0
-                    }
+                    checked={selectedIds.size === filteredPages.length && filteredPages.length > 0}
                     onChange={toggleSelectAll}
                     className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
@@ -547,10 +548,7 @@ export const SeoUrlList: React.FC<Props> = ({
                       className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                   </td>
-                  <td
-                    className="px-6 py-4 font-medium max-w-[300px] truncate"
-                    title={page.url}
-                  >
+                  <td className="px-6 py-4 font-medium max-w-[300px] truncate" title={page.url}>
                     <div className="flex items-center gap-2">
                       <span
                         onClick={() => onSelect(page)}
@@ -602,9 +600,7 @@ export const SeoUrlList: React.FC<Props> = ({
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right text-xs text-slate-400">
-                    {page.lastAnalyzedAt
-                      ? new Date(page.lastAnalyzedAt).toLocaleDateString()
-                      : '-'}
+                    {page.lastAnalyzedAt ? new Date(page.lastAnalyzedAt).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -644,7 +640,7 @@ export const SeoUrlList: React.FC<Props> = ({
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
                 className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-slate-700"
               >
@@ -654,7 +650,7 @@ export const SeoUrlList: React.FC<Props> = ({
                 Page {currentPage} of {totalPages}
               </div>
               <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
                 className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-slate-700"
               >

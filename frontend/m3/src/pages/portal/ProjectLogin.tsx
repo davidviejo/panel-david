@@ -39,12 +39,16 @@ const ProjectLogin: React.FC = () => {
             <Key className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Acceso a Proyecto</h1>
-          <p className="text-slate-500 mt-2">Proyecto: <span className="font-semibold text-slate-700">{slug}</span></p>
+          <p className="text-slate-500 mt-2">
+            Proyecto: <span className="font-semibold text-slate-700">{slug}</span>
+          </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Clave del Proyecto</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Clave del Proyecto
+            </label>
             <input
               type="password"
               value={password}
@@ -70,8 +74,11 @@ const ProjectLogin: React.FC = () => {
             {loading ? 'Desbloquear' : 'Entrar'}
           </button>
         </form>
-         <div className="mt-6 text-center">
-          <button onClick={() => navigate('/clientes')} className="text-sm text-slate-400 hover:text-slate-600">
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => navigate('/clientes')}
+            className="text-sm text-slate-400 hover:text-slate-600"
+          >
             ← Volver a lista de clientes
           </button>
         </div>

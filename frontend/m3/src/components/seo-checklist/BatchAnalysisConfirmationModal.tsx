@@ -77,7 +77,13 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
             </div>
             <div className="flex justify-between text-base font-semibold pt-2 border-t border-slate-100 dark:border-slate-800">
               <span>Coste Estimado:</span>
-              <span className={estimatedCost > budgets.maxEstimatedCostPerBatch ? 'text-red-500' : 'text-emerald-500'}>
+              <span
+                className={
+                  estimatedCost > budgets.maxEstimatedCostPerBatch
+                    ? 'text-red-500'
+                    : 'text-emerald-500'
+                }
+              >
                 €{estimatedCost.toFixed(3)}
               </span>
             </div>

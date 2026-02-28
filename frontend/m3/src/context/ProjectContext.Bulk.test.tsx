@@ -16,7 +16,7 @@ vi.mock('../services/clientRepository', () => ({
           { id: 9, title: 'Module 9', tasks: [], isCustom: true },
         ],
         customRoadmapOrder: [],
-      }
+      },
     ]),
     getGeneralNotes: vi.fn().mockReturnValue([]),
     getCurrentClientId: vi.fn().mockReturnValue('client-1'),
@@ -52,7 +52,7 @@ describe('ProjectContext - addTasksBulk', () => {
     render(
       <ProjectProvider>
         <TestComponent onMount={onMount} />
-      </ProjectProvider>
+      </ProjectProvider>,
     );
 
     const tasksToAdd = [

@@ -216,6 +216,97 @@ def set_preference():
 
     return jsonify({'status': 'ok', 'message': 'Configuración actualizada correctamente'})
 
+@ai_bp.route('/ai/seo-analysis', methods=['POST'])
+def seo_analysis_endpoint():
+    """Genera un análisis SEO utilizando Google Gemini desde el backend."""
+    data = request.get_json(silent=True) or {}
+    content = data.get('content')
+    analysis_type = data.get('type')
+    vertical = data.get('vertical')
+
+    if not content or not analysis_type:
+        return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+
+    system_instruction = (
+        'CRITICAL INSTRUCTION: You are an SEO Expert Tool. Do NOT invent, simulate, or hallucinate data, '
+        'metrics, traffic numbers, or statistics. If the user input does not contain enough information '
+        'to perform a specific analysis (e.g. they provide a URL but you cannot crawl it), explicitly '
+        'state what information is missing and provide theoretical advice based ONLY on the visible text '
+        'provided. Base your analysis STRICTLY on the provided input text and general SEO best practices.'
+    )
+
+    prompt = ""
+    if analysis_type == 'headline':
+        prompt = f'{system_instruction}\n    Actúa como un Experto SEO. Analiza el siguiente texto y proporciona 3 variaciones optimizadas de H1 y una Meta Description (máx 155 caracteres) optimizada para CTR. Responde en Español.\n    \n    Texto: "{content}"'
+    elif analysis_type == 'audit':
+        prompt = f'{system_instruction}\n    Actúa como Auditor SEO Técnico. Proporciona una lista de comprobaciones basada en el input: "{content}". Si el input es una URL, menciona claramente que NO puedes rastrear la web en tiempo real pero da recomendaciones generales basadas en la estructura visible de la URL o el tema inferido. Responde en Español.'
+    elif analysis_type == 'schema':
+        prompt = f'{system_instruction}\n    Actúa como Desarrollador SEO Técnico. Genera un marcado Schema \'NewsArticle\' JSON-LD válido para: "{content}". Usa marcadores genéricos (ej: "URL_AQUI", "FECHA_AQUI") para datos que no estén explícitamente en el texto. NO inventes autores o fechas si no se dan. Muestra SOLO el código JSON.'
+    elif analysis_type == 'calendar':
+        prompt = f'{system_instruction}\n    Actúa como Redactor Jefe. Crea un calendario de contenidos de 5 días enfocado en el tema: "{content}". Sugiere ángulos \'Breaking News\' y \'Evergreen\'. Responde en Español.'
+    elif analysis_type == 'competitor':
+        prompt = f'{system_instruction}\n    Actúa como Estratega SEO. Analiza la estrategia de contenido típica para un sitio del tipo: "{content}". Identifica oportunidades teóricas de "Océano Azul". NO inventes competidores ni métricas de tráfico. Responde en Español.'
+    elif analysis_type == 'tone':
+        prompt = f'{system_instruction}\n    Actúa como Editor Senior. Analiza el tono de voz del texto. Da una puntuación del 1-10 en "Objetividad" basada SOLO en el texto.\n    Texto: "{content}"'
+    elif analysis_type == 'roadmap':
+        v = vertical or 'media'
+        role = 'Estratega SEO General'
+        focus = 'Visibilidad General'
+
+        if v == 'media':
+            role = 'Director SEO de Medio de Comunicación'
+            focus = 'Google Discover, Top Stories, Velocidad'
+        elif v == 'ecom':
+            role = 'Head of SEO para E-commerce'
+            focus = 'Fichas de Producto, Categorías, Crawl Budget'
+        elif v == 'local':
+            role = 'Especialista SEO Local'
+            focus = 'Google Business Profile, Citaciones, Reseñas'
+        elif v == 'national':
+            role = 'Consultor SEO Nacional'
+            focus = 'Arquitectura Web, Contenidos, Autoridad de Marca'
+        elif v == 'international':
+            role = 'Estratega SEO Internacional'
+            focus = 'Hreflang, Localización, Dominios Globales'
+
+        prompt = f'{system_instruction}\n    Actúa como {role}. Crea un Roadmap Estratégico de 6 meses para: "{content}".\n    Enfoque: {focus}.\n    Estructura (Markdown):\n    1. Diagnóstico Inicial (Teórico basado en input)\n    2. Fases (Mes 1-6)\n    3. KPIs Recomendados (Genéricos para el vertical)\n\n    Responde en Español.'
+    else:
+        return jsonify({'error': 'Tipo de análisis no válido'}), 400
+
+    from apps.llm_service import _query_google
+    import os
+    # Intentar obtener API Key de varios lugares para retrocompatibilidad
+    api_key = session.get('google_key') or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    result = _query_google(prompt, model='gemini-2.0-flash', api_key=api_key)
+    return jsonify({'result': result})
+
+@ai_bp.route('/ai/headline-challenge', methods=['POST'])
+def headline_challenge_endpoint():
+    """Evalúa un titular para SEO y CTR usando Google Gemini desde el backend."""
+    data = request.get_json(silent=True) or {}
+    headline = data.get('headline')
+    keywords = data.get('keywords')
+
+    if not headline or not keywords:
+        return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+
+    prompt = (
+        f'Puntúa este titular de última hora en una escala de 0-100 por impacto SEO y CTR.\n'
+        f'  Keywords Objetivo: "{keywords}"\n'
+        f'  Titular: "{headline}"\n  \n'
+        f'  Formato de salida:\n'
+        f'  PUNTUACION: [número]\n'
+        f'  FEEDBACK: [Una frase de crítica en Español]\n'
+        f'  MEJOR_VERSION: [Una variación mejorada en Español]\n  \n'
+        f'  Sé estricto pero justo. Puntuaciones altas requieren match exacto de keyword y gancho emocional.'
+    )
+
+    from apps.llm_service import _query_google
+    import os
+    api_key = session.get('google_key') or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    result = _query_google(prompt, model='gemini-2.0-flash', api_key=api_key)
+    return jsonify({'result': result})
+
 @ai_bp.route('/ai/generate', methods=['POST'])
 def generate_endpoint():
     """Endpoint directo para ejecutar tareas con modelos gratuitos."""

@@ -93,90 +93,103 @@ export const CHECKLIST_POINTS: ChecklistPointDef[] = [
     key: 'CLUSTER',
     label: '1. Cluster',
     type: 'MANUAL',
-    learning: 'El cluster define la agrupación temática a la que pertenece la URL. Verifica que la página esté correctamente categorizada dentro de la arquitectura del sitio para potenciar la autoridad temática.'
+    learning:
+      'El cluster define la agrupación temática a la que pertenece la URL. Verifica que la página esté correctamente categorizada dentro de la arquitectura del sitio para potenciar la autoridad temática.',
   },
   {
     key: 'GEOLOCALIZACION',
     label: '2. Geolocalización',
     type: 'AUTO',
-    learning: 'Revisión de etiquetas hreflang y configuración regional para asegurar que el contenido se muestra al público objetivo correcto.'
+    learning:
+      'Revisión de etiquetas hreflang y configuración regional para asegurar que el contenido se muestra al público objetivo correcto.',
   },
   {
     key: 'DATOS_ESTRUCTURADOS',
     label: '3. Datos estructurados',
     type: 'AUTO',
-    learning: 'Validación de Schema.org para mejorar la comprensión del contenido por parte de los motores de búsqueda y potenciar los fragmentos enriquecidos.'
+    learning:
+      'Validación de Schema.org para mejorar la comprensión del contenido por parte de los motores de búsqueda y potenciar los fragmentos enriquecidos.',
   },
   {
     key: 'CONTENIDOS',
     label: '4. Contenidos',
     type: 'MANUAL',
-    learning: 'Análisis de la calidad, originalidad y relevancia del contenido. Debe satisfacer la intención de búsqueda del usuario.'
+    learning:
+      'Análisis de la calidad, originalidad y relevancia del contenido. Debe satisfacer la intención de búsqueda del usuario.',
   },
   {
     key: 'SNIPPETS',
     label: '5. Snippets',
     type: 'MIXED',
-    learning: 'Optimización de Title y Meta Description para mejorar el CTR en los resultados de búsqueda.'
+    learning:
+      'Optimización de Title y Meta Description para mejorar el CTR en los resultados de búsqueda.',
   },
   {
     key: 'IMAGENES',
     label: '6. Imágenes',
     type: 'AUTO',
-    learning: 'Verificación de atributos ALT, tamaño de archivo y formatos modernos (WebP) para mejorar la accesibilidad y velocidad.'
+    learning:
+      'Verificación de atributos ALT, tamaño de archivo y formatos modernos (WebP) para mejorar la accesibilidad y velocidad.',
   },
   {
     key: 'ENLAZADO_INTERNO',
     label: '7. Enlazado interno',
     type: 'MIXED',
-    learning: 'Evaluación de la estructura de enlaces internos para distribuir el Link Juice y facilitar la navegación del usuario y los crawlers.'
+    learning:
+      'Evaluación de la estructura de enlaces internos para distribuir el Link Juice y facilitar la navegación del usuario y los crawlers.',
   },
   {
     key: 'ESTRUCTURA',
     label: '8. Estructura',
     type: 'MANUAL',
-    learning: 'Revisión de la jerarquía de encabezados (H1, H2, H3...) para asegurar una lectura lógica y semántica.'
+    learning:
+      'Revisión de la jerarquía de encabezados (H1, H2, H3...) para asegurar una lectura lógica y semántica.',
   },
   {
     key: 'UX',
     label: '9. UX',
     type: 'MANUAL',
-    learning: 'Experiencia de usuario: facilidad de uso, legibilidad y ausencia de elementos intrusivos.'
+    learning:
+      'Experiencia de usuario: facilidad de uso, legibilidad y ausencia de elementos intrusivos.',
   },
   {
     key: 'WPO',
     label: '10. WPO',
     type: 'AUTO',
-    learning: 'Web Performance Optimization: Tiempos de carga y Core Web Vitals (LCP, FID/INP, CLS).'
+    learning:
+      'Web Performance Optimization: Tiempos de carga y Core Web Vitals (LCP, FID/INP, CLS).',
   },
   {
     key: 'ENLACE',
     label: '11. Enlace',
     type: 'MANUAL',
-    learning: 'Análisis del perfil de enlaces externos (backlinks) que apuntan a esta URL.'
+    learning: 'Análisis del perfil de enlaces externos (backlinks) que apuntan a esta URL.',
   },
   {
     key: 'OPORTUNIDADES',
     label: '12. Oportunidades VS KWs Objetivo',
     type: 'MANUAL',
-    learning: 'Identificación de keywords secundarias o variaciones semánticas que se pueden atacar para ganar más tráfico.'
+    learning:
+      'Identificación de keywords secundarias o variaciones semánticas que se pueden atacar para ganar más tráfico.',
   },
   {
     key: 'SEMANTICA',
     label: '13. Semántica',
     type: 'MANUAL',
-    learning: 'Uso de vocabulario relacionado y entidades para enriquecer el contexto del contenido.'
+    learning:
+      'Uso de vocabulario relacionado y entidades para enriquecer el contexto del contenido.',
   },
   {
     key: 'GEO_IMAGENES',
     label: '14. Geolocalización de imágenes',
     type: 'AUTO',
-    learning: 'Verificación de metadatos de ubicación en imágenes si es relevante para SEO local.'
+    learning: 'Verificación de metadatos de ubicación en imágenes si es relevante para SEO local.',
   },
   {
     key: 'CTA',
     label: '15. Llamada a la acción',
     type: 'MANUAL',
-    learning: 'Presencia y efectividad de los Call to Action para convertir el tráfico en objetivos.'
+    learning:
+      'Presencia y efectividad de los Call to Action para convertir el tráfico en objetivos.',
   },
 ];

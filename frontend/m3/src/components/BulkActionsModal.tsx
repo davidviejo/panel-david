@@ -34,22 +34,28 @@ const BulkActionsModal: React.FC<BulkActionsModalProps> = ({ isOpen, onClose }) 
   const [urls, setUrls] = useState('');
 
   // Find the first module with isCustom: true, or default to the last one if none found
-  const defaultModuleId = useMemo(() =>
-    modules.find((m) => m.isCustom)?.id || modules[modules.length - 1]?.id || 0
-  , [modules]);
+  const defaultModuleId = useMemo(
+    () => modules.find((m) => m.isCustom)?.id || modules[modules.length - 1]?.id || 0,
+    [modules],
+  );
 
   const [targetModuleId, setTargetModuleId] = useState<number>(defaultModuleId);
 
   // Update targetModuleId when modules change or on open if not set
   useEffect(() => {
     if (isOpen) {
-        setTargetModuleId(defaultModuleId);
+      setTargetModuleId(defaultModuleId);
     }
   }, [isOpen, defaultModuleId]);
 
-  const urlList = useMemo(() =>
-    urls.split('\n').map((u) => u.trim()).filter((u) => u.length > 0)
-  , [urls]);
+  const urlList = useMemo(
+    () =>
+      urls
+        .split('\n')
+        .map((u) => u.trim())
+        .filter((u) => u.length > 0),
+    [urls],
+  );
 
   if (!isOpen) return null;
 
@@ -110,12 +116,13 @@ const BulkActionsModal: React.FC<BulkActionsModalProps> = ({ isOpen, onClose }) 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-
         {/* Header */}
         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">Acciones Masivas</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Crea múltiples tareas para varias URLs.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Crea múltiples tareas para varias URLs.
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -127,7 +134,6 @@ const BulkActionsModal: React.FC<BulkActionsModalProps> = ({ isOpen, onClose }) 
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-
           {/* Module Selector */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -140,7 +146,7 @@ const BulkActionsModal: React.FC<BulkActionsModalProps> = ({ isOpen, onClose }) 
             >
               {modules.map((m) => (
                 <option key={m.id} value={m.id}>
-                   {m.id}. {m.title}
+                  {m.id}. {m.title}
                 </option>
               ))}
             </select>
@@ -172,7 +178,9 @@ const BulkActionsModal: React.FC<BulkActionsModalProps> = ({ isOpen, onClose }) 
                 onClick={handleSelectAll}
                 className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
               >
-                {selectedActions.size === ACTION_TYPES.length ? 'Deseleccionar todo' : 'Seleccionar todo'}
+                {selectedActions.size === ACTION_TYPES.length
+                  ? 'Deseleccionar todo'
+                  : 'Seleccionar todo'}
               </button>
             </div>
 
@@ -187,11 +195,13 @@ const BulkActionsModal: React.FC<BulkActionsModalProps> = ({ isOpen, onClose }) 
                       : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300'
                   }`}
                 >
-                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                    selectedActions.has(action)
-                      ? 'bg-blue-500 border-blue-500'
-                      : 'border-slate-400 bg-white dark:bg-slate-800'
-                  }`}>
+                  <div
+                    className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                      selectedActions.has(action)
+                        ? 'bg-blue-500 border-blue-500'
+                        : 'border-slate-400 bg-white dark:bg-slate-800'
+                    }`}
+                  >
                     {selectedActions.has(action) && <Check size={10} className="text-white" />}
                   </div>
                   <span className="truncate">{action}</span>
@@ -199,7 +209,6 @@ const BulkActionsModal: React.FC<BulkActionsModalProps> = ({ isOpen, onClose }) 
               ))}
             </div>
           </div>
-
         </div>
 
         {/* Footer */}
@@ -216,7 +225,11 @@ const BulkActionsModal: React.FC<BulkActionsModalProps> = ({ isOpen, onClose }) 
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Check size={18} />
-            Crear {urlList.length * selectedActions.size > 0 ? urlList.length * selectedActions.size : ''} Tareas
+            Crear{' '}
+            {urlList.length * selectedActions.size > 0
+              ? urlList.length * selectedActions.size
+              : ''}{' '}
+            Tareas
           </button>
         </div>
       </div>

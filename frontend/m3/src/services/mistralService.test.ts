@@ -35,8 +35,8 @@ describe('Mistral Service', () => {
     });
     // Default mock implementation
     mistralConfig.getEnv = vi.fn().mockReturnValue({
-        VITE_MISTRAL_API_KEY: 'test-key',
-        VITE_MISTRAL_MODEL: '',
+      VITE_MISTRAL_API_KEY: 'test-key',
+      VITE_MISTRAL_MODEL: '',
     });
   });
 
@@ -46,7 +46,7 @@ describe('Mistral Service', () => {
 
   it('should return error message when API key is missing', async () => {
     mistralConfig.getEnv = vi.fn().mockReturnValue({
-        VITE_MISTRAL_API_KEY: '',
+      VITE_MISTRAL_API_KEY: '',
     });
 
     const result = await enhanceTaskWithMistral(mockTask, 'media');
@@ -55,15 +55,15 @@ describe('Mistral Service', () => {
 
   it('should return false for configuration check when missing', () => {
     mistralConfig.getEnv = vi.fn().mockReturnValue({
-        VITE_MISTRAL_API_KEY: '',
+      VITE_MISTRAL_API_KEY: '',
     });
     expect(isMistralConfigured()).toBe(false);
   });
 
   it('should use default model when VITE_MISTRAL_MODEL is not set', async () => {
     mistralConfig.getEnv = vi.fn().mockReturnValue({
-        VITE_MISTRAL_API_KEY: 'test-key',
-        VITE_MISTRAL_MODEL: '',
+      VITE_MISTRAL_API_KEY: 'test-key',
+      VITE_MISTRAL_MODEL: '',
     });
 
     await enhanceTaskWithMistral(mockTask, 'media');
@@ -71,14 +71,14 @@ describe('Mistral Service', () => {
     expect(mockChatComplete).toHaveBeenCalledWith(
       expect.objectContaining({
         model: 'mistral-tiny',
-      })
+      }),
     );
   });
 
   it('should use configured model when VITE_MISTRAL_MODEL is set', async () => {
     mistralConfig.getEnv = vi.fn().mockReturnValue({
-        VITE_MISTRAL_API_KEY: 'test-key',
-        VITE_MISTRAL_MODEL: 'mistral-medium',
+      VITE_MISTRAL_API_KEY: 'test-key',
+      VITE_MISTRAL_MODEL: 'mistral-medium',
     });
 
     await enhanceTaskWithMistral(mockTask, 'media');
@@ -86,7 +86,7 @@ describe('Mistral Service', () => {
     expect(mockChatComplete).toHaveBeenCalledWith(
       expect.objectContaining({
         model: 'mistral-medium',
-      })
+      }),
     );
   });
 });

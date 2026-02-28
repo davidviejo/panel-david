@@ -14,17 +14,19 @@ const AdminIdeasPage: React.FC = () => {
     {
       id: '1',
       title: 'Integración con API de Google Search Console',
-      description: 'Automatizar la obtención de datos de clics, impresiones y posiciones para mostrar un gráfico de tendencia en el Dashboard general.',
+      description:
+        'Automatizar la obtención de datos de clics, impresiones y posiciones para mostrar un gráfico de tendencia en el Dashboard general.',
       status: 'pending',
       createdAt: new Date().toISOString(),
     },
     {
       id: '2',
       title: 'Sistema de notificaciones push',
-      description: 'Avisar a los usuarios (clientes y operadores) cuando haya un cambio de estado en una tarea crítica del Roadmap o en un módulo.',
+      description:
+        'Avisar a los usuarios (clientes y operadores) cuando haya un cambio de estado en una tarea crítica del Roadmap o en un módulo.',
       status: 'in_progress',
       createdAt: new Date(Date.now() - 86400000).toISOString(),
-    }
+    },
   ]);
 
   const [newIdeaTitle, setNewIdeaTitle] = useState('');
@@ -49,17 +51,23 @@ const AdminIdeasPage: React.FC = () => {
 
   const getStatusIcon = (status: Idea['status']) => {
     switch (status) {
-      case 'completed': return <CheckCircle2 className="text-emerald-500" size={20} />;
-      case 'in_progress': return <Clock className="text-blue-500" size={20} />;
-      case 'pending': return <Circle className="text-slate-400" size={20} />;
+      case 'completed':
+        return <CheckCircle2 className="text-emerald-500" size={20} />;
+      case 'in_progress':
+        return <Clock className="text-blue-500" size={20} />;
+      case 'pending':
+        return <Circle className="text-slate-400" size={20} />;
     }
   };
 
   const getStatusLabel = (status: Idea['status']) => {
     switch (status) {
-      case 'completed': return 'Completado';
-      case 'in_progress': return 'En progreso';
-      case 'pending': return 'Pendiente';
+      case 'completed':
+        return 'Completado';
+      case 'in_progress':
+        return 'En progreso';
+      case 'pending':
+        return 'Pendiente';
     }
   };
 
@@ -72,14 +80,17 @@ const AdminIdeasPage: React.FC = () => {
             Ideas de Mejora (Admin)
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1">
-            Espacio exclusivo para administradores donde registrar y hacer seguimiento de nuevas funcionalidades.
+            Espacio exclusivo para administradores donde registrar y hacer seguimiento de nuevas
+            funcionalidades.
           </p>
         </div>
       </div>
 
       {/* Formulario Nueva Idea */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Añadir nueva idea</h2>
+        <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">
+          Añadir nueva idea
+        </h2>
         <form onSubmit={handleAddIdea} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -125,18 +136,22 @@ const AdminIdeasPage: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 {getStatusIcon(idea.status)}
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{idea.title}</h3>
-                <span className={`text-xs px-2 py-1 rounded-full border font-medium ${
-                  idea.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800' :
-                  idea.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800' :
-                  'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
-                }`}>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  {idea.title}
+                </h3>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full border font-medium ${
+                    idea.status === 'completed'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
+                      : idea.status === 'in_progress'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                  }`}
+                >
                   {getStatusLabel(idea.status)}
                 </span>
               </div>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">
-                {idea.description}
-              </p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">{idea.description}</p>
             </div>
             <div className="text-xs text-slate-400 whitespace-nowrap">
               {new Date(idea.createdAt).toLocaleDateString()}

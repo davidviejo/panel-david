@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { analyzeStrikingDistance, analyzeLowCtr, analyzeQuickWins, analyzeCannibalization } from './gscInsights';
+import {
+  analyzeStrikingDistance,
+  analyzeLowCtr,
+  analyzeQuickWins,
+  analyzeCannibalization,
+} from './gscInsights';
 import { GSCRow } from '../types';
 
 describe('GSC Insights', () => {

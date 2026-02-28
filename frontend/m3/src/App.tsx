@@ -69,67 +69,63 @@ const AppRoutes: React.FC = () => {
       onDeleteNote={deleteNote}
     >
       <Routes>
-          <Route
-            path="/"
-            element={
-              <Dashboard
-                modules={modules}
-                globalScore={globalScore}
-                onReset={resetCurrentProject}
-              />
-            }
-          />
-          <Route
-            path="/module/:id"
-            element={
-              <ModuleDetail
-                modules={modules}
-                onToggleTask={toggleTask}
-                onAddTask={addTask}
-                onDeleteTask={deleteTask}
-                onUpdateTaskNotes={updateTaskNotes}
-                onUpdateTaskImpact={updateTaskImpact}
-                clientVertical={currentClient?.vertical || 'media'}
-                clientName={currentClient?.name || 'Cliente'}
-                onToggleCustomRoadmap={toggleCustomRoadmapTask}
-                onToggleTaskCommunicated={toggleTaskCommunicated}
-              />
-            }
-          />
-          <Route
-            path="/client-roadmap"
-            element={
-              <ClientRoadmap
-                modules={modules}
-                customRoadmapOrder={currentClient?.customRoadmapOrder}
-                onReorder={handleReorderRoadmap}
-                onToggleTask={toggleTask}
-                onRemoveFromRoadmap={toggleCustomRoadmapTask}
-                onUpdateTaskNotes={updateTaskNotes}
-                onUpdateTaskImpact={updateTaskImpact}
-                clientVertical={currentClient?.vertical || 'media'}
-                clientName={currentClient?.name || 'Cliente'}
-                onToggleTaskCommunicated={toggleTaskCommunicated}
-              />
-            }
-          />
-          <Route path="/kanban" element={<KanbanBoard />} />
-          <Route path="/checklist" element={<SeoChecklistPage />} />
-          <Route path="/ai-roadmap" element={<AIRoadmap />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/challenge" element={<SpeedChallenge />} />
-          <Route path="/admin/ideas" element={<AdminIdeasPage />} />
-          <Route
-            path="/completed-tasks"
-            element={
-              <CompletedTasks
-                completedTasks={currentClient?.completedTasksLog || []}
-                onAddManualTask={addManualCompletedTask}
-                onDeleteLogEntry={deleteCompletedTaskLog}
-              />
-            }
-          />
-          <Route path="*" element={<Navigate to="/app/" replace />} />
+        <Route
+          path="/"
+          element={
+            <Dashboard modules={modules} globalScore={globalScore} onReset={resetCurrentProject} />
+          }
+        />
+        <Route
+          path="/module/:id"
+          element={
+            <ModuleDetail
+              modules={modules}
+              onToggleTask={toggleTask}
+              onAddTask={addTask}
+              onDeleteTask={deleteTask}
+              onUpdateTaskNotes={updateTaskNotes}
+              onUpdateTaskImpact={updateTaskImpact}
+              clientVertical={currentClient?.vertical || 'media'}
+              clientName={currentClient?.name || 'Cliente'}
+              onToggleCustomRoadmap={toggleCustomRoadmapTask}
+              onToggleTaskCommunicated={toggleTaskCommunicated}
+            />
+          }
+        />
+        <Route
+          path="/client-roadmap"
+          element={
+            <ClientRoadmap
+              modules={modules}
+              customRoadmapOrder={currentClient?.customRoadmapOrder}
+              onReorder={handleReorderRoadmap}
+              onToggleTask={toggleTask}
+              onRemoveFromRoadmap={toggleCustomRoadmapTask}
+              onUpdateTaskNotes={updateTaskNotes}
+              onUpdateTaskImpact={updateTaskImpact}
+              clientVertical={currentClient?.vertical || 'media'}
+              clientName={currentClient?.name || 'Cliente'}
+              onToggleTaskCommunicated={toggleTaskCommunicated}
+            />
+          }
+        />
+        <Route path="/kanban" element={<KanbanBoard />} />
+        <Route path="/checklist" element={<SeoChecklistPage />} />
+        <Route path="/ai-roadmap" element={<AIRoadmap />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/challenge" element={<SpeedChallenge />} />
+        <Route path="/admin/ideas" element={<AdminIdeasPage />} />
+        <Route
+          path="/completed-tasks"
+          element={
+            <CompletedTasks
+              completedTasks={currentClient?.completedTasksLog || []}
+              onAddManualTask={addManualCompletedTask}
+              onDeleteLogEntry={deleteCompletedTaskLog}
+            />
+          }
+        />
+        <Route path="*" element={<Navigate to="/app/" replace />} />
       </Routes>
     </Layout>
   );

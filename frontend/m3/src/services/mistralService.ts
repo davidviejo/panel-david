@@ -3,7 +3,7 @@ import { Task } from '../types';
 
 // Exported for testing purposes
 export const mistralConfig = {
-  getEnv: () => import.meta.env
+  getEnv: () => import.meta.env,
 };
 
 // Initialize AI lazily to avoid crash if env var is missing during build/init
