@@ -26,6 +26,10 @@ class Config:
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
     ]
 
+    # Bot Simulator User Agents
+    BOT_SIM_UA_USER = os.environ.get('BOT_SIM_UA_USER', 'Mozilla/5.0 (Windows NT 10.0)')
+    BOT_SIM_UA_BOT = os.environ.get('BOT_SIM_UA_BOT', 'Mozilla/5.0 (compatible; Googlebot/2.1)')
+
     # DataForSEO Credentials
     DATAFORSEO_LOGIN = os.environ.get('DATAFORSEO_LOGIN')
     DATAFORSEO_PASSWORD = os.environ.get('DATAFORSEO_PASSWORD')

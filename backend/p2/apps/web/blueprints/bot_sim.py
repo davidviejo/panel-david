@@ -8,11 +8,10 @@ import requests
 import logging
 from urllib.parse import urlparse
 from apps.utils import is_safe_url
+from apps.core.config import Config
 
 bot_bp = Blueprint('bot_sim', __name__, url_prefix='/bot_sim')
 
-UA_USER = 'Mozilla/5.0 (Windows NT 10.0)'
-UA_BOT = 'Mozilla/5.0 (compatible; Googlebot/2.1)'
 TIMEOUT = (3, 10)  # (connect, read) en segundos
 
 session = requests.Session()
@@ -87,8 +86,8 @@ def check(url: str) -> dict:
         result['status'] = 'URL_NO_PERMITIDA'
         return result
 
-    user_res = _fetch(url_norm, UA_USER)
-    bot_res = _fetch(url_norm, UA_BOT)
+    user_res = _fetch(url_norm, Config.BOT_SIM_UA_USER)
+    bot_res = _fetch(url_norm, Config.BOT_SIM_UA_BOT)
 
     result['user'] = user_res
     result['bot'] = bot_res
