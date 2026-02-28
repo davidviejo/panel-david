@@ -49,7 +49,6 @@ def auth_project(slug):
     if not project:
         return jsonify({'error': 'Project not found'}), 404
 
-    # User asked for bcrypt for project passwords too
     if check_password_hash(password, project.get('project_password_hash')):
         token = create_token(role='project', scope=slug)
         return jsonify({'token': token, 'role': 'project', 'scope': slug})
