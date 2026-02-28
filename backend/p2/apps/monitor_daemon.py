@@ -9,6 +9,7 @@ import logging
 import time
 import requests
 import concurrent.futures
+from collections import deque
 from urllib.parse import urljoin, urlparse
 from typing import Dict, Any
 from apps.core.database import get_all_projects
@@ -26,7 +27,7 @@ def mask_url_credentials(url: str) -> str:
 
 # Configuración
 CHECK_INTERVAL = 3600 * 4  # Revisar cada 4 horas
-GLOBAL_ALERTS = []
+GLOBAL_ALERTS = deque(maxlen=50)
 ALERTS_LOCK = threading.Lock()
 _MONITOR_STARTED = False
 
@@ -129,9 +130,7 @@ def add_alert(project_name: str, msg: str) -> None:
         if GLOBAL_ALERTS and GLOBAL_ALERTS[0]['msg'] == msg and GLOBAL_ALERTS[0]['project'] == project_name:
             return
 
-        GLOBAL_ALERTS.insert(0, {"time": timestamp, "project": project_name, "msg": msg})
-        # Mantener solo las últimas 50 alertas
-        if len(GLOBAL_ALERTS) > 50: GLOBAL_ALERTS.pop()
+        GLOBAL_ALERTS.appendleft({"time": timestamp, "project": project_name, "msg": msg})
 
 def start_monitor():
     """

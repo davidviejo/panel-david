@@ -182,7 +182,7 @@ def create_app(config_class=Config):
 
     @app.route('/monitor/alerts')
     def get_alerts():
-        return jsonify(GLOBAL_ALERTS)
+        return jsonify(list(GLOBAL_ALERTS))
 
     @app.route('/api/health')
     def health_check():
