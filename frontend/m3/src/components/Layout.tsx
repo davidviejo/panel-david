@@ -98,7 +98,7 @@ interface LayoutProps {
   onDeleteNote?: (noteId: string, type: 'project' | 'general') => void;
 }
 
-type TabType = 'estado' | 'analisis' | 'estrategia' | 'acciones' | 'admin';
+type TabType = 'analitica' | 'estrategia' | 'acciones' | 'backend' | 'admin';
 
 const Layout: React.FC<LayoutProps> = ({
   children,
@@ -125,7 +125,7 @@ const Layout: React.FC<LayoutProps> = ({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [isEmergencyLoading, setIsEmergencyLoading] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('estado');
+  const [activeTab, setActiveTab] = useState<TabType>('analitica');
 
   useEffect(() => {
     if (darkMode) {
@@ -140,17 +140,15 @@ const Layout: React.FC<LayoutProps> = ({
   // Sync Tab with URL
   useEffect(() => {
     const path = location.pathname;
-    if (path === '/' || path === '/app' || path === '/app/' || path.startsWith('/app/completed-tasks')) {
-      setActiveTab('estado');
-    } else if (path.startsWith('/app/checklist') || path.startsWith('/app/challenge')) {
-      setActiveTab('analisis');
+    if (path === '/' || path === '/app' || path === '/app/' || path.startsWith('/app/checklist') || path.startsWith('/app/challenge')) {
+      setActiveTab('analitica');
     } else if (
       path.startsWith('/app/client-roadmap') ||
       path.startsWith('/app/ai-roadmap') ||
       path.startsWith('/app/module')
     ) {
       setActiveTab('estrategia');
-    } else if (path.startsWith('/app/kanban') || path.startsWith('/app/settings')) {
+    } else if (path.startsWith('/app/kanban') || path.startsWith('/app/settings') || path.startsWith('/app/completed-tasks')) {
       setActiveTab('acciones');
     } else if (path.startsWith('/app/admin')) {
       setActiveTab('admin');
@@ -158,13 +156,14 @@ const Layout: React.FC<LayoutProps> = ({
   }, [location.pathname]);
 
   const handleTabChange = (tab: TabType) => {
+    if (tab === 'backend') {
+      navigate('/operator');
+      return;
+    }
     setActiveTab(tab);
     switch (tab) {
-      case 'estado':
+      case 'analitica':
         navigate('/app/');
-        break;
-      case 'analisis':
-        navigate('/app/checklist');
         break;
       case 'estrategia':
         navigate('/app/client-roadmap');
@@ -217,7 +216,7 @@ const Layout: React.FC<LayoutProps> = ({
 
   const renderSidebarContent = () => {
     switch (activeTab) {
-      case 'estado':
+      case 'analitica':
         return (
           <>
             <NavItem
@@ -228,22 +227,10 @@ const Layout: React.FC<LayoutProps> = ({
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <NavItem
-              to="/app/completed-tasks"
-              icon={<ClipboardList size={20} />}
-              label={t('nav.completed_tasks')}
-              subLabel={t('nav.completed_tasks_sub')}
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-          </>
-        );
-      case 'analisis':
-        return (
-          <>
-            <NavItem
               to="/app/checklist"
               icon={<ListChecks size={20} />}
-              label={t('nav.seo_checklist')}
-              subLabel={t('nav.seo_checklist_sub')}
+              label="Agrupación y Clusterización"
+              subLabel="Análisis SEO y Clusters"
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <NavItem
@@ -273,7 +260,7 @@ const Layout: React.FC<LayoutProps> = ({
                 onClick={() => setIsMobileMenuOpen(false)}
               />
               <div className="my-4 border-t border-slate-100 dark:border-slate-800"></div>
-              <div className="px-4 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Módulos</div>
+              <div className="px-4 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Módulos de Auditoría</div>
               {modules.map((mod) => {
                 const isComplete =
                   mod.tasks.length > 0 && mod.tasks.every((t) => t.status === 'completed');
@@ -301,6 +288,13 @@ const Layout: React.FC<LayoutProps> = ({
                 subLabel={t('nav.kanban_board_sub')}
                 onClick={() => setIsMobileMenuOpen(false)}
               />
+            <NavItem
+              to="/app/completed-tasks"
+              icon={<ClipboardList size={20} />}
+              label={t('nav.completed_tasks')}
+              subLabel={t('nav.completed_tasks_sub')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
                <NavItem
                 to="/app/settings"
                 icon={<SettingsIcon size={20} />}
@@ -308,15 +302,6 @@ const Layout: React.FC<LayoutProps> = ({
                 subLabel={t('nav.settings_sub')}
                 onClick={() => setIsMobileMenuOpen(false)}
               />
-              {sessionStorage.getItem('portal_role') === 'operator' && (
-                <NavItem
-                  to="/operator"
-                  icon={<Tool size={20} />}
-                  label="Herramientas Backend"
-                  subLabel="Acceso a Operador"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                />
-              )}
           </>
         );
       case 'admin':
@@ -325,7 +310,7 @@ const Layout: React.FC<LayoutProps> = ({
              <NavItem
                 to="/app/admin/ideas"
                 icon={<Lightbulb size={20} />}
-                label="Ideas de Mejora"
+                label="Mejoras Back/Front"
                 subLabel="Sugerencias"
                 onClick={() => setIsMobileMenuOpen(false)}
               />
@@ -351,27 +336,31 @@ const Layout: React.FC<LayoutProps> = ({
 
           {/* Tabs */}
           <nav className="hidden md:flex items-center space-x-1">
-            {(['estado', 'analisis', 'estrategia', 'acciones', 'admin'] as TabType[]).map((tab) => {
-              if (tab === 'admin' && sessionStorage.getItem('portal_role') !== 'operator') return null;
+            {(['analitica', 'estrategia', 'acciones', 'backend', 'admin'] as TabType[]).map((tab) => {
+              if ((tab === 'admin' || tab === 'backend') && sessionStorage.getItem('portal_role') !== 'operator') return null;
 
               let toPath = '/app/';
-              if (tab === 'analisis') toPath = '/app/checklist';
               if (tab === 'estrategia') toPath = '/app/client-roadmap';
               if (tab === 'acciones') toPath = '/app/kanban';
               if (tab === 'admin') toPath = '/app/admin/ideas';
+              if (tab === 'backend') toPath = '/operator';
 
               return (
                 <NavLink
                   key={tab}
                   to={toPath}
-                  onClick={() => handleTabChange(tab)}
+                  onClick={(e) => {
+                    if (tab === 'backend') return; // Default NavLink action is fine for /operator
+                    e.preventDefault();
+                    handleTabChange(tab);
+                  }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
                     activeTab === tab
                       ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 ring-1 ring-blue-100 dark:ring-blue-800'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
                   }`}
                 >
-                  {tab}
+                  {tab === 'backend' ? 'Python Backend' : tab === 'analitica' ? 'Analítica' : tab}
                 </NavLink>
               );
             })}
@@ -434,20 +423,22 @@ const Layout: React.FC<LayoutProps> = ({
 
             {/* Mobile Tabs */}
             <div className="grid grid-cols-2 gap-2 mb-4">
-                 {(['estado', 'analisis', 'estrategia', 'acciones', 'admin'] as TabType[]).map((tab) => {
-                  if (tab === 'admin' && sessionStorage.getItem('portal_role') !== 'operator') return null;
+                 {(['analitica', 'estrategia', 'acciones', 'backend', 'admin'] as TabType[]).map((tab) => {
+                  if ((tab === 'admin' || tab === 'backend') && sessionStorage.getItem('portal_role') !== 'operator') return null;
 
                   let toPath = '/app/';
-                  if (tab === 'analisis') toPath = '/app/checklist';
                   if (tab === 'estrategia') toPath = '/app/client-roadmap';
                   if (tab === 'acciones') toPath = '/app/kanban';
                   if (tab === 'admin') toPath = '/app/admin/ideas';
+                  if (tab === 'backend') toPath = '/operator';
 
                   return (
                     <NavLink
                       key={tab}
                       to={toPath}
-                      onClick={() => {
+                      onClick={(e) => {
+                          if (tab === 'backend') return;
+                          e.preventDefault();
                           handleTabChange(tab);
                           setIsMobileMenuOpen(false);
                       }}
@@ -457,14 +448,14 @@ const Layout: React.FC<LayoutProps> = ({
                           : 'text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
                       }`}
                     >
-                      {tab}
+                      {tab === 'backend' ? 'Python' : tab === 'analitica' ? 'Analítica' : tab}
                     </NavLink>
                   );
                 })}
             </div>
           </div>
 
-          {activeTab === 'estado' && (
+          {activeTab === 'analitica' && (
              <div className="bg-slate-900 dark:bg-slate-800 rounded-2xl p-4 text-white relative overflow-hidden mb-6 border border-slate-800 dark:border-slate-700 shrink-0">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
                 <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
