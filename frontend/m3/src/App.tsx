@@ -15,6 +15,7 @@ const KanbanBoard = lazy(() => import('./pages/KanbanBoard'));
 const AIRoadmap = lazy(() => import('./pages/AIRoadmap'));
 const SeoChecklistPage = lazy(() => import('./pages/SeoChecklistPage'));
 const Settings = lazy(() => import('./pages/Settings'));
+const AdminIdeasPage = lazy(() => import('./pages/admin/AdminIdeasPage'));
 
 // Portal Pages
 const LandingPage = lazy(() => import('./pages/portal/LandingPage'));
@@ -117,6 +118,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/ai-roadmap" element={<AIRoadmap />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/challenge" element={<SpeedChallenge />} />
+          <Route path="/admin/ideas" element={<AdminIdeasPage />} />
           <Route
             path="/completed-tasks"
             element={

@@ -30,6 +30,7 @@ import {
   KanbanSquare,
   ListChecks,
   Wrench as Tool,
+  Lightbulb,
 } from 'lucide-react';
 import { ModuleData, Client, ClientVertical, Note } from '../types';
 import ClientSwitcher from './ClientSwitcher';
@@ -97,7 +98,7 @@ interface LayoutProps {
   onDeleteNote?: (noteId: string, type: 'project' | 'general') => void;
 }
 
-type TabType = 'estado' | 'analisis' | 'estrategia' | 'acciones';
+type TabType = 'estado' | 'analisis' | 'estrategia' | 'acciones' | 'admin';
 
 const Layout: React.FC<LayoutProps> = ({
   children,
@@ -151,6 +152,8 @@ const Layout: React.FC<LayoutProps> = ({
       setActiveTab('estrategia');
     } else if (path.startsWith('/app/kanban') || path.startsWith('/app/settings')) {
       setActiveTab('acciones');
+    } else if (path.startsWith('/app/admin')) {
+      setActiveTab('admin');
     }
   }, [location.pathname]);
 
@@ -168,6 +171,9 @@ const Layout: React.FC<LayoutProps> = ({
         break;
       case 'acciones':
         navigate('/app/kanban');
+        break;
+      case 'admin':
+        navigate('/app/admin/ideas');
         break;
     }
   };
@@ -313,6 +319,18 @@ const Layout: React.FC<LayoutProps> = ({
               )}
           </>
         );
+      case 'admin':
+        return (
+          <>
+             <NavItem
+                to="/app/admin/ideas"
+                icon={<Lightbulb size={20} />}
+                label="Ideas de Mejora"
+                subLabel="Sugerencias"
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+          </>
+        );
       default:
         return null;
     }
@@ -333,11 +351,14 @@ const Layout: React.FC<LayoutProps> = ({
 
           {/* Tabs */}
           <nav className="hidden md:flex items-center space-x-1">
-            {(['estado', 'analisis', 'estrategia', 'acciones'] as TabType[]).map((tab) => {
+            {(['estado', 'analisis', 'estrategia', 'acciones', 'admin'] as TabType[]).map((tab) => {
+              if (tab === 'admin' && sessionStorage.getItem('portal_role') !== 'operator') return null;
+
               let toPath = '/app/';
               if (tab === 'analisis') toPath = '/app/checklist';
               if (tab === 'estrategia') toPath = '/app/client-roadmap';
               if (tab === 'acciones') toPath = '/app/kanban';
+              if (tab === 'admin') toPath = '/app/admin/ideas';
 
               return (
                 <NavLink
@@ -413,11 +434,14 @@ const Layout: React.FC<LayoutProps> = ({
 
             {/* Mobile Tabs */}
             <div className="grid grid-cols-2 gap-2 mb-4">
-                 {(['estado', 'analisis', 'estrategia', 'acciones'] as TabType[]).map((tab) => {
+                 {(['estado', 'analisis', 'estrategia', 'acciones', 'admin'] as TabType[]).map((tab) => {
+                  if (tab === 'admin' && sessionStorage.getItem('portal_role') !== 'operator') return null;
+
                   let toPath = '/app/';
                   if (tab === 'analisis') toPath = '/app/checklist';
                   if (tab === 'estrategia') toPath = '/app/client-roadmap';
                   if (tab === 'acciones') toPath = '/app/kanban';
+                  if (tab === 'admin') toPath = '/app/admin/ideas';
 
                   return (
                     <NavLink
