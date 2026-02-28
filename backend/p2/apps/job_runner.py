@@ -56,7 +56,11 @@ class JobRunner:
 
         try:
             update_job_status(job_id, 'running')
+        except Exception as e:
+            logging.error(f"Failed to set job {job_id} to running: {e}")
+            return
 
+        try:
             # Get items
             items = get_job_items_by_status(job_id, 'queued')
             if not items:
@@ -159,7 +163,7 @@ class JobRunner:
             if item.get('item_metadata'):
                 try:
                     meta = json.loads(item['item_metadata'])
-                except:
+                except (json.JSONDecodeError, TypeError):
                     pass
 
             kw = meta.get('kwPrincipal', '')
