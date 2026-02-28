@@ -69,7 +69,10 @@ const ClientsLogin: React.FC = () => {
         </form>
 
         <div className="mt-6 text-center">
-          <button onClick={() => navigate('/')} className="text-sm text-slate-400 hover:text-slate-600">
+          <button
+            onClick={() => navigate('/')}
+            className="text-sm text-slate-400 hover:text-slate-600"
+          >
             ← Volver al inicio
           </button>
         </div>

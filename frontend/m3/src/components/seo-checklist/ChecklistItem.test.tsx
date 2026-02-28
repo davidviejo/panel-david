@@ -34,7 +34,9 @@ vi.mock('lucide-react', () => ({
 
 // Mock InternalLinksAnalysis
 vi.mock('./InternalLinksAnalysis', () => ({
-  InternalLinksAnalysis: () => <div data-testid="internal-links-analysis">Internal Links Analysis</div>,
+  InternalLinksAnalysis: () => (
+    <div data-testid="internal-links-analysis">Internal Links Analysis</div>
+  ),
 }));
 
 describe('ChecklistItem', () => {
@@ -45,10 +47,10 @@ describe('ChecklistItem', () => {
       status_manual: 'NO',
       notes_manual: '',
       autoData: {
-          competitorUrlsUsed: ['http://comp1.com'],
-          gapSections: ['Section 1'],
-          outlines: { h1: 'Title' }
-      }
+        competitorUrlsUsed: ['http://comp1.com'],
+        gapSections: ['Section 1'],
+        outlines: { h1: 'Title' },
+      },
     };
     const onChange = vi.fn();
     render(<ChecklistItem item={item} onChange={onChange} />);
@@ -68,9 +70,9 @@ describe('ChecklistItem', () => {
       status_manual: 'NO',
       notes_manual: '',
       autoData: {
-          advancedExecuted: false,
-          advancedBlockedReason: 'No credits'
-      }
+        advancedExecuted: false,
+        advancedBlockedReason: 'No credits',
+      },
     };
     const onChange = vi.fn();
     render(<ChecklistItem item={item} onChange={onChange} />);
@@ -82,24 +84,24 @@ describe('ChecklistItem', () => {
   });
 
   it('renders structured data with robust JSON viewer', () => {
-      const item: IChecklistItem = {
-          key: 'DATOS_ESTRUCTURADOS',
-          label: '3. Datos estructurados',
-          status_manual: 'SI',
-          notes_manual: '',
-          autoData: {
-              schemasParsed: ['Article'],
-              jsonLd: { "@context": "https://schema.org", "@type": "Article" }
-          }
-      };
-      const onChange = vi.fn();
-      render(<ChecklistItem item={item} onChange={onChange} />);
+    const item: IChecklistItem = {
+      key: 'DATOS_ESTRUCTURADOS',
+      label: '3. Datos estructurados',
+      status_manual: 'SI',
+      notes_manual: '',
+      autoData: {
+        schemasParsed: ['Article'],
+        jsonLd: { '@context': 'https://schema.org', '@type': 'Article' },
+      },
+    };
+    const onChange = vi.fn();
+    render(<ChecklistItem item={item} onChange={onChange} />);
 
-      fireEvent.click(screen.getByText('3. Datos estructurados'));
+    fireEvent.click(screen.getByText('3. Datos estructurados'));
 
-      expect(screen.getByText('Article')).toBeDefined(); // Tag
-      expect(screen.getByText('Bruto del Análisis')).toBeDefined();
-      // Since JSON.stringify formats with newlines, exact text match might be tricky, but we can check if it contains parts
-      // Or just that the component rendered without error.
+    expect(screen.getByText('Article')).toBeDefined(); // Tag
+    expect(screen.getByText('Bruto del Análisis')).toBeDefined();
+    // Since JSON.stringify formats with newlines, exact text match might be tricky, but we can check if it contains parts
+    // Or just that the component rendered without error.
   });
 });

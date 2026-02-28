@@ -54,7 +54,7 @@ export const useSeoChecklistSettings = () => {
         return updated;
       });
     },
-    [storageKey]
+    [storageKey],
   );
 
   return {

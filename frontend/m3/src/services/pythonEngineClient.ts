@@ -156,7 +156,7 @@ export const getBatchJob = async (jobId: string): Promise<BatchJobStatus> => {
 
 export const updateBatchJob = async (
   jobId: string,
-  action: 'pause' | 'resume' | 'cancel'
+  action: 'pause' | 'resume' | 'cancel',
 ): Promise<void> => {
   if (!ENGINE_URL) {
     throw new Error('MOTOR_NOT_CONFIGURED');
@@ -179,7 +179,7 @@ export const getBatchJobItems = async (
   jobId: string,
   status?: string,
   page: number = 1,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<{ items: BatchJobItem[]; total: number }> => {
   if (!ENGINE_URL) {
     throw new Error('MOTOR_NOT_CONFIGURED');
@@ -202,7 +202,7 @@ export const getBatchJobItems = async (
 
 export const getBatchJobItemResult = async (
   jobId: string,
-  itemId: string
+  itemId: string,
 ): Promise<AnalysisResponse> => {
   if (!ENGINE_URL) {
     throw new Error('MOTOR_NOT_CONFIGURED');

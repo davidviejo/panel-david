@@ -31,51 +31,64 @@ const OperatorPage: React.FC = () => {
   };
 
   const runTool = async (toolName: string) => {
-      try {
-          const res = await api.runOperatorTool(toolName);
-          setOutput(prev => [...prev, `> Run ${toolName}: ${res.status} - ${res.message}`]);
-      } catch (err) {
-          setOutput(prev => [...prev, `> Error running ${toolName}`]);
-      }
-  }
+    try {
+      const res = await api.runOperatorTool(toolName);
+      setOutput((prev) => [...prev, `> Run ${toolName}: ${res.status} - ${res.message}`]);
+    } catch (err) {
+      setOutput((prev) => [...prev, `> Error running ${toolName}`]);
+    }
+  };
 
   if (isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-900 text-slate-200 p-8 font-mono">
         <div className="max-w-4xl mx-auto">
-            <div className="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
-                <h1 className="text-2xl font-bold text-green-400 flex items-center">
-                    <Terminal className="mr-2" /> Operator Console
-                </h1>
-                <button onClick={() => {
-                    api.logout();
-                    navigate('/');
-                }} className="text-sm text-slate-400 hover:text-white">Logout</button>
-            </div>
+          <div className="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
+            <h1 className="text-2xl font-bold text-green-400 flex items-center">
+              <Terminal className="mr-2" /> Operator Console
+            </h1>
+            <button
+              onClick={() => {
+                api.logout();
+                navigate('/');
+              }}
+              className="text-sm text-slate-400 hover:text-white"
+            >
+              Logout
+            </button>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-1 space-y-4">
-                    <h2 className="text-sm font-semibold text-slate-500 uppercase">Available Tools</h2>
-                    {['audit_crawl', 'gsc_sync', 'keyword_gap', 'backlink_check'].map(tool => (
-                        <button
-                            key={tool}
-                            onClick={() => runTool(tool)}
-                            className="w-full text-left px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 flex justify-between items-center transition-colors"
-                        >
-                            <span>{tool}</span>
-                            <Play className="w-4 h-4 text-green-500" />
-                        </button>
-                    ))}
-                </div>
-                <div className="md:col-span-2">
-                    <h2 className="text-sm font-semibold text-slate-500 uppercase mb-4">Console Output</h2>
-                    <div className="bg-black/50 p-4 rounded-lg border border-slate-700 h-96 overflow-y-auto font-mono text-sm">
-                        {output.length === 0 ? <span className="text-slate-600">Waiting for commands...</span> : output.map((line, i) => (
-                            <div key={i} className="mb-1 border-b border-white/5 pb-1">{line}</div>
-                        ))}
-                    </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-1 space-y-4">
+              <h2 className="text-sm font-semibold text-slate-500 uppercase">Available Tools</h2>
+              {['audit_crawl', 'gsc_sync', 'keyword_gap', 'backlink_check'].map((tool) => (
+                <button
+                  key={tool}
+                  onClick={() => runTool(tool)}
+                  className="w-full text-left px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 flex justify-between items-center transition-colors"
+                >
+                  <span>{tool}</span>
+                  <Play className="w-4 h-4 text-green-500" />
+                </button>
+              ))}
             </div>
+            <div className="md:col-span-2">
+              <h2 className="text-sm font-semibold text-slate-500 uppercase mb-4">
+                Console Output
+              </h2>
+              <div className="bg-black/50 p-4 rounded-lg border border-slate-700 h-96 overflow-y-auto font-mono text-sm">
+                {output.length === 0 ? (
+                  <span className="text-slate-600">Waiting for commands...</span>
+                ) : (
+                  output.map((line, i) => (
+                    <div key={i} className="mb-1 border-b border-white/5 pb-1">
+                      {line}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -93,7 +106,9 @@ const OperatorPage: React.FC = () => {
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-2">Security Clearance</label>
+            <label className="block text-sm font-medium text-slate-400 mb-2">
+              Security Clearance
+            </label>
             <input
               type="password"
               value={password}
@@ -118,8 +133,11 @@ const OperatorPage: React.FC = () => {
             {loading ? 'Authenticating...' : 'Initialize'}
           </button>
         </form>
-         <div className="mt-6 text-center">
-          <button onClick={() => navigate('/')} className="text-sm text-slate-500 hover:text-slate-400">
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => navigate('/')}
+            className="text-sm text-slate-500 hover:text-slate-400"
+          >
             Abort
           </button>
         </div>

@@ -45,29 +45,29 @@ export const processAnalysisResult = (
   // We'll follow the original logic: ensure the structure exists, then inject/overwrite if gscQueries is not empty.
 
   if (gscQueries.length > 0 || !result.items?.OPORTUNIDADES?.autoData?.gscQueries) {
-      if (!result.items) {
-          result.items = {};
-      }
-      if (!result.items.OPORTUNIDADES) {
-        result.items.OPORTUNIDADES = {};
-      }
-      if (!result.items.OPORTUNIDADES.autoData) {
-        result.items.OPORTUNIDADES.autoData = {};
-      }
+    if (!result.items) {
+      result.items = {};
+    }
+    if (!result.items.OPORTUNIDADES) {
+      result.items.OPORTUNIDADES = {};
+    }
+    if (!result.items.OPORTUNIDADES.autoData) {
+      result.items.OPORTUNIDADES.autoData = {};
+    }
 
-      if (gscQueries.length > 0) {
-        result.items.OPORTUNIDADES.autoData.gscQueries = gscQueries;
-      }
+    if (gscQueries.length > 0) {
+      result.items.OPORTUNIDADES.autoData.gscQueries = gscQueries;
+    }
 
-      // Calculate kwFound if GSC data is present (either just injected or already there)
-      const currentGscQueries = result.items.OPORTUNIDADES.autoData.gscQueries || [];
-      if (currentGscQueries.length > 0) {
-          const normalizedKw = page.kwPrincipal.toLowerCase().trim();
-          const kwFound = currentGscQueries.some(
-            (q: any) => q.keys && q.keys[0] && q.keys[0].toLowerCase().trim() === normalizedKw,
-          );
-          result.items.OPORTUNIDADES.autoData.kwPrincipalInGSC = kwFound;
-      }
+    // Calculate kwFound if GSC data is present (either just injected or already there)
+    const currentGscQueries = result.items.OPORTUNIDADES.autoData.gscQueries || [];
+    if (currentGscQueries.length > 0) {
+      const normalizedKw = page.kwPrincipal.toLowerCase().trim();
+      const kwFound = currentGscQueries.some(
+        (q: any) => q.keys && q.keys[0] && q.keys[0].toLowerCase().trim() === normalizedKw,
+      );
+      result.items.OPORTUNIDADES.autoData.kwPrincipalInGSC = kwFound;
+    }
   }
 
   const updates: Partial<SeoPage> = {
@@ -82,12 +82,12 @@ export const processAnalysisResult = (
       const key = k as ChecklistKey;
       if (updates.checklist) {
         if (!updates.checklist[key]) {
-           updates.checklist[key] = {
-             key: key,
-             label: key,
-             status_manual: 'NA',
-             notes_manual: '',
-           };
+          updates.checklist[key] = {
+            key: key,
+            label: key,
+            status_manual: 'NA',
+            notes_manual: '',
+          };
         }
         // Deep merge of the checklist item is NOT done for autoData in the original code,
         // it replaced the properties spread from `v`.
@@ -133,9 +133,7 @@ export const runPageAnalysis = async (
     if (token && site) {
       try {
         const end = new Date().toISOString().split('T')[0];
-        const start = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split('T')[0];
+        const start = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         // Limit to 50 as requested
         gscQueries = await getPageQueries(token, site, page.url, start, end, 50);
       } catch (e) {

@@ -120,7 +120,9 @@ export const ClusteringAnalysis: React.FC<Props> = ({ data }) => {
                     </span>
                     <span
                       className={`flex items-center gap-1 font-bold ${
-                        isOwned ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+                        isOwned
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-amber-600 dark:text-amber-400'
                       }`}
                     >
                       {isOwned ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
@@ -136,9 +138,9 @@ export const ClusteringAnalysis: React.FC<Props> = ({ data }) => {
                 </div>
 
                 {cluster.runId && (
-                    <div className="hidden sm:block text-[10px] text-slate-400 font-mono">
-                        Run: {cluster.runId.slice(0, 8)}
-                    </div>
+                  <div className="hidden sm:block text-[10px] text-slate-400 font-mono">
+                    Run: {cluster.runId.slice(0, 8)}
+                  </div>
                 )}
               </div>
 
@@ -171,22 +173,24 @@ export const ClusteringAnalysis: React.FC<Props> = ({ data }) => {
                         <Search size={12} /> Top URLs SERP
                       </h4>
                       <div className="space-y-1">
-                        {(cluster.topUrlsSample || cluster.urls).slice(0, 5).map((url: string, i: number) => (
-                          <a
-                            key={i}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 hover:underline truncate"
-                          >
-                            <ExternalLink size={10} className="shrink-0" />
-                            {url}
-                          </a>
-                        ))}
+                        {(cluster.topUrlsSample || cluster.urls)
+                          .slice(0, 5)
+                          .map((url: string, i: number) => (
+                            <a
+                              key={i}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 hover:underline truncate"
+                            >
+                              <ExternalLink size={10} className="shrink-0" />
+                              {url}
+                            </a>
+                          ))}
                         {(cluster.topUrlsSample || cluster.urls).length > 5 && (
-                            <span className="text-xs text-slate-400 italic pl-5">
-                                ... y {(cluster.topUrlsSample || cluster.urls).length - 5} más
-                            </span>
+                          <span className="text-xs text-slate-400 italic pl-5">
+                            ... y {(cluster.topUrlsSample || cluster.urls).length - 5} más
+                          </span>
                         )}
                       </div>
                     </div>

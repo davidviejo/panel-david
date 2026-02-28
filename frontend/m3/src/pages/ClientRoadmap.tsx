@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import { ModuleData, Task } from '../types';
-import {
-  CheckCircle2,
-  HelpCircle,
-} from 'lucide-react';
+import { CheckCircle2, HelpCircle } from 'lucide-react';
 import { useToast } from '../components/ui/ToastContext';
 import { enhanceTaskWithMistral, isMistralConfigured } from '../services/mistralService';
 import { enhanceTaskWithOpenAI, isOpenAIConfigured } from '../services/openaiService';
@@ -86,33 +83,36 @@ const ClientRoadmap: React.FC<ClientRoadmapProps> = ({
     onReorder(newOrder);
   };
 
-  const handleVitaminAction = useCallback(async (task: Task, provider: 'mistral' | 'openai') => {
-    setIsVitaminLoading(true);
-    setVitaminResult(null);
-    setVitaminSource(provider);
-    try {
-      let result = '';
-      if (provider === 'mistral') {
-        result = await enhanceTaskWithMistral(task, clientVertical);
-      } else {
-        result = await enhanceTaskWithOpenAI(task, clientVertical);
-      }
+  const handleVitaminAction = useCallback(
+    async (task: Task, provider: 'mistral' | 'openai') => {
+      setIsVitaminLoading(true);
+      setVitaminResult(null);
+      setVitaminSource(provider);
+      try {
+        let result = '';
+        if (provider === 'mistral') {
+          result = await enhanceTaskWithMistral(task, clientVertical);
+        } else {
+          result = await enhanceTaskWithOpenAI(task, clientVertical);
+        }
 
-      setVitaminResult(result);
-      if (result.startsWith('Error')) {
-        showError(`Error al conectar con ${provider === 'mistral' ? 'Mistral' : 'OpenAI'}.`);
-      } else {
-        showSuccess(`Tarea vitaminizada con ${provider === 'mistral' ? 'Mistral' : 'ChatGPT'}.`);
+        setVitaminResult(result);
+        if (result.startsWith('Error')) {
+          showError(`Error al conectar con ${provider === 'mistral' ? 'Mistral' : 'OpenAI'}.`);
+        } else {
+          showSuccess(`Tarea vitaminizada con ${provider === 'mistral' ? 'Mistral' : 'ChatGPT'}.`);
+        }
+      } catch (e) {
+        showError('Error desconocido al vitaminizar.');
+      } finally {
+        setIsVitaminLoading(false);
       }
-    } catch (e) {
-      showError('Error desconocido al vitaminizar.');
-    } finally {
-      setIsVitaminLoading(false);
-    }
-  }, [clientVertical, showError, showSuccess]);
+    },
+    [clientVertical, showError, showSuccess],
+  );
 
   const handleToggleExpand = useCallback((taskId: string) => {
-    setExpandedTask(prev => prev === taskId ? null : taskId);
+    setExpandedTask((prev) => (prev === taskId ? null : taskId));
   }, []);
 
   if (tasks.length === 0) {

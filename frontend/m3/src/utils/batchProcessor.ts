@@ -13,7 +13,7 @@ export async function runBatchWithConcurrency<T, R>(
   processor: (item: T) => Promise<R>,
   concurrency: number,
   onProgress?: (progress: BatchProgress) => void,
-  costEstimator?: (item: T) => number
+  costEstimator?: (item: T) => number,
 ): Promise<R[]> {
   const results: R[] = [];
   let processedCount = 0;
@@ -46,7 +46,7 @@ export async function runBatchWithConcurrency<T, R>(
     if (!item) return;
 
     if (costEstimator) {
-        currentCost += costEstimator(item);
+      currentCost += costEstimator(item);
     }
 
     try {

@@ -14,7 +14,7 @@ describe('processAnalysisResult', () => {
         label: 'Ops',
         status_manual: 'SI',
         notes_manual: 'Manual note',
-        autoData: {}
+        autoData: {},
       } as ChecklistItem,
       DATOS_ESTRUCTURADOS: {
         key: 'DATOS_ESTRUCTURADOS',
@@ -32,9 +32,9 @@ describe('processAnalysisResult', () => {
         OPORTUNIDADES: {
           autoData: { newField: 123 },
           recommendation: 'Fix this',
-          suggested_status: 'NO'
-        }
-      }
+          suggested_status: 'NO',
+        },
+      },
     };
 
     const updates = processAnalysisResult(mockPage, result);
@@ -50,7 +50,7 @@ describe('processAnalysisResult', () => {
     const gscQueries = [{ keys: ['test'], clicks: 10 }];
     const result = {
       pageId: 'page-1',
-      items: {}
+      items: {},
     };
 
     const updates = processAnalysisResult(mockPage, result, gscQueries);
@@ -65,10 +65,10 @@ describe('processAnalysisResult', () => {
       items: {
         OPORTUNIDADES: {
           autoData: {
-            gscQueries: [{ keys: ['existing'], clicks: 5 }]
-          }
-        }
-      }
+            gscQueries: [{ keys: ['existing'], clicks: 5 }],
+          },
+        },
+      },
     };
 
     const updates = processAnalysisResult(mockPage, result);
@@ -82,10 +82,10 @@ describe('processAnalysisResult', () => {
       items: {
         DATOS_ESTRUCTURADOS: {
           autoData: {
-            schemasParsed: [{ '@type': 'LocalBusiness' }]
-          }
-        }
-      }
+            schemasParsed: [{ '@type': 'LocalBusiness' }],
+          },
+        },
+      },
     };
 
     const updates = processAnalysisResult(mockPage, result);
@@ -98,10 +98,10 @@ describe('processAnalysisResult', () => {
       items: {
         DATOS_ESTRUCTURADOS: {
           autoData: {
-            schemasParsed: [{ '@type': ['Store', 'LocalBusiness'] }]
-          }
-        }
-      }
+            schemasParsed: [{ '@type': ['Store', 'LocalBusiness'] }],
+          },
+        },
+      },
     };
 
     const updates = processAnalysisResult(mockPage, result);
@@ -114,10 +114,10 @@ describe('processAnalysisResult', () => {
       items: {
         DATOS_ESTRUCTURADOS: {
           autoData: {
-            schemasParsed: [{ '@type': 'Article' }]
-          }
-        }
-      }
+            schemasParsed: [{ '@type': 'Article' }],
+          },
+        },
+      },
     };
 
     const updates = processAnalysisResult(mockPage, result);

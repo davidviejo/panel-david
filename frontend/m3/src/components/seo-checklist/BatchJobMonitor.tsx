@@ -30,12 +30,7 @@ interface Props {
   onJobUpdate: (updatedJob: BatchJobStatus) => void;
 }
 
-export const BatchJobMonitor: React.FC<Props> = ({
-  jobs,
-  onClose,
-  onApplyResult,
-  onJobUpdate,
-}) => {
+export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult, onJobUpdate }) => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'done' | 'errors' | 'queued'>('done');
   const [items, setItems] = useState<BatchJobItem[]>([]);
@@ -132,11 +127,11 @@ export const BatchJobMonitor: React.FC<Props> = ({
   const handleApplyAllPage = async () => {
     if (!selectedJobId) return;
     // Apply for all items in current view that are NOT applied
-    const toApply = items.filter(i => !appliedIds.has(i.itemId));
+    const toApply = items.filter((i) => !appliedIds.has(i.itemId));
 
     // Process strictly sequentially or with small concurrency to avoid UI freeze/state thrashing
     for (const item of toApply) {
-        await handleApply(item.itemId);
+      await handleApply(item.itemId);
     }
   };
 
@@ -149,16 +144,17 @@ export const BatchJobMonitor: React.FC<Props> = ({
               <RefreshCw size={20} />
               Batch Jobs Monitor
             </h2>
-            <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg">
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
+            >
               <X size={20} />
             </button>
           </div>
 
           <div className="flex-1 overflow-auto p-4">
             {jobs.length === 0 ? (
-              <div className="text-center py-20 text-slate-400">
-                No hay jobs recientes.
-              </div>
+              <div className="text-center py-20 text-slate-400">No hay jobs recientes.</div>
             ) : (
               <div className="grid gap-4">
                 {jobs.map((job) => (
@@ -169,17 +165,20 @@ export const BatchJobMonitor: React.FC<Props> = ({
                   >
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`font-mono text-xs px-2 py-0.5 rounded-full border ${
-                          job.status === 'done' ? 'bg-emerald-100 border-emerald-200 text-emerald-700' :
-                          job.status === 'error' ? 'bg-red-100 border-red-200 text-red-700' :
-                          job.status === 'cancelled' ? 'bg-slate-100 border-slate-200 text-slate-700' :
-                          'bg-blue-100 border-blue-200 text-blue-700'
-                        }`}>
+                        <span
+                          className={`font-mono text-xs px-2 py-0.5 rounded-full border ${
+                            job.status === 'done'
+                              ? 'bg-emerald-100 border-emerald-200 text-emerald-700'
+                              : job.status === 'error'
+                                ? 'bg-red-100 border-red-200 text-red-700'
+                                : job.status === 'cancelled'
+                                  ? 'bg-slate-100 border-slate-200 text-slate-700'
+                                  : 'bg-blue-100 border-blue-200 text-blue-700'
+                          }`}
+                        >
                           {job.status.toUpperCase()}
                         </span>
-                        <span className="text-xs text-slate-400">
-                          ID: {job.id.slice(0, 8)}...
-                        </span>
+                        <span className="text-xs text-slate-400">ID: {job.id.slice(0, 8)}...</span>
                       </div>
                       <div className="text-sm font-medium">
                         {new Date(job.created_at).toLocaleString()}
@@ -194,9 +193,11 @@ export const BatchJobMonitor: React.FC<Props> = ({
                         <div className="w-24 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full ${
-                                job.status === 'error' ? 'bg-red-500' : 'bg-blue-600'
+                              job.status === 'error' ? 'bg-red-500' : 'bg-blue-600'
                             }`}
-                            style={{ width: `${(job.progress.processed / (job.progress.total || 1)) * 100}%` }}
+                            style={{
+                              width: `${(job.progress.processed / (job.progress.total || 1)) * 100}%`,
+                            }}
                           />
                         </div>
                       </div>
@@ -219,55 +220,66 @@ export const BatchJobMonitor: React.FC<Props> = ({
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <button
-                onClick={() => setSelectedJobId(null)}
-                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-500"
+              onClick={() => setSelectedJobId(null)}
+              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-500"
             >
-                <ChevronLeft size={20} />
+              <ChevronLeft size={20} />
             </button>
             <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 Job Details
-                <span className="font-mono text-sm font-normal text-slate-500">#{selectedJob?.id.slice(0, 8)}</span>
-                </h2>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <span className={`px-1.5 py-0.5 rounded border ${
-                        selectedJob?.status === 'done' ? 'bg-emerald-100 border-emerald-200 text-emerald-700' :
-                        selectedJob?.status === 'processing' ? 'bg-blue-100 border-blue-200 text-blue-700' :
-                        'bg-slate-100 border-slate-200 text-slate-600'
-                    }`}>
-                        {selectedJob?.status}
-                    </span>
-                    <span>{selectedJob?.progress.processed} / {selectedJob?.progress.total} processed</span>
-                </div>
+                <span className="font-mono text-sm font-normal text-slate-500">
+                  #{selectedJob?.id.slice(0, 8)}
+                </span>
+              </h2>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span
+                  className={`px-1.5 py-0.5 rounded border ${
+                    selectedJob?.status === 'done'
+                      ? 'bg-emerald-100 border-emerald-200 text-emerald-700'
+                      : selectedJob?.status === 'processing'
+                        ? 'bg-blue-100 border-blue-200 text-blue-700'
+                        : 'bg-slate-100 border-slate-200 text-slate-600'
+                  }`}
+                >
+                  {selectedJob?.status}
+                </span>
+                <span>
+                  {selectedJob?.progress.processed} / {selectedJob?.progress.total} processed
+                </span>
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             {selectedJob?.status === 'processing' && (
-                <button
-                    onClick={() => handleAction('pause')}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 text-sm font-medium"
-                >
-                    <Pause size={16} /> Pause
-                </button>
+              <button
+                onClick={() => handleAction('pause')}
+                className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 text-sm font-medium"
+              >
+                <Pause size={16} /> Pause
+              </button>
             )}
             {selectedJob?.status === 'pending' || (selectedJob?.status as any) === 'paused' ? (
-                 <button
-                    onClick={() => handleAction('resume')}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 text-sm font-medium"
-                 >
-                     <Play size={16} /> Resume
-                 </button>
+              <button
+                onClick={() => handleAction('resume')}
+                className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 text-sm font-medium"
+              >
+                <Play size={16} /> Resume
+              </button>
             ) : null}
             {(selectedJob?.status === 'processing' || selectedJob?.status === 'pending') && (
-                <button
-                    onClick={() => handleAction('cancel')}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"
-                >
-                    <Square size={16} /> Cancel
-                </button>
+              <button
+                onClick={() => handleAction('cancel')}
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"
+              >
+                <Square size={16} /> Cancel
+              </button>
             )}
-            <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg">
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
+            >
               <X size={20} />
             </button>
           </div>
@@ -275,117 +287,139 @@ export const BatchJobMonitor: React.FC<Props> = ({
 
         {/* Tabs */}
         <div className="flex border-b border-slate-200 dark:border-slate-800">
-            <button
-                onClick={() => { setActiveTab('done'); setItemsPage(1); }}
-                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === 'done'
-                    ? 'border-emerald-500 text-emerald-600 bg-emerald-50/50 dark:bg-emerald-900/10'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
-            >
-                Done ({selectedJob?.progress.succeeded})
-            </button>
-            <button
-                onClick={() => { setActiveTab('errors'); setItemsPage(1); }}
-                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === 'errors'
-                    ? 'border-red-500 text-red-600 bg-red-50/50 dark:bg-red-900/10'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
-            >
-                Errors ({selectedJob?.progress.failed})
-            </button>
-            <button
-                onClick={() => { setActiveTab('queued'); setItemsPage(1); }}
-                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === 'queued'
-                    ? 'border-blue-500 text-blue-600 bg-blue-50/50 dark:bg-blue-900/10'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
-            >
-                Queued / Pending
-            </button>
+          <button
+            onClick={() => {
+              setActiveTab('done');
+              setItemsPage(1);
+            }}
+            className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'done'
+                ? 'border-emerald-500 text-emerald-600 bg-emerald-50/50 dark:bg-emerald-900/10'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Done ({selectedJob?.progress.succeeded})
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('errors');
+              setItemsPage(1);
+            }}
+            className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'errors'
+                ? 'border-red-500 text-red-600 bg-red-50/50 dark:bg-red-900/10'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Errors ({selectedJob?.progress.failed})
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('queued');
+              setItemsPage(1);
+            }}
+            className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'queued'
+                ? 'border-blue-500 text-blue-600 bg-blue-50/50 dark:bg-blue-900/10'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Queued / Pending
+          </button>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-900 p-4">
-            {activeTab === 'done' && items.length > 0 && (
-                <div className="mb-4 flex justify-end">
-                    <button
-                        onClick={handleApplyAllPage}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition-colors text-sm font-bold"
-                    >
-                        <Download size={16} /> Apply All on Page
-                    </button>
-                </div>
-            )}
+          {activeTab === 'done' && items.length > 0 && (
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={handleApplyAllPage}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition-colors text-sm font-bold"
+              >
+                <Download size={16} /> Apply All on Page
+              </button>
+            </div>
+          )}
 
-            {isLoadingItems ? (
-                <div className="flex justify-center py-20">
-                    <Loader2 className="animate-spin text-slate-400" size={32} />
-                </div>
-            ) : (
-                <div className="space-y-2">
-                    {items.map((item) => (
-                        <div key={item.itemId} className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center text-sm">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                {item.status === 'done' && <CheckCircle size={16} className="text-emerald-500 shrink-0" />}
-                                {item.status === 'error' && <AlertCircle size={16} className="text-red-500 shrink-0" />}
-                                {(item.status === 'pending' || item.status === 'processing') && <Clock size={16} className="text-slate-400 shrink-0" />}
-
-                                <span className="truncate max-w-md font-medium" title={item.url}>{item.url}</span>
-                                {item.error && <span className="text-red-500 text-xs truncate max-w-xs">{item.error}</span>}
-                            </div>
-
-                            {item.status === 'done' && (
-                                <button
-                                    onClick={() => handleApply(item.itemId)}
-                                    disabled={applyingIds.has(item.itemId) || appliedIds.has(item.itemId)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                        appliedIds.has(item.itemId)
-                                        ? 'bg-emerald-100 text-emerald-700 cursor-default'
-                                        : 'bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600'
-                                    }`}
-                                >
-                                    {applyingIds.has(item.itemId) ? (
-                                        <Loader2 className="animate-spin" size={14} />
-                                    ) : appliedIds.has(item.itemId) ? (
-                                        'Applied'
-                                    ) : (
-                                        'Apply Result'
-                                    )}
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                    {items.length === 0 && (
-                        <div className="text-center py-10 text-slate-400">
-                            No items found in this section.
-                        </div>
+          {isLoadingItems ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="animate-spin text-slate-400" size={32} />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {items.map((item) => (
+                <div
+                  key={item.itemId}
+                  className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-between items-center text-sm"
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    {item.status === 'done' && (
+                      <CheckCircle size={16} className="text-emerald-500 shrink-0" />
                     )}
+                    {item.status === 'error' && (
+                      <AlertCircle size={16} className="text-red-500 shrink-0" />
+                    )}
+                    {(item.status === 'pending' || item.status === 'processing') && (
+                      <Clock size={16} className="text-slate-400 shrink-0" />
+                    )}
+
+                    <span className="truncate max-w-md font-medium" title={item.url}>
+                      {item.url}
+                    </span>
+                    {item.error && (
+                      <span className="text-red-500 text-xs truncate max-w-xs">{item.error}</span>
+                    )}
+                  </div>
+
+                  {item.status === 'done' && (
+                    <button
+                      onClick={() => handleApply(item.itemId)}
+                      disabled={applyingIds.has(item.itemId) || appliedIds.has(item.itemId)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        appliedIds.has(item.itemId)
+                          ? 'bg-emerald-100 text-emerald-700 cursor-default'
+                          : 'bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600'
+                      }`}
+                    >
+                      {applyingIds.has(item.itemId) ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : appliedIds.has(item.itemId) ? (
+                        'Applied'
+                      ) : (
+                        'Apply Result'
+                      )}
+                    </button>
+                  )}
                 </div>
-            )}
+              ))}
+              {items.length === 0 && (
+                <div className="text-center py-10 text-slate-400">
+                  No items found in this section.
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Pagination */}
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center">
-            <button
-                onClick={() => setItemsPage(p => Math.max(1, p - 1))}
-                disabled={itemsPage === 1}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg disabled:opacity-50"
-            >
-                <ChevronLeft size={20} />
-            </button>
-            <span className="text-sm text-slate-500">
-                Page {itemsPage} of {Math.ceil(itemsTotal / 50) || 1}
-            </span>
-            <button
-                onClick={() => setItemsPage(p => p + 1)}
-                disabled={itemsPage >= Math.ceil(itemsTotal / 50)}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg disabled:opacity-50"
-            >
-                <ChevronRight size={20} />
-            </button>
+          <button
+            onClick={() => setItemsPage((p) => Math.max(1, p - 1))}
+            disabled={itemsPage === 1}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg disabled:opacity-50"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <span className="text-sm text-slate-500">
+            Page {itemsPage} of {Math.ceil(itemsTotal / 50) || 1}
+          </span>
+          <button
+            onClick={() => setItemsPage((p) => p + 1)}
+            disabled={itemsPage >= Math.ceil(itemsTotal / 50)}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg disabled:opacity-50"
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
       </div>
     </div>

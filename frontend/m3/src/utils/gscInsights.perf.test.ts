@@ -15,7 +15,10 @@ describe('Performance Benchmark: analyzeCannibalization', () => {
         keys: [query, `https://example.com/page_${i}`],
         clicks: Math.floor(Math.random() * 100),
         // 80% of rows have < 50 impressions (Long Tail), 20% have high volume
-        impressions: Math.random() > 0.2 ? Math.floor(Math.random() * 49) : Math.floor(Math.random() * 1000) + 50,
+        impressions:
+          Math.random() > 0.2
+            ? Math.floor(Math.random() * 49)
+            : Math.floor(Math.random() * 1000) + 50,
         ctr: Math.random() * 0.1,
         position: Math.floor(Math.random() * 20) + 1,
       });

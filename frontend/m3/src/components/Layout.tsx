@@ -140,7 +140,13 @@ const Layout: React.FC<LayoutProps> = ({
   // Sync Tab with URL
   useEffect(() => {
     const path = location.pathname;
-    if (path === '/' || path === '/app' || path === '/app/' || path.startsWith('/app/checklist') || path.startsWith('/app/challenge')) {
+    if (
+      path === '/' ||
+      path === '/app' ||
+      path === '/app/' ||
+      path.startsWith('/app/checklist') ||
+      path.startsWith('/app/challenge')
+    ) {
       setActiveTab('analitica');
     } else if (
       path.startsWith('/app/client-roadmap') ||
@@ -148,7 +154,11 @@ const Layout: React.FC<LayoutProps> = ({
       path.startsWith('/app/module')
     ) {
       setActiveTab('estrategia');
-    } else if (path.startsWith('/app/kanban') || path.startsWith('/app/settings') || path.startsWith('/app/completed-tasks')) {
+    } else if (
+      path.startsWith('/app/kanban') ||
+      path.startsWith('/app/settings') ||
+      path.startsWith('/app/completed-tasks')
+    ) {
       setActiveTab('acciones');
     } else if (path.startsWith('/app/admin')) {
       setActiveTab('admin');
@@ -245,49 +255,51 @@ const Layout: React.FC<LayoutProps> = ({
       case 'estrategia':
         return (
           <>
-             <NavItem
-                to="/app/client-roadmap"
-                icon={<Map size={20} />}
-                label={t('nav.client_roadmap')}
-                subLabel={t('nav.client_roadmap_sub')}
-                onClick={() => setIsMobileMenuOpen(false)}
-              />
-              <NavItem
-                to="/app/ai-roadmap"
-                icon={<Sparkles size={20} />}
-                label={t('nav.ai_roadmap')}
-                subLabel={t('nav.ai_roadmap_sub')}
-                onClick={() => setIsMobileMenuOpen(false)}
-              />
-              <div className="my-4 border-t border-slate-100 dark:border-slate-800"></div>
-              <div className="px-4 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Módulos de Auditoría</div>
-              {modules.map((mod) => {
-                const isComplete =
-                  mod.tasks.length > 0 && mod.tasks.every((t) => t.status === 'completed');
-                return (
-                  <NavItem
-                    key={mod.id}
-                    to={`/app/module/${mod.id}`}
-                    icon={getIcon(mod.iconName)}
-                    label={`${t('nav.module_prefix')}${mod.id}: ${mod.title}`}
-                    subLabel={mod.levelRange}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    isComplete={isComplete}
-                  />
-                );
-              })}
+            <NavItem
+              to="/app/client-roadmap"
+              icon={<Map size={20} />}
+              label={t('nav.client_roadmap')}
+              subLabel={t('nav.client_roadmap_sub')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <NavItem
+              to="/app/ai-roadmap"
+              icon={<Sparkles size={20} />}
+              label={t('nav.ai_roadmap')}
+              subLabel={t('nav.ai_roadmap_sub')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <div className="my-4 border-t border-slate-100 dark:border-slate-800"></div>
+            <div className="px-4 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Módulos de Auditoría
+            </div>
+            {modules.map((mod) => {
+              const isComplete =
+                mod.tasks.length > 0 && mod.tasks.every((t) => t.status === 'completed');
+              return (
+                <NavItem
+                  key={mod.id}
+                  to={`/app/module/${mod.id}`}
+                  icon={getIcon(mod.iconName)}
+                  label={`${t('nav.module_prefix')}${mod.id}: ${mod.title}`}
+                  subLabel={mod.levelRange}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  isComplete={isComplete}
+                />
+              );
+            })}
           </>
         );
       case 'acciones':
         return (
           <>
-             <NavItem
-                to="/app/kanban"
-                icon={<KanbanSquare size={20} />}
-                label={t('nav.kanban_board')}
-                subLabel={t('nav.kanban_board_sub')}
-                onClick={() => setIsMobileMenuOpen(false)}
-              />
+            <NavItem
+              to="/app/kanban"
+              icon={<KanbanSquare size={20} />}
+              label={t('nav.kanban_board')}
+              subLabel={t('nav.kanban_board_sub')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
             <NavItem
               to="/app/completed-tasks"
               icon={<ClipboardList size={20} />}
@@ -295,25 +307,25 @@ const Layout: React.FC<LayoutProps> = ({
               subLabel={t('nav.completed_tasks_sub')}
               onClick={() => setIsMobileMenuOpen(false)}
             />
-               <NavItem
-                to="/app/settings"
-                icon={<SettingsIcon size={20} />}
-                label={t('nav.settings')}
-                subLabel={t('nav.settings_sub')}
-                onClick={() => setIsMobileMenuOpen(false)}
-              />
+            <NavItem
+              to="/app/settings"
+              icon={<SettingsIcon size={20} />}
+              label={t('nav.settings')}
+              subLabel={t('nav.settings_sub')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
           </>
         );
       case 'admin':
         return (
           <>
-             <NavItem
-                to="/app/admin/ideas"
-                icon={<Lightbulb size={20} />}
-                label="Mejoras Back/Front"
-                subLabel="Sugerencias"
-                onClick={() => setIsMobileMenuOpen(false)}
-              />
+            <NavItem
+              to="/app/admin/ideas"
+              icon={<Lightbulb size={20} />}
+              label="Mejoras Back/Front"
+              subLabel="Sugerencias"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
           </>
         );
       default:
@@ -336,34 +348,40 @@ const Layout: React.FC<LayoutProps> = ({
 
           {/* Tabs */}
           <nav className="hidden lg:flex items-center space-x-1">
-            {(['analitica', 'estrategia', 'acciones', 'backend', 'admin'] as TabType[]).map((tab) => {
-              if ((tab === 'admin' || tab === 'backend') && sessionStorage.getItem('portal_role') !== 'operator') return null;
+            {(['analitica', 'estrategia', 'acciones', 'backend', 'admin'] as TabType[]).map(
+              (tab) => {
+                if (
+                  (tab === 'admin' || tab === 'backend') &&
+                  sessionStorage.getItem('portal_role') !== 'operator'
+                )
+                  return null;
 
-              let toPath = '/app/';
-              if (tab === 'estrategia') toPath = '/app/client-roadmap';
-              if (tab === 'acciones') toPath = '/app/kanban';
-              if (tab === 'admin') toPath = '/app/admin/ideas';
-              if (tab === 'backend') toPath = '/operator';
+                let toPath = '/app/';
+                if (tab === 'estrategia') toPath = '/app/client-roadmap';
+                if (tab === 'acciones') toPath = '/app/kanban';
+                if (tab === 'admin') toPath = '/app/admin/ideas';
+                if (tab === 'backend') toPath = '/operator';
 
-              return (
-                <NavLink
-                  key={tab}
-                  to={toPath}
-                  onClick={(e) => {
-                    if (tab === 'backend') return; // Default NavLink action is fine for /operator
-                    e.preventDefault();
-                    handleTabChange(tab);
-                  }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
-                    activeTab === tab
-                      ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 ring-1 ring-blue-100 dark:ring-blue-800'
-                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
-                  }`}
-                >
-                  {tab === 'backend' ? 'Python Backend' : tab === 'analitica' ? 'Analítica' : tab}
-                </NavLink>
-              );
-            })}
+                return (
+                  <NavLink
+                    key={tab}
+                    to={toPath}
+                    onClick={(e) => {
+                      if (tab === 'backend') return; // Default NavLink action is fine for /operator
+                      e.preventDefault();
+                      handleTabChange(tab);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
+                      activeTab === tab
+                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 ring-1 ring-blue-100 dark:ring-blue-800'
+                        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {tab === 'backend' ? 'Python Backend' : tab === 'analitica' ? 'Analítica' : tab}
+                  </NavLink>
+                );
+              },
+            )}
           </nav>
         </div>
 
@@ -379,7 +397,7 @@ const Layout: React.FC<LayoutProps> = ({
         <div className="hidden lg:flex items-center gap-3">
           {clients && currentClientId && onSwitchClient && onAddClient && onDeleteClient && (
             <div className="w-64">
-               <ClientSwitcher
+              <ClientSwitcher
                 clients={clients}
                 currentClientId={currentClientId}
                 onSwitchClient={onSwitchClient}
@@ -408,11 +426,10 @@ const Layout: React.FC<LayoutProps> = ({
       `}
       >
         <div className="px-4 pb-4 flex-1 overflow-y-auto custom-scrollbar flex flex-col">
-
           {/* Mobile Client Switcher */}
           <div className="lg:hidden mb-4">
             {clients && currentClientId && onSwitchClient && onAddClient && onDeleteClient && (
-               <ClientSwitcher
+              <ClientSwitcher
                 clients={clients}
                 currentClientId={currentClientId}
                 onSwitchClient={onSwitchClient}
@@ -423,8 +440,13 @@ const Layout: React.FC<LayoutProps> = ({
 
             {/* Mobile Tabs */}
             <div className="grid grid-cols-2 gap-2 mb-4">
-                 {(['analitica', 'estrategia', 'acciones', 'backend', 'admin'] as TabType[]).map((tab) => {
-                  if ((tab === 'admin' || tab === 'backend') && sessionStorage.getItem('portal_role') !== 'operator') return null;
+              {(['analitica', 'estrategia', 'acciones', 'backend', 'admin'] as TabType[]).map(
+                (tab) => {
+                  if (
+                    (tab === 'admin' || tab === 'backend') &&
+                    sessionStorage.getItem('portal_role') !== 'operator'
+                  )
+                    return null;
 
                   let toPath = '/app/';
                   if (tab === 'estrategia') toPath = '/app/client-roadmap';
@@ -437,10 +459,10 @@ const Layout: React.FC<LayoutProps> = ({
                       key={tab}
                       to={toPath}
                       onClick={(e) => {
-                          if (tab === 'backend') return;
-                          e.preventDefault();
-                          handleTabChange(tab);
-                          setIsMobileMenuOpen(false);
+                        if (tab === 'backend') return;
+                        e.preventDefault();
+                        handleTabChange(tab);
+                        setIsMobileMenuOpen(false);
                       }}
                       className={`block text-center px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border ${
                         activeTab === tab
@@ -451,32 +473,31 @@ const Layout: React.FC<LayoutProps> = ({
                       {tab === 'backend' ? 'Python' : tab === 'analitica' ? 'Analítica' : tab}
                     </NavLink>
                   );
-                })}
+                },
+              )}
             </div>
           </div>
 
           {activeTab === 'analitica' && (
-             <div className="bg-slate-900 dark:bg-slate-800 rounded-2xl p-4 text-white relative overflow-hidden mb-6 border border-slate-800 dark:border-slate-700 shrink-0">
-                <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
-                <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
+            <div className="bg-slate-900 dark:bg-slate-800 rounded-2xl p-4 text-white relative overflow-hidden mb-6 border border-slate-800 dark:border-slate-700 shrink-0">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+              <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
                 {t('global_score')}
-                </p>
-                <div className="flex items-end gap-2">
+              </p>
+              <div className="flex items-end gap-2">
                 <span className="text-4xl font-bold">{Math.round(globalScore)}</span>
                 <span className="text-slate-400 mb-1">/ 100</span>
-                </div>
-                <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+              </div>
+              <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
                 <div
-                    className="bg-gradient-to-r from-blue-400 to-emerald-400 h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${globalScore}%` }}
+                  className="bg-gradient-to-r from-blue-400 to-emerald-400 h-full rounded-full transition-all duration-1000"
+                  style={{ width: `${globalScore}%` }}
                 ></div>
-                </div>
+              </div>
             </div>
           )}
 
-          <nav className="space-y-1 pr-2">
-            {renderSidebarContent()}
-          </nav>
+          <nav className="space-y-1 pr-2">{renderSidebarContent()}</nav>
 
           <div className="mt-auto pt-6 pb-2 space-y-3">
             <button

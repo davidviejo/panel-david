@@ -244,11 +244,13 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({
 
   const filteredTasks = useMemo(
     () =>
-      module ? module.tasks.filter((t) => {
-        if (filter === 'high') return t.impact === 'High';
-        if (filter === 'incomplete') return t.status !== 'completed';
-        return true;
-      }) : [],
+      module
+        ? module.tasks.filter((t) => {
+            if (filter === 'high') return t.impact === 'High';
+            if (filter === 'incomplete') return t.status !== 'completed';
+            return true;
+          })
+        : [],
     [module, filter],
   );
 

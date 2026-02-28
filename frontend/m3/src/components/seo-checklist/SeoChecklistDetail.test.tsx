@@ -39,25 +39,25 @@ const mockPage: SeoPage = {
   pageType: 'Article',
   cluster: 'Test Cluster',
   checklist: {
-      CLUSTER: { key: 'CLUSTER', label: 'Cluster', status_manual: 'SI', notes_manual: '' },
-      // Add a few more keys to satisfy the component if it iterates all points,
-      // but the mock ChecklistItem handles rendering.
-      // However, SeoChecklistDetail iterates CHECKLIST_POINTS global constant.
-      // We need to ensure page.checklist has keys for all points or handle missing ones?
-      // The component assumes they exist.
-      // Let's rely on type casting for the test mock or provide minimal necessary data.
+    CLUSTER: { key: 'CLUSTER', label: 'Cluster', status_manual: 'SI', notes_manual: '' },
+    // Add a few more keys to satisfy the component if it iterates all points,
+    // but the mock ChecklistItem handles rendering.
+    // However, SeoChecklistDetail iterates CHECKLIST_POINTS global constant.
+    // We need to ensure page.checklist has keys for all points or handle missing ones?
+    // The component assumes they exist.
+    // Let's rely on type casting for the test mock or provide minimal necessary data.
   } as any,
 };
 
 // Ensure all checklist points are present in mockPage to avoid runtime errors during map
 import { CHECKLIST_POINTS } from '../../types/seoChecklist';
-CHECKLIST_POINTS.forEach(point => {
-    (mockPage.checklist as any)[point.key] = {
-        key: point.key,
-        label: point.label,
-        status_manual: 'NA',
-        notes_manual: ''
-    };
+CHECKLIST_POINTS.forEach((point) => {
+  (mockPage.checklist as any)[point.key] = {
+    key: point.key,
+    label: point.label,
+    status_manual: 'NA',
+    notes_manual: '',
+  };
 });
 
 describe('SeoChecklistDetail', () => {
@@ -68,7 +68,7 @@ describe('SeoChecklistDetail', () => {
         onUpdatePage={vi.fn()}
         onUpdateChecklistItem={vi.fn()}
         onBack={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText('https://example.com/test')).toBeDefined();
@@ -85,7 +85,7 @@ describe('SeoChecklistDetail', () => {
         onUpdatePage={onUpdatePage}
         onUpdateChecklistItem={vi.fn()}
         onBack={vi.fn()}
-      />
+      />,
     );
 
     // Click edit button
@@ -130,7 +130,7 @@ describe('SeoChecklistDetail', () => {
         onUpdatePage={onUpdatePage}
         onUpdateChecklistItem={vi.fn()}
         onBack={vi.fn()}
-      />
+      />,
     );
 
     // Click edit button

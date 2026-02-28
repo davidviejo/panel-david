@@ -18,8 +18,18 @@ const mockPage: SeoPage = {
   kwPrincipal: 'test',
   pageType: 'Article',
   checklist: {
-    GEOLOCALIZACION: { key: 'GEOLOCALIZACION', label: 'Geo', status_manual: 'NA', notes_manual: '' },
-    DATOS_ESTRUCTURADOS: { key: 'DATOS_ESTRUCTURADOS', label: 'Data', status_manual: 'NA', notes_manual: '' },
+    GEOLOCALIZACION: {
+      key: 'GEOLOCALIZACION',
+      label: 'Geo',
+      status_manual: 'NA',
+      notes_manual: '',
+    },
+    DATOS_ESTRUCTURADOS: {
+      key: 'DATOS_ESTRUCTURADOS',
+      label: 'Data',
+      status_manual: 'NA',
+      notes_manual: '',
+    },
     OPORTUNIDADES: { key: 'OPORTUNIDADES', label: 'Ops', status_manual: 'NA', notes_manual: '' },
   } as any,
 };
@@ -36,16 +46,16 @@ describe('runPageAnalysis', () => {
       items: {
         DATOS_ESTRUCTURADOS: {
           autoData: {
-            schemasParsed: ['LocalBusiness', 'Organization']
-          }
+            schemasParsed: ['LocalBusiness', 'Organization'],
+          },
         },
         GEOLOCALIZACION: {
           autoData: {
-            localBusiness: false // Initially false or undefined
-          }
+            localBusiness: false, // Initially false or undefined
+          },
         },
-        OPORTUNIDADES: { autoData: {} }
-      }
+        OPORTUNIDADES: { autoData: {} },
+      },
     });
 
     const updates = await runPageAnalysis(mockPage);
@@ -61,11 +71,11 @@ describe('runPageAnalysis', () => {
       items: {
         DATOS_ESTRUCTURADOS: {
           autoData: {
-            schemasParsed: [{ '@type': 'LocalBusiness' }]
-          }
+            schemasParsed: [{ '@type': 'LocalBusiness' }],
+          },
         },
-        OPORTUNIDADES: { autoData: {} }
-      }
+        OPORTUNIDADES: { autoData: {} },
+      },
     });
 
     const updates = await runPageAnalysis(mockPage);
@@ -82,16 +92,16 @@ describe('runPageAnalysis', () => {
       items: {
         DATOS_ESTRUCTURADOS: {
           autoData: {
-            schemasParsed: ['Article']
-          }
+            schemasParsed: ['Article'],
+          },
         },
         GEOLOCALIZACION: {
           autoData: {
-            localBusiness: false
-          }
+            localBusiness: false,
+          },
         },
-        OPORTUNIDADES: { autoData: {} }
-      }
+        OPORTUNIDADES: { autoData: {} },
+      },
     });
 
     const updates = await runPageAnalysis(mockPage);

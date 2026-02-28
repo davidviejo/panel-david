@@ -85,7 +85,7 @@ describe('ClientRoadmap', () => {
     render(
       <MemoryRouter>
         <ClientRoadmap {...defaultProps} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const tasks = screen.getAllByRole('heading', { level: 3 });
@@ -101,7 +101,7 @@ describe('ClientRoadmap', () => {
     render(
       <MemoryRouter>
         <ClientRoadmap {...props} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const tasks = screen.getAllByRole('heading', { level: 3 });
@@ -113,7 +113,7 @@ describe('ClientRoadmap', () => {
     const { rerender } = render(
       <MemoryRouter>
         <ClientRoadmap {...defaultProps} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     let tasks = screen.getAllByRole('heading', { level: 3 });
@@ -127,7 +127,7 @@ describe('ClientRoadmap', () => {
     rerender(
       <MemoryRouter>
         <ClientRoadmap {...newProps} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     tasks = screen.getAllByRole('heading', { level: 3 });

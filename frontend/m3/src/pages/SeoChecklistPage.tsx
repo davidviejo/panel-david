@@ -6,11 +6,11 @@ import { ImportUrlsModal } from '../components/seo-checklist/ImportUrlsModal';
 import { BatchJobMonitor } from '../components/seo-checklist/BatchJobMonitor';
 import { Plus, ListChecks } from 'lucide-react';
 import {
-    getCapabilities,
-    createBatchJob,
-    BatchJobStatus,
-    AnalysisPayload,
-    AnalysisResponse
+  getCapabilities,
+  createBatchJob,
+  BatchJobStatus,
+  AnalysisPayload,
+  AnalysisResponse,
 } from '../services/pythonEngineClient';
 import { Capabilities, AnalysisConfigPayload, SeoPage } from '../types/seoChecklist';
 import { processAnalysisResult } from '../utils/seoUtils';
@@ -41,7 +41,7 @@ const SeoChecklistPage: React.FC = () => {
           JSON.stringify({
             data: caps,
             timestamp: Date.now(),
-          })
+          }),
         );
       }
     };
@@ -82,38 +82,38 @@ const SeoChecklistPage: React.FC = () => {
 
   const handleRunBatch = async (selectedPages: SeoPage[], config: AnalysisConfigPayload) => {
     // Construct payload
-    const items: AnalysisPayload[] = selectedPages.map(p => ({
-        url: p.url,
-        kwPrincipal: p.kwPrincipal,
-        pageType: p.pageType,
-        geoTarget: p.geoTarget,
-        cluster: p.cluster,
-        pageId: p.id,
-        // If GSC integration exists, maybe we should fetch queries first?
-        // For batch, fetching GSC queries for 5000 URLs client-side is bad.
-        // We assume the backend can handle it or we skip it for now.
-        // Or if we already have them in autoData, pass them.
-        gscQueries: p.checklist.OPORTUNIDADES?.autoData?.gscQueries || []
+    const items: AnalysisPayload[] = selectedPages.map((p) => ({
+      url: p.url,
+      kwPrincipal: p.kwPrincipal,
+      pageType: p.pageType,
+      geoTarget: p.geoTarget,
+      cluster: p.cluster,
+      pageId: p.id,
+      // If GSC integration exists, maybe we should fetch queries first?
+      // For batch, fetching GSC queries for 5000 URLs client-side is bad.
+      // We assume the backend can handle it or we skip it for now.
+      // Or if we already have them in autoData, pass them.
+      gscQueries: p.checklist.OPORTUNIDADES?.autoData?.gscQueries || [],
     }));
 
     try {
-        const response = await createBatchJob({ items, config });
-        const newJob: BatchJobStatus = {
-            id: response.jobId,
-            status: 'pending',
-            progress: { total: items.length, processed: 0, succeeded: 0, failed: 0 },
-            created_at: new Date().toISOString()
-        };
-        setJobs(prev => [newJob, ...prev]);
-        setIsMonitorOpen(true);
+      const response = await createBatchJob({ items, config });
+      const newJob: BatchJobStatus = {
+        id: response.jobId,
+        status: 'pending',
+        progress: { total: items.length, processed: 0, succeeded: 0, failed: 0 },
+        created_at: new Date().toISOString(),
+      };
+      setJobs((prev) => [newJob, ...prev]);
+      setIsMonitorOpen(true);
     } catch (e) {
-        console.error('Failed to start batch job', e);
-        alert('Failed to start server-side batch job. Check console or try client-side mode.');
+      console.error('Failed to start batch job', e);
+      alert('Failed to start server-side batch job. Check console or try client-side mode.');
     }
   };
 
   const handleJobUpdate = (updatedJob: BatchJobStatus) => {
-    setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
+    setJobs((prev) => prev.map((j) => (j.id === updatedJob.id ? updatedJob : j)));
   };
 
   const handleApplyResult = (result: AnalysisResponse) => {
@@ -126,7 +126,7 @@ const SeoChecklistPage: React.FC = () => {
     updatePage(page.id, updates);
   };
 
-  const selectedPage = pages.find(p => p.id === selectedPageId);
+  const selectedPage = pages.find((p) => p.id === selectedPageId);
 
   return (
     <div className="space-y-6">
@@ -134,30 +134,37 @@ const SeoChecklistPage: React.FC = () => {
         <>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                    Checklist SEO (URLs)
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-1">
-                    Gestiona y analiza el SEO On-Page de tus URLs.
-                </p>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                Checklist SEO (URLs)
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">
+                Gestiona y analiza el SEO On-Page de tus URLs.
+              </p>
             </div>
             <div className="flex items-center gap-3">
-                {jobs.length > 0 && (
-                    <button
-                        onClick={() => setIsMonitorOpen(true)}
-                        className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2"
-                    >
-                        <ListChecks size={20} />
-                        Monitor Jobs ({jobs.filter(j => j.status !== 'done' && j.status !== 'cancelled' && j.status !== 'error').length})
-                    </button>
-                )}
+              {jobs.length > 0 && (
                 <button
-                    onClick={() => setIsImportModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+                  onClick={() => setIsMonitorOpen(true)}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2"
                 >
-                    <Plus size={20} />
-                    Importar URLs
+                  <ListChecks size={20} />
+                  Monitor Jobs (
+                  {
+                    jobs.filter(
+                      (j) =>
+                        j.status !== 'done' && j.status !== 'cancelled' && j.status !== 'error',
+                    ).length
+                  }
+                  )
                 </button>
+              )}
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+              >
+                <Plus size={20} />
+                Importar URLs
+              </button>
             </div>
           </div>
 
@@ -173,10 +180,10 @@ const SeoChecklistPage: React.FC = () => {
         </>
       ) : (
         <SeoChecklistDetail
-            page={selectedPage}
-            onUpdatePage={updatePage}
-            onUpdateChecklistItem={updateChecklistItem}
-            onBack={() => setSelectedPageId(null)}
+          page={selectedPage}
+          onUpdatePage={updatePage}
+          onUpdateChecklistItem={updateChecklistItem}
+          onBack={() => setSelectedPageId(null)}
         />
       )}
 
@@ -189,10 +196,10 @@ const SeoChecklistPage: React.FC = () => {
 
       {isMonitorOpen && (
         <BatchJobMonitor
-            jobs={jobs}
-            onClose={() => setIsMonitorOpen(false)}
-            onApplyResult={handleApplyResult}
-            onJobUpdate={handleJobUpdate}
+          jobs={jobs}
+          onClose={() => setIsMonitorOpen(false)}
+          onApplyResult={handleApplyResult}
+          onJobUpdate={handleJobUpdate}
         />
       )}
     </div>

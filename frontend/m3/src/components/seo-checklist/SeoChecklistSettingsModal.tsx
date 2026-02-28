@@ -210,22 +210,22 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                 <input
                   type="number"
                   value={formData.budgets.maxUrlsPerBatch}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value) || 0;
-                      const limit = capabilities?.limits.maxUrlsPerBatch || Infinity;
-                      if (val > limit) {
-                        alert(`El valor máximo permitido es ${limit}`);
-                      }
-                      handleChange('budgets', 'maxUrlsPerBatch', Math.min(val, limit));
-                    }}
-                    max={capabilities?.limits.maxUrlsPerBatch}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0;
+                    const limit = capabilities?.limits.maxUrlsPerBatch || Infinity;
+                    if (val > limit) {
+                      alert(`El valor máximo permitido es ${limit}`);
+                    }
+                    handleChange('budgets', 'maxUrlsPerBatch', Math.min(val, limit));
+                  }}
+                  max={capabilities?.limits.maxUrlsPerBatch}
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 />
-                  {capabilities?.limits.maxUrlsPerBatch && (
-                    <span className="text-xs text-slate-400 block mt-1">
-                      Límite sistema: {capabilities.limits.maxUrlsPerBatch}
-                    </span>
-                  )}
+                {capabilities?.limits.maxUrlsPerBatch && (
+                  <span className="text-xs text-slate-400 block mt-1">
+                    Límite sistema: {capabilities.limits.maxUrlsPerBatch}
+                  </span>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
