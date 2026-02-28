@@ -607,7 +607,7 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                 </div>
                 {nextModule && (
                   <button
-                    onClick={() => navigate(`/module/${nextModule.id}`)}
+                    onClick={() => navigate(`/app/module/${nextModule.id}`)}
                     className="mt-4 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1"
                   >
                     Ir al Módulo <ArrowRight size={16} />
@@ -745,7 +745,7 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
           return (
             <div
               key={m.id}
-              onClick={() => navigate(`/module/${m.id}`)}
+              onClick={() => navigate(`/app/module/${m.id}`)}
               className="group bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/5 transition-all cursor-pointer"
             >
               <div className="flex justify-between items-start mb-4">
