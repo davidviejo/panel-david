@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Kanban Board Features', () => {
   test('Kanban tasks filtering and customization', async ({ page }) => {
     // 1. Navigate to the app (using hash router)
-    await page.goto('/#/module/1');
+    await page.goto('/#/app/module/1');
     await page.waitForTimeout(1000); // Wait for load
 
     const taskName = 'Verificar Indexación (robots.txt & sitemap)';
@@ -32,7 +32,8 @@ test.describe('Kanban Board Features', () => {
     }
 
     // 3. Navigate to Kanban Board
-    await page.goto('/#/kanban');
+    await page.getByRole('link', { name: 'acciones', exact: true }).click();
+    await page.getByRole('link', { name: 'Tablero Kanban', exact: false }).click();
     await page.waitForTimeout(1000);
 
     // 4. Verify the task is present in "Pendiente" (default)

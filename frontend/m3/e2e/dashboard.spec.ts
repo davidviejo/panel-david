@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('dashboard loads correctly', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/#/app/');
   await expect(page).toHaveTitle(/MediaFlow SEO/);
 
   // Verify key dashboard elements

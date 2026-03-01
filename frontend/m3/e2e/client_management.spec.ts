@@ -1,14 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 test('create and switch client', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/#/app/');
 
-  // Find the client switcher button in the sidebar
-  // Using a selector targeting the button that likely contains the ChevronDown icon
-  const switcherButton = page.locator('aside button svg.lucide-chevron-down').locator('..');
+  // Find the client switcher button in the header (visible on desktop)
+  const switcherButton = page.locator('header button.w-full.flex.items-center.justify-between');
 
-  // Ensure sidebar is visible (mobile menu handling might be needed on small screens,
-  // but default viewport for Playwright is 1280x720 so it should be fine)
   await expect(switcherButton).toBeVisible();
   await switcherButton.click();
 

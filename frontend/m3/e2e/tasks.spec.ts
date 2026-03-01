@@ -1,13 +1,15 @@
 import { test, expect } from '@playwright/test';
 
 test('navigate to module and verify task details', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/#/app/');
 
+  // Click on the 'estrategia' tab first, since modules are there
+  await page.getByRole('link', { name: 'estrategia', exact: true }).click();
   // Click on the first module card (M1)
-  // Selecting by text "M1" inside the circle might be safer
-  await page.click('text=M1');
+  // It should be visible in the sidebar as "M1:" or something similar.
+  await page.getByRole('link', { name: /Módulo 1|M1:/i }).click();
 
-  await expect(page).toHaveURL(/.*#\/module\/1/);
+  await expect(page).toHaveURL(/.*#\/app\/module\/1/);
 
   // Wait for tasks to render
   await expect(page.locator('h1')).toBeVisible();

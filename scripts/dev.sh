@@ -55,6 +55,9 @@ trap 'kill 0' SIGINT
 # Start Backend in background
 export FLASK_DEBUG=true
 export PORT=5000
+export SECRET_KEY=test_secret
+export JWT_SECRET=test_jwt_secret
+export GOOGLE_DEFAULT_COOKIE=test_cookie
 # Ensure we run from backend/p2 so relative paths work if any
 (cd "$BACKEND_DIR" && python3 run.py) &
 
