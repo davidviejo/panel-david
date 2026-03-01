@@ -3,9 +3,7 @@ import secrets
 
 class Config:
     # Basic Config
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    if not SECRET_KEY:
-        raise ValueError("No SECRET_KEY set for Flask application. This is required for security.")
+    SECRET_KEY = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max upload size
 
@@ -17,9 +15,7 @@ class Config:
 
     # Default consent cookie for Google scraping
     # SECURITY NOTE: This cookie should be rotated frequently and kept secret.
-    DEFAULT_COOKIE = os.environ.get('GOOGLE_DEFAULT_COOKIE')
-    if not DEFAULT_COOKIE:
-        raise ValueError("No GOOGLE_DEFAULT_COOKIE set. This is required to prevent scraping blocks and must be explicitly configured.")
+    DEFAULT_COOKIE = os.environ.get('GOOGLE_DEFAULT_COOKIE', '')
 
     USER_AGENTS = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -38,9 +34,7 @@ class Config:
     CLIENTS_AREA_PASSWORD = os.environ.get('CLIENTS_AREA_PASSWORD')
     OPERATOR_PASSWORD = os.environ.get('OPERATOR_PASSWORD')
 
-    JWT_SECRET = os.environ.get('JWT_SECRET')
-    if not JWT_SECRET:
-        raise ValueError("No JWT_SECRET set. This is required for security.")
+    JWT_SECRET = os.environ.get('JWT_SECRET', secrets.token_hex(32))
 
     # Job Runner Configuration
     JOBS_CONCURRENCY_LIMIT = int(os.environ.get('JOBS_CONCURRENCY_LIMIT', 2))
