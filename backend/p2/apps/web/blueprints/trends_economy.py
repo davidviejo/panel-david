@@ -18,7 +18,8 @@ from apps.core.database import get_user_settings
 
 trends_bp = Blueprint('trends_bp', __name__)
 
-DB_FILE = 'trends_jobs.db'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(BASE_DIR, '..', '..', '..', 'data', 'trends_jobs.db')
 
 _DB_INITIALIZED = False
 
