@@ -20,11 +20,16 @@ trends_bp = Blueprint('trends_bp', __name__)
 
 DB_FILE = 'trends_jobs.db'
 
+_DB_INITIALIZED = False
+
 def init_db():
     """
     Inicializa la base de datos SQLite para el seguimiento de trabajos.
     Crea la tabla 'jobs' si no existe.
     """
+    global _DB_INITIALIZED
+    if _DB_INITIALIZED:
+        return
     try:
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
@@ -32,12 +37,13 @@ def init_db():
                      (job_id TEXT PRIMARY KEY, active INTEGER, progress INTEGER, log TEXT, data TEXT, error TEXT, created_at REAL)''')
         conn.commit()
         conn.close()
+        _DB_INITIALIZED = True
     except Exception as e:
         logging.error(f"Error initiating DB: {e}")
 
-init_db()
 
 def get_job_status(job_id):
+    init_db()
     """
     Recupera el estado actual de un trabajo por su ID.
 
@@ -76,6 +82,7 @@ def update_job_status(job_id, updates, conn=None):
         updates (dict): Diccionario con los campos a actualizar (active, progress, log_append, data, error).
         conn (sqlite3.Connection, optional): Conexión existente a la base de datos. Si se proporciona, no se cierra al finalizar.
     """
+    init_db()
     should_close = False
     try:
         if conn is None:
@@ -125,6 +132,7 @@ def worker_realtime_trends(job_id, geo, category, api_key=None):
         category (str): Categoría de búsqueda.
         api_key (str, optional): Clave API de SerpApi (desde UI).
     """
+    init_db()
     conn = None
     try:
         conn = sqlite3.connect(DB_FILE)
@@ -205,6 +213,7 @@ def dashboard():
 
 @trends_bp.route('/trends/start', methods=['POST'])
 def start_analysis():
+    init_db()
     job_id = str(uuid.uuid4())
     geo = request.form.get('geo', 'ES')
     category = request.form.get('category', 'h')

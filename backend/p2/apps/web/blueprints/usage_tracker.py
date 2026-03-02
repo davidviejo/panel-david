@@ -10,8 +10,13 @@ usage_bp = Blueprint('usage', __name__, url_prefix='/usage')
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, '..', '..', 'data', 'api_usage.db')
 
+_DB_INITIALIZED = False
+
 def init_db():
     """Inicializa la tabla"""
+    global _DB_INITIALIZED
+    if _DB_INITIALIZED:
+        return
     try:
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
@@ -19,13 +24,12 @@ def init_db():
                      (day_date TEXT PRIMARY KEY, count INTEGER)''')
         conn.commit()
         conn.close()
+        _DB_INITIALIZED = True
     except Exception as e:
         logging.error(f"Error iniciando DB: {e}")
 
-# Inicializar al importar
-init_db()
-
 def increment_api_usage(amount=1):
+    init_db()
     today = str(date.today())
     try:
         conn = sqlite3.connect(DB_FILE)
@@ -38,6 +42,7 @@ def increment_api_usage(amount=1):
         logging.error(f"Error update DB: {e}")
 
 def get_today_usage():
+    init_db()
     today = str(date.today())
     count = 0
     try:
