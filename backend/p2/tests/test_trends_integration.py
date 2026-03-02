@@ -17,17 +17,10 @@ sys.modules['bs4'] = MagicMock()
 sys.modules['werkzeug'] = MagicMock()
 sys.modules['werkzeug.utils'] = MagicMock()
 
-# Load trends_provider manually first
-spec_provider = importlib.util.spec_from_file_location("apps.trends_provider", "backend/p2/apps/web/blueprints/trends_provider.py")
-trends_provider = importlib.util.module_from_spec(spec_provider)
-sys.modules["apps.trends_provider"] = trends_provider
-# We don't need to exec it if we just want it to exist, but exec is safer if it has exports
-spec_provider.loader.exec_module(trends_provider)
-
 # Now load trends_economy
-spec = importlib.util.spec_from_file_location("apps.trends_economy", "backend/p2/apps/web/blueprints/trends_economy.py")
+spec = importlib.util.spec_from_file_location("apps.web.blueprints.trends_economy", "apps/web/blueprints/trends_economy.py")
 trends_economy = importlib.util.module_from_spec(spec)
-sys.modules["apps.trends_economy"] = trends_economy
+sys.modules["apps.web.blueprints.trends_economy"] = trends_economy
 spec.loader.exec_module(trends_economy)
 
 worker_realtime_trends = trends_economy.worker_realtime_trends

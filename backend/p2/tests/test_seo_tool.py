@@ -21,7 +21,7 @@ def test_dispatcher_serpapi_success():
         ]
     }
 
-    with patch('requests.get', return_value=mock_response) as mock_get:
+    with patch('apps.web.blueprints.seo_tool.requests.get', return_value=mock_response) as mock_get:
         results = dispatcher(kw, cfg)
 
         assert len(results) == 2
@@ -49,7 +49,7 @@ def test_dispatcher_serpapi_error():
     mock_response = MagicMock()
     mock_response.json.return_value = {"error": "Invalid key"}
 
-    with patch('requests.get', return_value=mock_response):
+    with patch('apps.web.blueprints.seo_tool.requests.get', return_value=mock_response):
         with pytest.raises(Exception, match="SerpApi Error"):
             dispatcher(kw, cfg)
 
@@ -64,7 +64,6 @@ def test_dispatcher_serpapi_exception():
         'tos': 15
     }
 
-    # Simulate connection error which is caught and returns []
-    with patch('requests.get', side_effect=Exception("Connection error")):
+    with patch('apps.web.blueprints.seo_tool.requests.get', side_effect=Exception("Connection error")):
         results = dispatcher(kw, cfg)
         assert results == []

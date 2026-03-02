@@ -62,7 +62,7 @@ def test_monitor_state_flow():
 
 def test_execute_ai_task_simulation():
     # Mock query_llm to simulate response
-    with patch('apps.web.blueprints.ai_hub._query_openai_direct') as mock_query:
+    with patch('apps.ai_hub._query_openai_direct') as mock_query:
         mock_query.return_value = "[SIMULACIÓN AI] Fix this text"
 
         prompt = "Fix this text"
