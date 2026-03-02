@@ -1,11 +1,14 @@
 from flask import Blueprint, render_template, request, jsonify
 import requests
 import concurrent.futures
+from apps.utils import is_safe_url
 
 wpo_bp = Blueprint('wpo', __name__, url_prefix='/wpo')
 
 def check_wpo(url):
     d = {'url': url, 'ttfb': 0, 'size': 0}
+    if not is_safe_url(url):
+        return d
     try:
         r = requests.get(url, timeout=10)
         d['ttfb'] = round(r.elapsed.total_seconds(), 3)
