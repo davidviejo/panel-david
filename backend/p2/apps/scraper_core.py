@@ -10,12 +10,40 @@ from playwright.sync_api import sync_playwright
 import urllib.parse
 from typing import List, Dict, Optional, Any, Union
 from flask import session, has_request_context
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from concurrent.futures import ThreadPoolExecutor
 from apps.web.blueprints.usage_tracker import increment_api_usage
 from apps.core.config import Config
 from apps.utils import is_safe_url, sanitize_log_message
 
 class GoogleAPIError(Exception):
     pass
+
+# --- ROBUST SCRAPING SESSION ---
+def create_robust_session() -> requests.Session:
+    """
+    Creates a robust reusable requests Session with automatic retries for server errors
+    and timeouts.
+    """
+    session = requests.Session()
+
+    # Configure retry strategy
+    retry_strategy = Retry(
+        total=5,
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET", "HEAD"]
+    )
+
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+# Global reusable session
+robust_session = create_robust_session()
+
 
 def get_optimized_headers(cookie: Optional[str] = None) -> Dict[str, str]:
     """
@@ -546,3 +574,138 @@ def fetch_url_hybrid(url: str, delay: Union[int, float] = 0) -> Dict[str, Any]:
 def get_soup(url: str, delay: int = 0) -> Optional[BeautifulSoup]:
     result = fetch_url_hybrid(url, delay)
     return BeautifulSoup(result['content'], 'html.parser') if result['content'] else None
+
+# --- NEW ROBUST URL FETCHING ---
+def fetch_url(url: str, connect_timeout: int = 10, read_timeout: int = 30, random_delay: bool = True) -> Dict[str, Any]:
+    """
+    Robust HTTP fetching wrapper using the global robust session.
+
+    Args:
+        url (str): The URL to fetch.
+        connect_timeout (int): Connect timeout in seconds.
+        read_timeout (int): Read timeout in seconds.
+        random_delay (bool): If True, wait 1-3 seconds before fetching.
+
+    Returns:
+        dict: A structured dictionary with status and extracted information.
+    """
+    if random_delay:
+        time.sleep(random.uniform(1, 3))
+
+    start_time = time.time()
+
+    result = {
+        'url': url,
+        'ok': False,
+        'status_code': None,
+        'final_url': None,
+        'html': None,
+        'error_type': None,
+        'error_message': None,
+        'elapsed_ms': 0
+    }
+
+    try:
+        response = robust_session.get(
+            url,
+            headers=get_optimized_headers(),
+            timeout=(connect_timeout, read_timeout)
+        )
+
+        # Calculate elapsed time
+        result['elapsed_ms'] = int((time.time() - start_time) * 1000)
+        result['status_code'] = response.status_code
+        result['final_url'] = response.url
+
+        if response.status_code == 200:
+            result['ok'] = True
+            result['html'] = response.text
+            logging.info(f"fetch_url OK: {url} | Status: {response.status_code} | Time: {result['elapsed_ms']}ms")
+        elif response.status_code == 403:
+            result['error_type'] = 'blocked_403'
+            result['error_message'] = f"HTTP {response.status_code}"
+            logging.warning(f"fetch_url BLOCKED: {url} | Status: {response.status_code} | Time: {result['elapsed_ms']}ms")
+        elif response.status_code == 429:
+            result['error_type'] = 'rate_limited_429'
+            result['error_message'] = f"HTTP {response.status_code}"
+            logging.warning(f"fetch_url RATE_LIMITED: {url} | Status: {response.status_code} | Time: {result['elapsed_ms']}ms")
+        else:
+            result['error_type'] = 'other'
+            result['error_message'] = f"HTTP {response.status_code}"
+            logging.warning(f"fetch_url OTHER HTTP ERROR: {url} | Status: {response.status_code} | Time: {result['elapsed_ms']}ms")
+
+    except requests.exceptions.ConnectTimeout as e:
+        result['elapsed_ms'] = int((time.time() - start_time) * 1000)
+        result['error_type'] = 'connect_timeout'
+        result['error_message'] = str(e)
+        logging.error(f"fetch_url CONNECT TIMEOUT: {url} | Time: {result['elapsed_ms']}ms | Error: {e}")
+    except requests.exceptions.ReadTimeout as e:
+        result['elapsed_ms'] = int((time.time() - start_time) * 1000)
+        result['error_type'] = 'read_timeout'
+        result['error_message'] = str(e)
+        logging.error(f"fetch_url READ TIMEOUT: {url} | Time: {result['elapsed_ms']}ms | Error: {e}")
+    except requests.exceptions.SSLError as e:
+        result['elapsed_ms'] = int((time.time() - start_time) * 1000)
+        result['error_type'] = 'ssl_error'
+        result['error_message'] = str(e)
+        logging.error(f"fetch_url SSL ERROR: {url} | Time: {result['elapsed_ms']}ms | Error: {e}")
+    except requests.exceptions.ConnectionError as e:
+        result['elapsed_ms'] = int((time.time() - start_time) * 1000)
+        error_str = str(e).lower()
+        if 'name resolution' in error_str or 'nodename nor servname' in error_str:
+            result['error_type'] = 'dns_error'
+        else:
+            result['error_type'] = 'connection_error'
+        result['error_message'] = str(e)
+        logging.error(f"fetch_url CONNECTION ERROR ({result['error_type']}): {url} | Time: {result['elapsed_ms']}ms | Error: {e}")
+    except Exception as e:
+        result['elapsed_ms'] = int((time.time() - start_time) * 1000)
+        result['error_type'] = 'other'
+        result['error_message'] = str(e)
+        logging.error(f"fetch_url OTHER ERROR: {url} | Time: {result['elapsed_ms']}ms | Error: {e}")
+
+    return result
+
+def fetch_many(urls: List[str], max_workers: int = 5, connect_timeout: int = 10, read_timeout: int = 30, random_delay: bool = True) -> List[Dict[str, Any]]:
+    """
+    Robust HTTP fetching wrapper to process multiple URLs concurrently.
+
+    Args:
+        urls (List[str]): List of URLs to fetch.
+        max_workers (int): Maximum number of concurrent workers.
+        connect_timeout (int): Connect timeout in seconds.
+        read_timeout (int): Read timeout in seconds.
+        random_delay (bool): If True, wait 1-3 seconds before fetching each URL.
+
+    Returns:
+        List[Dict[str, Any]]: A list of dictionaries with status and extracted information, in the same order as the input URLs.
+    """
+    results_map: Dict[str, Dict[str, Any]] = {}
+
+    def fetch_task(url: str) -> None:
+        try:
+            results_map[url] = fetch_url(
+                url,
+                connect_timeout=connect_timeout,
+                read_timeout=read_timeout,
+                random_delay=random_delay
+            )
+        except Exception as e:
+            # Fallback for unexpected task runner errors
+            results_map[url] = {
+                'url': url,
+                'ok': False,
+                'status_code': None,
+                'final_url': None,
+                'html': None,
+                'error_type': 'task_error',
+                'error_message': str(e),
+                'elapsed_ms': 0
+            }
+            logging.error(f"fetch_many TASK ERROR for {url}: {e}")
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        executor.map(fetch_task, urls)
+
+    # Return results in the exact same order as the input URLs
+    return [results_map[url] for url in urls]
