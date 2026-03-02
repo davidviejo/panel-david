@@ -101,11 +101,13 @@ export const processAnalysisResult = (
         // This preserves status_manual and notes_manual from `updates.checklist[key]` (which is from `page.checklist`),
         // and overwrites autoData, recommendation, etc. from `v`.
 
-        updates.checklist[key] = {
-          ...updates.checklist[key],
-          ...v,
-          suggested_status: v.suggested_status as any,
-        };
+        if (v) {
+          updates.checklist[key] = {
+            ...updates.checklist[key],
+            ...v,
+            suggested_status: v.suggested_status as any,
+          };
+        }
       }
     });
   }
