@@ -83,7 +83,7 @@ def create_app(config_class=Config):
     # Inicializar base de datos
     init_db()
 
-    app = Flask(__name__, template_folder='../templates', static_folder='../static')
+    app = Flask(__name__, template_folder='../../templates', static_folder='../../static')
     app.config.from_object(config_class)
 
     # --- SECURITY: Auto-hash passwords if plain text ---
