@@ -4,7 +4,7 @@ from apps.web.blueprints.content_gap import get_text_content
 from apps.web.blueprints.meta_gen import gen
 from apps.web.blueprints.image_audit import scan_imgs
 from apps.web.blueprints.hreflang_tool import check_hreflang
-from apps.scraper_core import _fetch_with_requests, _fetch_with_playwright
+from apps.tools.scraper_core import _fetch_with_requests, _fetch_with_playwright
 from apps.web.blueprints.bot_sim import _fetch as bot_fetch, check as bot_check
 
 class TestSecurityBasic(unittest.TestCase):
@@ -35,13 +35,13 @@ class TestSecurityBasic(unittest.TestCase):
             self.assertNotIn("Internal DB", str(result), "Should not leak internal error details")
 
     def test_scraper_core_requests_error_suppression(self):
-        with patch('apps.scraper_core.requests.get') as mock_get:
+        with patch('apps.tools.scraper_core.requests.get') as mock_get:
             mock_get.side_effect = Exception("System Path /etc/passwd leaked")
             result = _fetch_with_requests("http://example.com")
             self.assertEqual(result['error'], "Error de conexión", "Should return generic connection error")
 
     def test_scraper_core_playwright_error_suppression(self):
-        with patch('apps.scraper_core.get_browser') as mock_browser:
+        with patch('apps.tools.scraper_core.get_browser') as mock_browser:
             mock_browser.side_effect = Exception("Browser crash stack trace")
             result = _fetch_with_playwright("http://example.com")
             self.assertEqual(result['error'], "Error de navegación", "Should return generic navigation error")

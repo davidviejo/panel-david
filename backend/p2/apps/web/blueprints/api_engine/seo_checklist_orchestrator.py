@@ -11,7 +11,7 @@ from collections import Counter
 from urllib.parse import urlparse, urljoin
 
 # Tools imports
-from apps.scraper_core import fetch_url_hybrid
+from apps.tools.scraper_core import fetch_url_hybrid
 from apps.web.blueprints.checklist_tool import check_url_compliance
 from apps.web.blueprints.pixel_tool import check_px
 from apps.web.blueprints.structure_tool import get_struct

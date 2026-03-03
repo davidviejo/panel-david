@@ -13,7 +13,7 @@ from collections import deque
 from urllib.parse import urljoin, urlparse
 from typing import Dict, Any
 from apps.core.database import get_all_projects
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 def mask_url_credentials(url: str) -> str:
     """Oculta credenciales en la URL para logs seguros."""

@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 from flask import Blueprint, render_template, request, jsonify
 import requests
 import concurrent.futures
-from apps.utils import is_safe_url, safe_get_json
+from apps.tools.utils import is_safe_url, safe_get_json
 
 fast_bp = Blueprint('fast', __name__, url_prefix='/fast')
 

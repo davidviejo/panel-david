@@ -4,7 +4,7 @@ Incluye simulador de SERP, generador de Schema y generador de FAQ Schema.
 """
 from flask import Blueprint, render_template, request, jsonify
 import json
-from apps.utils import safe_get_json
+from apps.tools.utils import safe_get_json
 
 extra_bp = Blueprint('extra', __name__, url_prefix='/extra')
 

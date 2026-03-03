@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify
 import requests
 from bs4 import BeautifulSoup
 import concurrent.futures
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 structure_bp = Blueprint('structure', __name__, url_prefix='/structure')
 

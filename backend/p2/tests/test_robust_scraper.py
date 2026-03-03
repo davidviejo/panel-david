@@ -2,11 +2,11 @@ import pytest
 from unittest.mock import patch, MagicMock
 import requests
 import time
-from apps.scraper_core import fetch_url, fetch_many, get_optimized_headers
+from apps.tools.scraper_core import fetch_url, fetch_many, get_optimized_headers
 
 class TestRobustScraper:
 
-    @patch('apps.scraper_core.robust_session.get')
+    @patch('apps.tools.scraper_core.robust_session.get')
     def test_fetch_url_ok(self, mock_get):
         # Configurar el mock para que devuelva una respuesta exitosa
         mock_response = MagicMock()
@@ -30,7 +30,7 @@ class TestRobustScraper:
         assert isinstance(result['elapsed_ms'], int)
         mock_get.assert_called_once()
 
-    @patch('apps.scraper_core.robust_session.get')
+    @patch('apps.tools.scraper_core.robust_session.get')
     def test_fetch_url_timeout(self, mock_get):
         # Simular un timeout de conexión
         mock_get.side_effect = requests.exceptions.ConnectTimeout("Connection timed out")
@@ -43,7 +43,7 @@ class TestRobustScraper:
         assert result['error_type'] == 'connect_timeout'
         assert 'Connection timed out' in result['error_message']
 
-    @patch('apps.scraper_core.robust_session.get')
+    @patch('apps.tools.scraper_core.robust_session.get')
     def test_fetch_url_429_rate_limit(self, mock_get):
         # Simular un rate limit (429)
         mock_response = MagicMock()
@@ -59,7 +59,7 @@ class TestRobustScraper:
         assert result['error_type'] == 'rate_limited_429'
         assert 'HTTP 429' in result['error_message']
 
-    @patch('apps.scraper_core.robust_session.get')
+    @patch('apps.tools.scraper_core.robust_session.get')
     def test_fetch_url_connection_error_dns(self, mock_get):
         # Simular error de conexión (DNS)
         mock_get.side_effect = requests.exceptions.ConnectionError("Failed to resolve Name resolution for example.com")
@@ -71,7 +71,7 @@ class TestRobustScraper:
         assert result['error_type'] == 'dns_error'
         assert 'Name resolution' in result['error_message']
 
-    @patch('apps.scraper_core.robust_session.get')
+    @patch('apps.tools.scraper_core.robust_session.get')
     def test_fetch_many_mixed_results(self, mock_get):
         # Mock para devolver 200 para URL1 y Timeout para URL2
         def side_effect(url, *args, **kwargs):

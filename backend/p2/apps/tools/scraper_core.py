@@ -15,7 +15,7 @@ from urllib3.util.retry import Retry
 from concurrent.futures import ThreadPoolExecutor
 from apps.web.blueprints.usage_tracker import increment_api_usage
 from apps.core.config import Config
-from apps.utils import is_safe_url, sanitize_log_message
+from apps.tools.utils import is_safe_url, sanitize_log_message
 
 class GoogleAPIError(Exception):
     pass

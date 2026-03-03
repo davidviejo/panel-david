@@ -1,8 +1,8 @@
 import os
 import logging
 from flask import session, has_request_context
-from apps.utils import sanitize_log_message
-from apps.ai_hub import execute_ai_task
+from apps.tools.utils import sanitize_log_message
+from apps.tools.ai_hub import execute_ai_task
 
 # Configuración de Logging
 logger = logging.getLogger(__name__)

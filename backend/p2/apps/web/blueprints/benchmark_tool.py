@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify
-from apps.scraper_core import smart_serp_search, get_soup
+from apps.tools.scraper_core import smart_serp_search, get_soup
 import concurrent.futures
 import statistics
 

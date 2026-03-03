@@ -6,7 +6,7 @@ import concurrent.futures
 from urllib.parse import urljoin
 import pandas as pd
 import io
-from apps.utils import validate_url, is_safe_url
+from apps.tools.utils import validate_url, is_safe_url
 
 image_bp = Blueprint('image_audit', __name__, url_prefix='/image_audit')
 

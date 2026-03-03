@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import re
 import concurrent.futures
 from urllib.parse import urljoin
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 leads_bp = Blueprint('leads', __name__, url_prefix='/leads')
 

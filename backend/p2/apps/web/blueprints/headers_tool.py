@@ -4,7 +4,7 @@ import socket, ssl
 import logging
 from urllib.parse import urlparse
 from datetime import datetime
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 headers_bp = Blueprint('headers', __name__, url_prefix='/headers')
 

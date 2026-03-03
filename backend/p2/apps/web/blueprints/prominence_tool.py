@@ -4,7 +4,7 @@ import logging
 from bs4 import BeautifulSoup
 from urllib.parse import unquote
 import concurrent.futures
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 prominence_bp = Blueprint('prominence', __name__, url_prefix='/prominence')
 

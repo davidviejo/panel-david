@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import concurrent.futures
 import logging
 from urllib.parse import urljoin
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 health_bp = Blueprint('health', __name__, url_prefix='/health')
 

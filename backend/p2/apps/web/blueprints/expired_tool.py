@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import socket
 from urllib.parse import urlparse
 import concurrent.futures
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 expired_bp = Blueprint('expired', __name__, url_prefix='/expired')
 

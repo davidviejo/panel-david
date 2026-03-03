@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 import concurrent.futures
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 graph_bp = Blueprint('graph', __name__, url_prefix='/graph')
 

@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import pandas as pd
 import io
 import concurrent.futures
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 sculpting_bp = Blueprint('sculpting', __name__, url_prefix='/sculpting')
 

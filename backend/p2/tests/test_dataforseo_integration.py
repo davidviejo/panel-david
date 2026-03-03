@@ -25,16 +25,16 @@ sys.modules['google.generativeai'] = MagicMock()
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import AFTER mocking
-from apps.scraper_core import smart_serp_search
+from apps.tools.scraper_core import smart_serp_search
 from apps.core.config import Config
 
 class TestDataForSEOIntegration(unittest.TestCase):
 
     def setUp(self):
-        self.mock_post_patcher = patch('apps.scraper_core.requests.post')
+        self.mock_post_patcher = patch('apps.tools.scraper_core.requests.post')
         self.mock_post = self.mock_post_patcher.start()
 
-        self.mock_google_patcher = patch('apps.scraper_core.search_google_official')
+        self.mock_google_patcher = patch('apps.tools.scraper_core.search_google_official')
         self.mock_google = self.mock_google_patcher.start()
 
     def tearDown(self):

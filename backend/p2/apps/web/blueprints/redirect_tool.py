@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
 from flask import Blueprint, render_template, request, jsonify
 import requests
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 redirect_bp = Blueprint('redirect', __name__, url_prefix='/redirect')
 

@@ -3,7 +3,7 @@ import requests
 import logging
 from bs4 import BeautifulSoup
 import concurrent.futures
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 hreflang_bp = Blueprint('hreflang', __name__, url_prefix='/hreflang')
 

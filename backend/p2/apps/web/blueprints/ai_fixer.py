@@ -1,6 +1,6 @@
 # apps/ai_fixer.py
 from flask import Blueprint, request, jsonify
-from apps.llm_service import query_llm
+from apps.tools.llm_service import query_llm
 
 ai_bp = Blueprint('ai_bp', __name__)
 

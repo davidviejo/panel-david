@@ -3,7 +3,7 @@ import requests
 from urllib.robotparser import RobotFileParser
 from urllib.parse import urlparse, urljoin
 import concurrent.futures
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 robots_bp = Blueprint('robots', __name__, url_prefix='/robots')
 

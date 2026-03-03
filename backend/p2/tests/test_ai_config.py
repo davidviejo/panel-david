@@ -1,7 +1,7 @@
 import unittest
 from flask import Flask, session
 from apps.web.blueprints.ai_routes import ai_bp
-from apps.scraper_core import smart_serp_search
+from apps.tools.scraper_core import smart_serp_search
 import os
 
 class TestAIConfig(unittest.TestCase):
@@ -51,7 +51,7 @@ class TestAIConfig(unittest.TestCase):
             # I can mock search_dataforseo to verify arguments.
 
             from unittest.mock import patch
-            with patch('apps.scraper_core.search_dataforseo') as mock_search:
+            with patch('apps.tools.scraper_core.search_dataforseo') as mock_search:
                 mock_search.return_value = []
 
                 # Call with mode='dataforseo' to force DFS path

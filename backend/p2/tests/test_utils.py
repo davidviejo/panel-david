@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from apps.utils import validate_url, clean_url, is_safe_url, normalize
+from apps.tools.utils import validate_url, clean_url, is_safe_url, normalize
 
 def test_normalize():
     assert normalize("Héllò Wórld") == "hello world"

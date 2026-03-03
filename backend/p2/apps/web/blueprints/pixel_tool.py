@@ -9,7 +9,7 @@ import concurrent.futures
 import pandas as pd
 import io
 import logging
-from apps.utils import is_safe_url, safe_get_json
+from apps.tools.utils import is_safe_url, safe_get_json
 
 pixel_bp = Blueprint('pixel', __name__, url_prefix='/pixel')
 

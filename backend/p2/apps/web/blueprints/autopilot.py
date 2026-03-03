@@ -15,8 +15,8 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from werkzeug.utils import secure_filename
 from apps.web.blueprints.project_manager import get_active_project
-from apps.scraper_core import smart_serp_search
-from apps.utils import is_safe_url
+from apps.tools.scraper_core import smart_serp_search
+from apps.tools.utils import is_safe_url
 
 autopilot_bp = Blueprint('autopilot_bp', __name__)
 

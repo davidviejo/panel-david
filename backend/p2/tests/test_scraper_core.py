@@ -1,12 +1,12 @@
 from unittest.mock import patch, MagicMock
-from apps.scraper_core import fetch_url_hybrid, get_optimized_headers, parse_google_html
+from apps.tools.scraper_core import fetch_url_hybrid, get_optimized_headers, parse_google_html
 
 def test_get_optimized_headers():
     headers = get_optimized_headers()
     assert 'User-Agent' in headers
     assert 'Cookie' in headers
 
-@patch('apps.scraper_core.requests.get')
+@patch('apps.tools.scraper_core.requests.get')
 def test_fetch_url_hybrid_requests_success(mock_get):
     mock_response = MagicMock()
     mock_response.status_code = 200
@@ -19,8 +19,8 @@ def test_fetch_url_hybrid_requests_success(mock_get):
     assert result['method'] == 'Requests'
     assert b'Content' in result['content']
 
-@patch('apps.scraper_core.requests.get')
-@patch('apps.scraper_core.get_browser')
+@patch('apps.tools.scraper_core.requests.get')
+@patch('apps.tools.scraper_core.get_browser')
 def test_fetch_url_hybrid_playwright_fallback(mock_get_browser, mock_get):
     # Mock requests failure
     mock_response = MagicMock()

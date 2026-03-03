@@ -1,6 +1,6 @@
 import unittest
 from apps.web.blueprints.readability_tool import count_syllables
-from apps.utils import normalize
+from apps.tools.utils import normalize
 from apps.web.blueprints.kw_intent import classify_keyword
 from apps.web.blueprints.nlp_tool import get_ngrams
 
@@ -21,7 +21,7 @@ class TestTextUtils(unittest.TestCase):
         # No vowels
         self.assertEqual(count_syllables("brrr"), 0)
 
-    # --- Tests for apps.utils.normalize ---
+    # --- Tests for apps.tools.utils.normalize ---
     def test_normalize_normal(self):
         self.assertEqual(normalize("Camión"), "camion")
         self.assertEqual(normalize("Árbol de la Vida"), "arbol de la vida")

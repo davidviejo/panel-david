@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from apps.llm_service import query_llm
+from apps.tools.llm_service import query_llm
 
 enhance_bp = Blueprint('enhance_bp', __name__)
 

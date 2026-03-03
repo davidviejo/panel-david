@@ -10,7 +10,7 @@ import logging
 import requests
 from flask import Blueprint, render_template, request, jsonify
 from bs4 import BeautifulSoup
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 snippet_bp = Blueprint('snippet', __name__, url_prefix='/snippet')
 

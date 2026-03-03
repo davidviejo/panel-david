@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, Key, AlertTriangle } from 'lucide-react';
 import { useToast } from '../components/ui/ToastContext';
 import { useSettings } from '../context/SettingsContext';
+import DataManagementPanel from '../components/DataManagementPanel';
 
 const Settings: React.FC = () => {
   const { settings, updateSettings } = useSettings();
@@ -211,6 +212,8 @@ const Settings: React.FC = () => {
           envían a ningún servidor backend propio.
         </p>
       </div>
+
+      <DataManagementPanel />
     </div>
   );
 };

@@ -89,7 +89,7 @@ def test_autopilot_path_traversal(client):
 
 def test_llm_service_verbose_error(client):
     # We mock openai client to fail
-    with patch('apps.llm_service.openai') as mock_openai:
+    with patch('apps.tools.llm_service.openai') as mock_openai:
         # Mock the client instance and its method
         mock_client_instance = MagicMock()
         mock_client_instance.chat.completions.create.side_effect = Exception("SENSITIVE_API_KEY_LEAK")
@@ -123,8 +123,8 @@ def test_fetch_sitemap_urls_ssrf_direct():
         assert result == []
 
 def test_fetch_url_hybrid_ssrf_direct():
-    from apps.scraper_core import fetch_url_hybrid
-    with patch('apps.scraper_core._fetch_with_requests') as mock_req:
+    from apps.tools.scraper_core import fetch_url_hybrid
+    with patch('apps.tools.scraper_core._fetch_with_requests') as mock_req:
         url = "http://127.0.0.1/sensitive"
         result = fetch_url_hybrid(url)
         mock_req.assert_not_called()

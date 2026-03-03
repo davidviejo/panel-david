@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 import concurrent.futures
 import re
 from typing import Dict, Any
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 extract_bp = Blueprint('extract', __name__, url_prefix='/extract')
 

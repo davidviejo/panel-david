@@ -3,7 +3,7 @@ import requests
 import logging
 from bs4 import BeautifulSoup
 import concurrent.futures
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 social_bp = Blueprint('social', __name__, url_prefix='/social')
 

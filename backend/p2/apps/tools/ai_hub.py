@@ -3,7 +3,7 @@ import logging
 import json
 import os
 from flask import session, has_request_context
-from apps.utils import sanitize_log_message
+from apps.tools.utils import sanitize_log_message
 
 logger = logging.getLogger(__name__)
 

@@ -30,8 +30,8 @@ sys.modules['lxml'] = MagicMock()
 
 # Import the function to test
 try:
-    from apps.scraper_core import search_dataforseo
-    import apps.scraper_core
+    from apps.tools.scraper_core import search_dataforseo
+    import apps.tools.scraper_core
 except ImportError as e:
     print(f"ImportError: {e}")
     sys.exit(1)
@@ -40,7 +40,7 @@ class TestDataForSEOFix(unittest.TestCase):
     def test_search_dataforseo_keyword_not_base64_encoded(self):
         # Mock requests.post
         mock_post = MagicMock()
-        apps.scraper_core.requests.post = mock_post
+        apps.tools.scraper_core.requests.post = mock_post
 
         # Mock response
         mock_response = MagicMock()

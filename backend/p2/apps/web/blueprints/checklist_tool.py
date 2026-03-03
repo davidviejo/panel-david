@@ -12,7 +12,7 @@ import pandas as pd
 import io
 import concurrent.futures
 import re
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 checklist_bp = Blueprint('checklist', __name__, url_prefix='/checklist')
 

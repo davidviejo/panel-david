@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 import requests
 import concurrent.futures
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 wpo_bp = Blueprint('wpo', __name__, url_prefix='/wpo')
 

@@ -17,8 +17,11 @@ sys.modules['bs4'] = MagicMock()
 sys.modules['werkzeug'] = MagicMock()
 sys.modules['werkzeug.utils'] = MagicMock()
 
+import os
 # Now load trends_economy
-spec = importlib.util.spec_from_file_location("apps.web.blueprints.trends_economy", "apps/web/blueprints/trends_economy.py")
+basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+target_path = os.path.join(basedir, "apps", "web", "blueprints", "trends_economy.py")
+spec = importlib.util.spec_from_file_location("apps.web.blueprints.trends_economy", target_path)
 trends_economy = importlib.util.module_from_spec(spec)
 sys.modules["apps.web.blueprints.trends_economy"] = trends_economy
 spec.loader.exec_module(trends_economy)

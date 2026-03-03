@@ -1,6 +1,6 @@
 # apps/serp_scanner.py
 import logging
-from apps.scraper_core import smart_serp_search
+from apps.tools.scraper_core import smart_serp_search
 
 # Tu lista negra del código proporcionado
 BLACKLIST = [

@@ -5,7 +5,7 @@ import re
 import concurrent.futures
 import logging
 from typing import List, Dict, Any, Optional
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 nap_bp = Blueprint('nap', __name__, url_prefix='/nap')
 

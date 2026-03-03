@@ -3,7 +3,7 @@ from unittest.mock import patch
 from apps.web.blueprints.pixel_tool import get_px
 from apps.web.blueprints.serp_scanner import is_valid_url
 from apps.core_monitor import update_global, reset_global, GLOBAL_STATE
-from apps.ai_hub import execute_ai_task
+from apps.tools.ai_hub import execute_ai_task
 
 # --- Tests for apps.web.blueprints.pixel_tool.py ---
 
@@ -62,7 +62,7 @@ def test_monitor_state_flow():
 
 def test_execute_ai_task_simulation():
     # Mock query_llm to simulate response
-    with patch('apps.ai_hub._query_openai_direct') as mock_query:
+    with patch('apps.tools.ai_hub._query_openai_direct') as mock_query:
         mock_query.return_value = "[SIMULACIÓN AI] Fix this text"
 
         prompt = "Fix this text"

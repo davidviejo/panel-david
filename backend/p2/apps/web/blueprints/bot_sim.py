@@ -7,7 +7,7 @@ from flask import Blueprint, render_template, request, jsonify
 import requests
 import logging
 from urllib.parse import urlparse
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 from apps.core.config import Config
 
 bot_bp = Blueprint('bot_sim', __name__, url_prefix='/bot_sim')

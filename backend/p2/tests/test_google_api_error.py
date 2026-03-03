@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from apps.scraper_core import search_google_official, GoogleAPIError
+from apps.tools.scraper_core import search_google_official, GoogleAPIError
 
 class TestGoogleAPIError(unittest.TestCase):
     @patch('requests.get')

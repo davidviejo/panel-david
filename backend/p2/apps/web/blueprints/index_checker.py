@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify
-from apps.scraper_core import smart_serp_search
+from apps.tools.scraper_core import smart_serp_search
 import time
 
 indexer_bp = Blueprint('indexer', __name__, url_prefix='/indexer')

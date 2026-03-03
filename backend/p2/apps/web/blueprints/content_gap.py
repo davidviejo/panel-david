@@ -8,7 +8,7 @@ import re
 import statistics
 import pandas as pd
 import io
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 gap_bp = Blueprint('gap', __name__, url_prefix='/gap')
 

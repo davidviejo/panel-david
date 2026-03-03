@@ -7,7 +7,7 @@ import concurrent.futures
 import pandas as pd
 import io
 import re
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 schema_detector_bp = Blueprint('schema_detector', __name__, url_prefix='/schema_detector')
 

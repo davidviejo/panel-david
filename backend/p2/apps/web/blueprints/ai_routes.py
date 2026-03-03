@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session, render_template
-from apps.ai_hub import AI_MODELS, execute_ai_task, generate_ai_image
+from apps.tools.ai_hub import AI_MODELS, execute_ai_task, generate_ai_image
 from apps.core.database import get_user_settings, upsert_user_settings
 import logging
 
@@ -273,7 +273,7 @@ def seo_analysis_endpoint():
     else:
         return jsonify({'error': 'Tipo de análisis no válido'}), 400
 
-    from apps.llm_service import _query_google
+    from apps.tools.llm_service import _query_google
     import os
     # Intentar obtener API Key de varios lugares para retrocompatibilidad
     api_key = session.get('google_key') or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -301,7 +301,7 @@ def headline_challenge_endpoint():
         f'  Sé estricto pero justo. Puntuaciones altas requieren match exacto de keyword y gancho emocional.'
     )
 
-    from apps.llm_service import _query_google
+    from apps.tools.llm_service import _query_google
     import os
     api_key = session.get('google_key') or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     result = _query_google(prompt, model='gemini-2.0-flash', api_key=api_key)

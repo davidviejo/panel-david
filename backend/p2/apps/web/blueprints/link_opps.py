@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 import concurrent.futures
 import re
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 opps_bp = Blueprint('opps', __name__, url_prefix='/opps')
 

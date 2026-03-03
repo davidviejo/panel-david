@@ -3,7 +3,7 @@ import requests
 import concurrent.futures
 import logging
 from typing import Dict, Any, List
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 intent_bp = Blueprint('intent', __name__, url_prefix='/intent')
 

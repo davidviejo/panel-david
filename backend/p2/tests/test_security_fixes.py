@@ -1,7 +1,7 @@
 import pytest
 import io
 from apps.web import create_app
-from apps.utils import validate_url
+from apps.tools.utils import validate_url
 
 def test_validate_url():
     assert validate_url("http://google.com")

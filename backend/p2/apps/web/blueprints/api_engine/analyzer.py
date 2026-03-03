@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Optional
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 from collections import Counter
-from apps.scraper_core import fetch_url_hybrid
+from apps.tools.scraper_core import fetch_url_hybrid
 
 def run_seo_checklist_analysis(url, kwPrincipal, pageType, geoTarget=None, cluster=None):
     # 1. Fetch content

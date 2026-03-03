@@ -7,7 +7,7 @@ from difflib import SequenceMatcher
 from collections import Counter
 
 from apps.core_monitor import update_global, reset_global
-from apps.scraper_core import smart_serp_search
+from apps.tools.scraper_core import smart_serp_search
 
 seo_bp = Blueprint('seo', __name__, url_prefix='/seo')
 
@@ -149,7 +149,7 @@ def scrape_page(url: str):
     """
     try:
         # Import tardío para evitar dependencias circulares
-        from apps.scraper_core import scrape_page as core_scrape
+        from apps.tools.scraper_core import scrape_page as core_scrape
         data = core_scrape(url)
         if data:
             return data

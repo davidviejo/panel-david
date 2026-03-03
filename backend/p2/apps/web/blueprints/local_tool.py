@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify
-from apps.utils import safe_get_json
+from apps.tools.utils import safe_get_json
 
 local_bp = Blueprint('local', __name__, url_prefix='/local')
 

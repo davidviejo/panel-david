@@ -28,6 +28,36 @@ const DataManagementPanel: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportCSV = () => {
+    const headers = ['Proyecto', 'Vertical', 'Módulo', 'Tarea', 'Estado', 'Impacto'];
+    const rows: string[][] = [];
+
+    clients.forEach((client) => {
+      client.modules.forEach((module) => {
+        module.tasks.forEach((task) => {
+          rows.push([
+            `"${client.name.replace(/"/g, '""')}"`,
+            `"${client.vertical.replace(/"/g, '""')}"`,
+            `"${module.title.replace(/"/g, '""')}"`,
+            `"${task.title.replace(/"/g, '""')}"`,
+            `"${task.status.replace(/"/g, '""')}"`,
+            `"${task.impact.replace(/"/g, '""')}"`,
+          ]);
+        });
+      });
+    });
+
+    const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `MediaFlow_Tasks_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -75,18 +105,26 @@ const DataManagementPanel: React.FC = () => {
       <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
         Gestión de Datos
       </h3>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 mb-2">
         <button
           onClick={handleExport}
           className="flex items-center justify-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
         >
-          <Download size={14} /> Backup
+          <Download size={14} /> Backup JSON
         </button>
         <button
           onClick={() => fileInputRef.current?.click()}
           className="flex items-center justify-center gap-2 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
         >
           <Upload size={14} /> Restaurar
+        </button>
+      </div>
+      <div className="grid grid-cols-1">
+        <button
+          onClick={handleExportCSV}
+          className="flex items-center justify-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg text-xs font-medium text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
+        >
+          <Download size={14} /> Exportar CSV Tareas
         </button>
         <input
           type="file"

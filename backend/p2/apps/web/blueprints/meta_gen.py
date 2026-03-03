@@ -6,7 +6,7 @@ import concurrent.futures
 from urllib.parse import urlparse
 import pandas as pd
 import io
-from apps.utils import is_safe_url, sanitize_log_message
+from apps.tools.utils import is_safe_url, sanitize_log_message
 
 meta_gen_bp = Blueprint('meta_gen', __name__, url_prefix='/meta_gen')
 

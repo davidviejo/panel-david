@@ -4,7 +4,7 @@ Compara los resultados de búsqueda para dos keywords distintas y determina si c
 """
 from flask import Blueprint, render_template, request, jsonify
 import requests
-from apps.scraper_core import smart_serp_search
+from apps.tools.scraper_core import smart_serp_search
 
 overlap_bp = Blueprint('overlap', __name__, url_prefix='/overlap')
 

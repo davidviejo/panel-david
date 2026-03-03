@@ -6,7 +6,7 @@ from flask import Blueprint, render_template, request, jsonify
 import requests
 from bs4 import BeautifulSoup
 from difflib import SequenceMatcher
-from apps.utils import is_safe_url
+from apps.tools.utils import is_safe_url
 
 duplicate_bp = Blueprint('duplicate', __name__, url_prefix='/duplicate')
 
