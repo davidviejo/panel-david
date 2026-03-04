@@ -5,7 +5,7 @@ Extrae metadatos básicos, detecta thin content y problemas de renderizado.
 """
 from flask import Blueprint, render_template, request, jsonify, send_file
 # Importamos la función del scraper core
-from apps.tools.scraper_core import fetch_url_hybrid
+from apps.scraping.scraper_core import fetch_url_hybrid
 from apps.tools.utils import is_safe_url
 from bs4 import BeautifulSoup
 import pandas as pd

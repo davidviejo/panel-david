@@ -123,8 +123,8 @@ def test_fetch_sitemap_urls_ssrf_direct():
         assert result == []
 
 def test_fetch_url_hybrid_ssrf_direct():
-    from apps.tools.scraper_core import fetch_url_hybrid
-    with patch('apps.tools.scraper_core._fetch_with_requests') as mock_req:
+    from apps.scraping.scraper_core import fetch_url_hybrid
+    with patch('apps.scraping.scraper_core._fetch_with_requests') as mock_req:
         url = "http://127.0.0.1/sensitive"
         result = fetch_url_hybrid(url)
         mock_req.assert_not_called()

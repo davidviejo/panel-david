@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 import logging
 # Importamos nuestro nuevo núcleo
-from apps.tools.scraper_core import get_soup
+from apps.scraping.scraper_core import get_soup
 from apps.tools.utils import validate_url
 import re
 from collections import Counter
