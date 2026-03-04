@@ -38,7 +38,7 @@ const LandingPage: React.FC = () => {
     slug: p.id,
     name: p.name,
     status: 'active',
-    description: `Proyecto Local (${p.vertical}) - Creado el ${new Date(p.createdAt).toLocaleDateString()}`,
+    description: `Proyecto (${p.vertical}) - Creado el ${new Date(p.createdAt).toLocaleDateString()}`,
     isLocal: true,
   }));
 
