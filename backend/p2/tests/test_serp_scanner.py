@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-from apps.web.blueprints.serp_scanner import is_valid_url, find_competitors, BLACKLIST
+from apps.scraping.serp_scanner import is_valid_url, find_competitors, BLACKLIST
 
 class TestSerpScanner:
     # --- Tests for is_valid_url ---
@@ -51,7 +51,7 @@ class TestSerpScanner:
 
     # --- Tests for find_competitors ---
 
-    @patch('apps.web.blueprints.serp_scanner.smart_serp_search')
+    @patch('apps.scraping.serp_scanner.smart_serp_search')
     def test_find_competitors_success(self, mock_search):
         """Test finding competitors successfully filters out blacklisted ones."""
         # Mocking smart_serp_search to return a mix of valid and invalid URLs
@@ -71,7 +71,7 @@ class TestSerpScanner:
         assert results[0]["url"] == "https://www.competidor1.es"
         assert results[1]["url"] == "https://www.competidor2.com"
 
-    @patch('apps.web.blueprints.serp_scanner.smart_serp_search')
+    @patch('apps.scraping.serp_scanner.smart_serp_search')
     def test_find_competitors_empty_keyword(self, mock_search):
         """Test that an empty keyword returns an empty list."""
         assert find_competitors("") == []
@@ -79,7 +79,7 @@ class TestSerpScanner:
         # Ensure search wasn't called
         mock_search.assert_not_called()
 
-    @patch('apps.web.blueprints.serp_scanner.smart_serp_search')
+    @patch('apps.scraping.serp_scanner.smart_serp_search')
     def test_find_competitors_exception_handling(self, mock_search):
         """Test that exceptions during search are handled gracefully."""
         # Make the mock raise an exception

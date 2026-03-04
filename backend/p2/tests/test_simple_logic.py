@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 from apps.web.blueprints.pixel_tool import get_px
-from apps.web.blueprints.serp_scanner import is_valid_url
+from apps.scraping.serp_scanner import is_valid_url
 from apps.core_monitor import update_global, reset_global, GLOBAL_STATE
 from apps.tools.ai_hub import execute_ai_task
 
