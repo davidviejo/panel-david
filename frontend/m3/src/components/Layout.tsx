@@ -33,6 +33,8 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { ModuleData, Client, ClientVertical, Note } from '../types';
+import { useSeoChecklist } from '../hooks/useSeoChecklist';
+
 import ClientSwitcher from './ClientSwitcher';
 import NotesPanel from './NotesPanel';
 import { useTranslation } from 'react-i18next';
@@ -45,9 +47,10 @@ interface NavItemProps {
   subLabel?: string;
   onClick?: () => void;
   isComplete?: boolean;
+  progress?: number;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ to, icon, label, subLabel, onClick, isComplete }) => {
+const NavItem: React.FC<NavItemProps> = ({ to, icon, label, subLabel, onClick, isComplete, progress }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
 
@@ -76,6 +79,14 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, subLabel, onClick, i
           </span>
         )}
       </div>
+      {progress !== undefined && (
+        <div className={`absolute bottom-0 left-0 right-0 h-1 rounded-b-xl overflow-hidden transition-opacity ${isActive ? 'bg-blue-800/50' : 'bg-slate-200 dark:bg-slate-700 opacity-50 group-hover:opacity-100'}`}>
+          <div
+            className={`h-full rounded-r-full transition-all duration-500 ${progress === 100 ? 'bg-emerald-500' : (isActive ? 'bg-white' : 'bg-blue-500')}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
       {isComplete && !isActive && <CheckCircle2 size={16} className="text-emerald-500" />}
     </NavLink>
   );
@@ -117,6 +128,7 @@ const Layout: React.FC<LayoutProps> = ({
 }) => {
   const { t } = useTranslation();
   const location = useLocation();
+  const { pages } = useSeoChecklist();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(
@@ -137,6 +149,21 @@ const Layout: React.FC<LayoutProps> = ({
     }
   }, [darkMode]);
 
+  const checklistProgress = React.useMemo(() => {
+    if (!pages || pages.length === 0) return undefined;
+
+    let totalItems = 0;
+    let completedItems = 0;
+
+    pages.forEach(page => {
+      const items = Object.values(page.checklist);
+      totalItems += items.length;
+      completedItems += items.filter((i: any) => i.status_manual === 'SI').length;
+    });
+
+    if (totalItems === 0) return 0;
+    return Math.round((completedItems / totalItems) * 100);
+  }, [pages]);
   // Sync Tab with URL
   useEffect(() => {
     const path = location.pathname;
@@ -242,6 +269,7 @@ const Layout: React.FC<LayoutProps> = ({
               label="Agrupación y Clusterización"
               subLabel="Análisis SEO y Clusters"
               onClick={() => setIsMobileMenuOpen(false)}
+              progress={checklistProgress}
             />
             <NavItem
               to="/app/challenge"
