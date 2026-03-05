@@ -3,6 +3,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useProject } from '../context/ProjectContext';
 import { Task } from '../types';
 import BulkActionsModal from '../components/BulkActionsModal';
+import TaskDetailModal from '../components/TaskDetailModal';
 import {
   CheckCircle2,
   Circle,
@@ -20,6 +21,7 @@ import {
   MessageSquare,
   Layers,
   ExternalLink,
+  Edit2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DEFAULT_KANBAN_COLUMNS } from '../config/kanban';
@@ -27,7 +29,9 @@ import { DEFAULT_KANBAN_COLUMNS } from '../config/kanban';
 const KanbanBoard: React.FC = () => {
   const {
     modules,
+    addTasksBulk,
     updateTaskStatus,
+    toggleTask,
     currentClient,
     addKanbanColumn,
     deleteKanbanColumn,
@@ -37,6 +41,13 @@ const KanbanBoard: React.FC = () => {
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+
+  // New task creation state
+  const [isAddingTask, setIsAddingTask] = useState<{ columnId: string } | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  // Task detail modal state
+  const [selectedTask, setSelectedTask] = useState<{ task: Task; moduleId: number } | null>(null);
 
   const columns = currentClient?.kanbanColumns || DEFAULT_KANBAN_COLUMNS;
 
@@ -95,6 +106,31 @@ const KanbanBoard: React.FC = () => {
     if (foundModuleId !== -1) {
       updateTaskStatus(foundModuleId, foundTaskId, newStatus);
     }
+  };
+
+  const handleAddTask = (columnId: string) => {
+    if (newTaskTitle.trim()) {
+      // Find default custom module or fallback to first
+      let targetModule = modules.find((m) => m.isCustom);
+      if (!targetModule && modules.length > 0) targetModule = modules[modules.length - 1];
+
+      if (targetModule) {
+        const newTask = {
+          moduleId: targetModule.id,
+          title: newTaskTitle.trim(),
+          description: `Nueva tarea creada en el tablero Kanban en la columna ${columns.find((c) => c.id === columnId)?.title || columnId}`,
+          impact: 'Medium' as const,
+          category: 'Kanban',
+          status: columnId,
+          isInRoadmap: true,
+        };
+
+        // We use addTasksBulk since it supports setting status and isInRoadmap directly
+        addTasksBulk([newTask]);
+      }
+    }
+    setNewTaskTitle('');
+    setIsAddingTask(null);
   };
 
   const handleAddColumn = () => {
@@ -221,7 +257,7 @@ const KanbanBoard: React.FC = () => {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className={`flex-1 p-3 overflow-y-auto custom-scrollbar transition-colors ${
+                      className={`flex-1 p-3 overflow-y-auto custom-scrollbar transition-colors flex flex-col ${
                         snapshot.isDraggingOver ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''
                       }`}
                     >
@@ -229,10 +265,10 @@ const KanbanBoard: React.FC = () => {
                         <Draggable key={item.task.id} draggableId={item.task.id} index={index}>
                           {(provided, snapshot) => (
                             <div
+                              onClick={() => setSelectedTask(item)}
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`bg-white dark:bg-slate-800 p-4 rounded-lg border shadow-sm mb-3 group hover:border-blue-300 dark:hover:border-blue-500 transition-all ${
+                              className={`bg-white dark:bg-slate-800 p-4 rounded-lg border shadow-sm mb-3 group hover:border-blue-300 dark:hover:border-blue-500 transition-all cursor-pointer ${
                                 snapshot.isDragging
                                   ? 'shadow-xl ring-2 ring-blue-500 rotate-1'
                                   : 'border-slate-200 dark:border-slate-700'
@@ -248,8 +284,20 @@ const KanbanBoard: React.FC = () => {
                                   Módulo {item.moduleId}
                                   <ExternalLink size={10} />
                                 </Link>
-                                <div className="text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <GripVertical size={16} />
+                                <div className="flex items-center gap-2 text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedTask(item);
+                                    }}
+                                    className="hover:text-blue-500 transition-colors p-1"
+                                    title="Editar detalles"
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <div {...provided.dragHandleProps} className="cursor-grab">
+                                    <GripVertical size={16} />
+                                  </div>
                                 </div>
                               </div>
                               <h4 className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-3 leading-snug">
@@ -258,7 +306,10 @@ const KanbanBoard: React.FC = () => {
 
                               {/* Task Details Edit */}
                               <div className="space-y-2 mb-3 pt-3 border-t border-slate-100 dark:border-slate-700">
-                                <div className="flex items-center gap-2">
+                                <div
+                                  className="flex items-center gap-2"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <User size={14} className="text-slate-400" />
                                   <input
                                     type="text"
@@ -272,7 +323,10 @@ const KanbanBoard: React.FC = () => {
                                     }
                                   />
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div
+                                  className="flex items-center gap-2"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <LinkIcon size={14} className="text-slate-400" />
                                   <input
                                     type="text"
@@ -286,7 +340,10 @@ const KanbanBoard: React.FC = () => {
                                     }
                                   />
                                 </div>
-                                <div className="flex items-start gap-2">
+                                <div
+                                  className="flex items-start gap-2"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <FileText size={14} className="text-slate-400 mt-0.5" />
                                   <textarea
                                     placeholder="Notas adicionales..."
@@ -325,6 +382,54 @@ const KanbanBoard: React.FC = () => {
                         </Draggable>
                       ))}
                       {provided.placeholder}
+
+                      {/* Add Task Button/Input at bottom of column */}
+                      <div className="mt-auto pt-2" onClick={(e) => e.stopPropagation()}>
+                        {isAddingTask?.columnId === column.id ? (
+                          <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-blue-300 dark:border-blue-500 shadow-sm">
+                            <input
+                              type="text"
+                              value={newTaskTitle}
+                              onChange={(e) => setNewTaskTitle(e.target.value)}
+                              placeholder="Título de la tarea..."
+                              className="w-full bg-transparent text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none mb-2"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleAddTask(column.id);
+                                if (e.key === 'Escape') setIsAddingTask(null);
+                              }}
+                            />
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => setIsAddingTask(null)}
+                                className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                onClick={() => handleAddTask(column.id)}
+                                className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
+                              >
+                                Añadir
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setIsAddingTask({ columnId: column.id });
+                              setNewTaskTitle('');
+                            }}
+                            className="w-full flex items-center justify-center gap-1 py-2 text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors group"
+                          >
+                            <Plus
+                              size={16}
+                              className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                            />
+                            Añadir tarjeta
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </Droppable>
@@ -335,6 +440,15 @@ const KanbanBoard: React.FC = () => {
       </div>
 
       <BulkActionsModal isOpen={isBulkModalOpen} onClose={() => setIsBulkModalOpen(false)} />
+
+      <TaskDetailModal
+        isOpen={selectedTask !== null}
+        onClose={() => setSelectedTask(null)}
+        task={selectedTask?.task || null}
+        moduleId={selectedTask?.moduleId || null}
+        onUpdateTaskDetails={updateTaskDetails}
+        onToggleTask={toggleTask}
+      />
     </div>
   );
 };
