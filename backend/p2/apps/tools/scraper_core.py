@@ -100,18 +100,19 @@ def parse_google_html(html_content: str) -> List[Dict[str, str]]:
 
         if anchor_tag and header_tag:
             link = anchor_tag['href']
-            title = header_tag.get_text(strip=True)
+            if link:
+                title = header_tag.get_text(strip=True)
 
-            # Limpieza de trackers de google (/url?q=...) si aparecen
-            if '/url?q=' in link:
-                try:
-                    link = link.split('/url?q=')[1].split('&')[0]
-                    link = urllib.parse.unquote(link)
-                except Exception: pass
+                # Limpieza de trackers de google (/url?q=...) si aparecen
+                if '/url?q=' in link:
+                    try:
+                        link = link.split('/url?q=')[1].split('&')[0]
+                        link = urllib.parse.unquote(link)
+                    except Exception: pass
 
-            if link.startswith('http') and 'google.' not in link:
-                if not any(r['url'] == link for r in results):
-                    results.append({'url': link, 'title': title})
+                if link.startswith('http') and 'google.' not in link:
+                    if not any(r['url'] == link for r in results):
+                        results.append({'url': link, 'title': title})
 
     # INTENTO 2: Selectores Legacy (Para modo GBV=1 / Sin cookies)
     if not results:
@@ -668,6 +669,11 @@ def fetch_url(url: str, connect_timeout: int = 10, read_timeout: int = 30, rando
             result['error_type'] = 'connection_error'
         result['error_message'] = str(e)
         logging.error(f"fetch_url CONNECTION ERROR ({result['error_type']}): {url} | Time: {result['elapsed_ms']}ms | Error: {e}")
+    except requests.exceptions.RequestException as e:
+        result['elapsed_ms'] = int((time.time() - start_time) * 1000)
+        result['error_type'] = 'other'
+        result['error_message'] = str(e)
+        logging.error(f"fetch_url REQUEST ERROR: {url} | Time: {result['elapsed_ms']}ms | Error: {e}")
     except Exception as e:
         result['elapsed_ms'] = int((time.time() - start_time) * 1000)
         result['error_type'] = 'other'
