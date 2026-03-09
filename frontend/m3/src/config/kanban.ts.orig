@@ -1,7 +1,7 @@
 import { KanbanColumn } from '../types';
 
 export const DEFAULT_KANBAN_COLUMNS: KanbanColumn[] = [
-  { id: 'pending', title: 'Back del cliente' },
+  { id: 'pending', title: 'Back del cliente (next step)' },
   { id: 'commitment', title: 'Compromiso (next step)' },
   { id: 'working-now', title: 'Working now (equipo)' },
   { id: 'in-progress', title: 'In progress (equipo)' },
