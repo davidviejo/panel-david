@@ -184,7 +184,7 @@ preshed==3.0.12
     # via
     #   spacy
     #   thinc
-primp==1.1.1
+primp==1.1.2
     # via duckduckgo-search
 proto-plus==1.27.1
     # via
