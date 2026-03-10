@@ -211,6 +211,9 @@
                     <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearLab()">
                         🧹 Limpiar
                     </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="exportBulkLab()">
+                        ⬇️ Exportar CSV
+                    </button>
                 </div>
 
                 <textarea id="manualUrls" class="form-control mb-2" rows="6" placeholder="https://tu-url-1.com
@@ -227,6 +230,7 @@ https://tu-url-2.com"></textarea>
 
 <script>
 let lastResults = [];
+let lastBulkResults = [];
 
 const modeSel   = document.getElementById('modeSelect');
 const form      = document.getElementById('runForm');
@@ -608,7 +612,8 @@ function runBulk(){
     })
     .then(r=>r.json())
     .then(d=>{
-        resDiv.innerHTML = (d.data || []).map(i=>{
+        lastBulkResults = d.data || [];
+        resDiv.innerHTML = lastBulkResults.map(i=>{
             const headings = (i.headings || []).slice(0, 10).map(h => `
                 <div class="small mb-1">
                     <span class="badge bg-light text-dark me-1">${h.tag}</span>
@@ -663,6 +668,50 @@ function runBulk(){
 }
 
 // --- Helpers del laboratorio ---
+
+function exportBulkLab() {
+    if (!lastBulkResults || lastBulkResults.length === 0) {
+        showAlert('No hay datos para exportar. Analiza algunas URLs primero.');
+        return;
+    }
+
+    const headers = ["URL", "Title", "H1", "Words", "Images", "Headings (H1-H3)", "Entities"];
+    const rows = [];
+    rows.push(headers.map(h => `"${h}"`).join(','));
+
+    lastBulkResults.forEach(i => {
+        const url = (i.url || '').replace(/"/g, '""');
+        const title = (i.title || '').replace(/"/g, '""');
+        const h1 = (i.h1 || '').replace(/"/g, '""');
+        const words = i.words || 0;
+        const imgs = i.imgs || 0;
+
+        const headingsText = (i.headings || []).map(h => `${h.tag}: ${h.text}`).join('\n').replace(/"/g, '""');
+        const entitiesText = (i.entities || []).join(', ').replace(/"/g, '""');
+
+        const row = [
+            `"${url}"`,
+            `"${title}"`,
+            `"${h1}"`,
+            words,
+            imgs,
+            `"${headingsText}"`,
+            `"${entitiesText}"`
+        ];
+        rows.push(row.join(','));
+    });
+
+    const csvContent = rows.join('\n');
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'laboratorio_resultados.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
 
 function clearLab(){
     document.getElementById('manualUrls').value = '';
