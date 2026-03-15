@@ -62,7 +62,7 @@ distro==1.9.0
     #   openai
 docstring-parser==0.17.0
     # via anthropic
-ddgs==9.11.2
+ddgs>=9.11.2
     # via -r backend/p2/requirements.in
 et-xmlfile==2.0.0
     # via openpyxl
@@ -184,7 +184,7 @@ preshed==3.0.12
     # via
     #   spacy
     #   thinc
-primp==1.1.2
+primp>=1.1.2
 proto-plus==1.27.1
     # via
     #   google-ai-generativelanguage
