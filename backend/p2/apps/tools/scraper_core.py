@@ -244,7 +244,7 @@ def search_dataforseo(keyword: str, login: str, passw: str, num_results: int = 1
             "keyword": keyword,
             "language_code": lang[:2],
             "location_name": location_name,
-            "depth": num_results + 5 # Pedimos un poco más por si acaso
+            "depth": max(100, num_results + 20) # DataForSEO cuenta todos los elementos. Un depth bajo puede omitir orgánicos.
         }]
 
         headers = {
@@ -252,7 +252,7 @@ def search_dataforseo(keyword: str, login: str, passw: str, num_results: int = 1
             'Content-Type': 'application/json'
         }
 
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        response = requests.post(url, json=payload, headers=headers, timeout=60)
         data = response.json()
 
         if data.get('status_code') == 20000:
