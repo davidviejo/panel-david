@@ -1,58 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Linkedin, Twitter, Globe, CheckCircle, FolderOpen } from 'lucide-react';
-import { api } from '../../services/api';
-import { Spinner } from '../../components/ui/Spinner';
-import { useProject } from '../../context/ProjectContext';
-
-interface DisplayClient {
-  slug: string;
-  name: string;
-  status: string;
-  description: string;
-  isLocal?: boolean;
-}
+import React from 'react';
+import { Linkedin, Twitter, Globe } from 'lucide-react';
 
 const LandingPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { clients: localProjects, switchClient } = useProject();
-  const [publicProjects, setPublicProjects] = useState<DisplayClient[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const data = await api.getPublicClients();
-        setPublicProjects(data);
-      } catch (err) {
-        console.error('Error fetching public clients:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchClients();
-  }, []);
-
-  // Map local projects to DisplayClient format
-  const mappedLocalProjects: DisplayClient[] = localProjects.map((p) => ({
-    slug: p.id,
-    name: p.name,
-    status: 'active',
-    description: `Proyecto (${p.vertical}) - Creado el ${new Date(p.createdAt).toLocaleDateString()}`,
-    isLocal: true,
-  }));
-
-  const combinedClients = [...mappedLocalProjects, ...publicProjects];
-
-  const handleAccess = (client: DisplayClient) => {
-    if (client.isLocal) {
-      switchClient(client.slug);
-      navigate('/app/');
-    } else {
-      navigate(`/p/${client.slug}`);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-orange-500 selection:text-white">
       {/* Navbar */}
@@ -67,11 +16,11 @@ const LandingPage: React.FC = () => {
 
             {/* Navigation */}
             <div className="flex items-center space-x-8 text-sm font-semibold text-slate-500 uppercase tracking-wide">
-              <a href="#experience" className="hover:text-orange-500 transition-colors">
-                Experiencia
+              <a href="#servicios" className="hover:text-orange-500 transition-colors">
+                Servicios
               </a>
-              <a href="#projects" className="hover:text-orange-500 transition-colors">
-                Proyectos
+              <a href="#metodologia" className="hover:text-orange-500 transition-colors">
+                Metodología
               </a>
               <div className="flex items-center space-x-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -162,75 +111,228 @@ const LandingPage: React.FC = () => {
 
       <div className="w-full h-px bg-slate-200 max-w-7xl mx-auto my-8"></div>
 
-      {/* Experience Section */}
-      <section id="experience" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-8">
-          Trayectoria Profesional
+      {/* 2. Strategic Capabilities (Servicios) */}
+      <section id="servicios" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold text-blue-900 tracking-tight leading-tight mb-8">
+          Consultoría SEO estratégica para escalar tráfico y negocio
         </h2>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Card 1 */}
           <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <h3 className="text-slate-800 font-bold text-lg">Consultor SEO Senior</h3>
-            <p className="text-orange-500 text-sm font-medium mb-1">agenciaSEO.eu</p>
-            <p className="text-slate-400 text-xs mb-4">sept. 2024 - actualidad • Remoto</p>
+            <h3 className="text-slate-800 font-bold text-lg mb-2">Estrategia SEO</h3>
             <p className="text-slate-600 text-sm leading-relaxed">
-              Consultoría SEO especializada en auditorías técnicas, arquitectura de sitios y
-              estrategia de posicionamiento para grandes cuentas de e-commerce y servicios.
+              Definición de roadmap SEO basado en negocio y competencia.
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">SEO internacional</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Estrategias de posicionamiento en múltiples mercados.
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">SEO técnico</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Optimización de rastreo, indexación y arquitectura.
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">Keyword Intelligence</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Investigación avanzada de oportunidades de tráfico.
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">Autoridad y link building</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Construcción estratégica de autoridad.
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">SEO analytics</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Análisis de datos y mejora continua.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="w-full h-px bg-slate-200 max-w-7xl mx-auto my-8"></div>
+
+      {/* 3. Metodología SEO */}
+      <section id="metodologia" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold text-blue-900 tracking-tight leading-tight mb-8">
+          Metodología de consultoría SEO
+        </h2>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-slate-800 font-bold text-lg mb-4">Diagnóstico SEO técnico</h3>
+            <p className="text-slate-500 text-xs uppercase tracking-wider mb-2 font-semibold">Auditoría completa:</p>
+            <ul className="space-y-2 text-slate-600 text-sm list-disc pl-4">
+              <li>indexación</li>
+              <li>arquitectura</li>
+              <li>rendimiento</li>
+            </ul>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-slate-800 font-bold text-lg mb-4">Inteligencia competitiva</h3>
+            <ul className="space-y-2 text-slate-600 text-sm list-disc pl-4">
+              <li>análisis SERP</li>
+              <li>análisis de competencia</li>
+              <li>oportunidades de posicionamiento</li>
+            </ul>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-slate-800 font-bold text-lg mb-4">Estrategia de crecimiento</h3>
+            <ul className="space-y-2 text-slate-600 text-sm list-disc pl-4">
+              <li>roadmap SEO</li>
+              <li>clusters de contenido</li>
+              <li>autoridad</li>
+            </ul>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-slate-800 font-bold text-lg mb-4">Data analytics</h3>
+            <ul className="space-y-2 text-slate-600 text-sm list-disc pl-4">
+              <li>medición</li>
+              <li>optimización continua</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <div className="w-full h-px bg-slate-200 max-w-7xl mx-auto my-8"></div>
+
+      {/* 4. SEO Internacional */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold text-blue-900 tracking-tight leading-tight mb-6">
+          Estrategias SEO en más de 20 mercados internacionales
+        </h2>
+        <div className="mb-6">
+          <ul className="space-y-2 text-slate-600 text-lg list-disc pl-4">
+            <li>experiencia en mercados</li>
+            <li>SEO multilingüe</li>
+            <li>SEO para expansión internacional</li>
+          </ul>
+        </div>
+        <div className="flex flex-wrap gap-2 pt-2">
+          {['consultor SEO internacional', 'SEO global', 'SEO multilingüe'].map((keyword) => (
+            <span
+              key={keyword}
+              className="px-4 py-1.5 bg-orange-50 text-orange-700 rounded-full text-xs font-semibold"
+            >
+              {keyword}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      <div className="w-full h-px bg-slate-200 max-w-7xl mx-auto my-8"></div>
+
+      {/* 5. Expertise / Contenido estratégico */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold text-blue-900 tracking-tight leading-tight mb-8">
+          Estrategias SEO y análisis del mercado
+        </h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 flex items-center justify-center h-32 text-slate-500 font-medium hover:bg-slate-100 transition-colors cursor-pointer">
+            Informes
+          </div>
+          <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 flex items-center justify-center h-32 text-slate-500 font-medium hover:bg-slate-100 transition-colors cursor-pointer">
+            Análisis
+          </div>
+          <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 flex items-center justify-center h-32 text-slate-500 font-medium hover:bg-slate-100 transition-colors cursor-pointer">
+            Estudios SEO
+          </div>
+        </div>
+      </section>
+
+      <div className="w-full h-px bg-slate-200 max-w-7xl mx-auto my-8"></div>
+
+      {/* 6. Lead Magnet */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto bg-blue-50 rounded-2xl border border-blue-100 text-center my-12">
+        <h2 className="text-3xl font-bold text-blue-900 tracking-tight leading-tight mb-4">
+          Pronóstico SEO 2026
+        </h2>
+        <p className="text-slate-600 mb-8 max-w-2xl mx-auto">
+          Descarga nuestro informe sobre captación y autoridad para prepararte ante los retos del futuro del posicionamiento orgánico.
+        </p>
+        <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full shadow-md transition-colors">
+          Descargar Informe
+        </button>
+      </section>
+
+      <div className="w-full h-px bg-slate-200 max-w-7xl mx-auto my-8"></div>
+
+      {/* 7. Insights / Artículos */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold text-blue-900 tracking-tight leading-tight mb-8">
+          Insights sobre estrategia SEO
+        </h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:border-blue-300 transition-colors cursor-pointer">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">Futuro del SEO</h3>
+            <p className="text-slate-500 text-sm">Tendencias y evolución del algoritmo.</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:border-blue-300 transition-colors cursor-pointer">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">Análisis SERP</h3>
+            <p className="text-slate-500 text-sm">Desgranando la intención de búsqueda y resultados enriquecidos.</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:border-blue-300 transition-colors cursor-pointer">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">Estrategias de contenido</h3>
+            <p className="text-slate-500 text-sm">Creación de autoridad semántica a través de clusters.</p>
+          </div>
+        </div>
+      </section>
+
+      <div className="w-full h-px bg-slate-200 max-w-7xl mx-auto my-8"></div>
+
+      {/* 8. Preguntas frecuentes sobre consultoría SEO */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
+        <h2 className="text-3xl font-bold text-blue-900 tracking-tight leading-tight mb-8 text-center">
+          Preguntas frecuentes sobre consultoría SEO
+        </h2>
+
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">¿Qué es un consultor SEO?</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Un consultor SEO es un especialista en posicionamiento en buscadores que analiza, diseña y ejecuta estrategias para mejorar la visibilidad de un sitio web en Google y otros motores de búsqueda. Su trabajo consiste en identificar oportunidades de tráfico orgánico, optimizar la estructura y el contenido de la web, y desarrollar estrategias que permitan atraer usuarios cualificados.
             </p>
           </div>
 
-          {/* Card 2 */}
-          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <h3 className="text-slate-800 font-bold text-lg">Consultor SEO Freelance</h3>
-            <p className="text-orange-500 text-sm font-medium mb-1">David Viejo</p>
-            <p className="text-slate-400 text-xs mb-4">dic. 2020 - actualidad • Zaragoza</p>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">¿Qué hace un consultor SEO?</h3>
             <p className="text-slate-600 text-sm leading-relaxed">
-              Gestión integral de estrategia SEO para clientes propios. Diseño web optimizado,
-              linkbuilding y optimización de ROI.
+              Un consultor SEO analiza la situación actual de una web, estudia el mercado y la competencia, y define estrategias para mejorar el posicionamiento orgánico. Entre sus tareas se encuentran la auditoría SEO, investigación de palabras clave, optimización técnica, estrategia de contenidos y desarrollo de autoridad mediante enlaces.
             </p>
           </div>
 
-          {/* Card 3 */}
-          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <h3 className="text-slate-800 font-bold text-lg">Head of SEO</h3>
-            <p className="text-orange-500 text-sm font-medium mb-1">BirdCom</p>
-            <p className="text-slate-400 text-xs mb-4">oct. 2023 - sept. 2024 • Zaragoza</p>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">¿Cuándo contratar un consultor SEO?</h3>
             <p className="text-slate-600 text-sm leading-relaxed">
-              Liderazgo de equipo SEO (7 personas). Gestión de proyectos de alto ticket, formación
-              interna y desarrollo de roadmap estratégico.
+              Es recomendable contratar un consultor SEO cuando una web no aparece en Google, ha perdido tráfico orgánico, quiere escalar su crecimiento digital o necesita una estrategia clara de posicionamiento.
             </p>
           </div>
 
-          {/* Card 4 */}
-          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <h3 className="text-slate-800 font-bold text-lg">Consultor SEO Manager</h3>
-            <p className="text-orange-500 text-sm font-medium mb-1">BirdCom</p>
-            <p className="text-slate-400 text-xs mb-4">ene. 2022 - oct. 2023 • Zaragoza</p>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">¿Cuánto cuesta un consultor SEO?</h3>
             <p className="text-slate-600 text-sm leading-relaxed">
-              Gestión simultánea de hasta 13 proyectos. Implementación de IA en procesos SEO y alta
-              retención de clientes.
+              El coste de un consultor SEO depende del proyecto, la complejidad del sitio web y los objetivos de crecimiento. Los servicios pueden contratarse por horas, por proyecto o mediante consultoría mensual.
             </p>
           </div>
 
-          {/* Card 5 */}
-          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <h3 className="text-slate-800 font-bold text-lg">Especialista SEO</h3>
-            <p className="text-orange-500 text-sm font-medium mb-1">BirdCom</p>
-            <p className="text-slate-400 text-xs mb-4">feb. 2021 - ene. 2022 • Zaragoza</p>
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">¿Cuánto tarda el SEO en dar resultados?</h3>
             <p className="text-slate-600 text-sm leading-relaxed">
-              Ejecución de estrategias SEO, auditorías técnicas y campañas de linkbuilding como
-              primer integrante del departamento.
+              El SEO suele mostrar resultados entre 3 y 6 meses, dependiendo de la competencia del sector, la autoridad del dominio y la calidad de la estrategia aplicada.
             </p>
           </div>
-          {/* Card 6 */}
-          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <h3 className="text-slate-800 font-bold text-lg">SEO & CM</h3>
-            <p className="text-orange-500 text-sm font-medium mb-1">Óptima Web</p>
-            <p className="text-slate-400 text-xs mb-4">jul. 2020 - dic. 2020 • Zaragoza</p>
+
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <h3 className="text-slate-800 font-bold text-lg mb-2">¿Consultor SEO o agencia SEO?</h3>
             <p className="text-slate-600 text-sm leading-relaxed">
-              Prácticas de máster enfocadas en estrategias SEO, diseño web y gestión de redes
-              sociales.
+              Un consultor SEO suele ofrecer un enfoque más estratégico y personalizado, mientras que una agencia SEO cuenta con un equipo más amplio para ejecutar diferentes áreas del posicionamiento.
             </p>
           </div>
         </div>
@@ -292,24 +394,6 @@ const LandingPage: React.FC = () => {
       </section>
 
       <div className="w-full h-px bg-slate-200 max-w-7xl mx-auto my-8"></div>
-
-      {/* Certifications */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">
-          Certificaciones
-        </h2>
-        <div className="flex flex-wrap gap-4">
-          <div className="bg-slate-100 px-4 py-2 rounded border border-slate-200 flex items-center text-slate-600 text-sm font-medium">
-            <CheckCircle className="w-4 h-4 text-orange-500 mr-2" /> Google Certified
-          </div>
-          <div className="bg-slate-100 px-4 py-2 rounded border border-slate-200 flex items-center text-slate-600 text-sm font-medium">
-            <CheckCircle className="w-4 h-4 text-orange-500 mr-2" /> HubSpot Certified
-          </div>
-          <div className="bg-slate-100 px-4 py-2 rounded border border-slate-200 flex items-center text-slate-600 text-sm font-medium">
-            <CheckCircle className="w-4 h-4 text-orange-500 mr-2" /> SEO Técnico Avanzado
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="bg-slate-50 border-t border-slate-200 py-12 mt-12">
