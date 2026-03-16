@@ -377,11 +377,22 @@ def worker(kws, file, cfg):
 
     try:
         final_clusters, max_id = ([], 0)
+        existing_kws = set()
         if file:
             final_clusters, max_id = load_history(file)
+            for c in final_clusters:
+                if c.get('parent'):
+                    existing_kws.add(c['parent'].lower())
+                for child in c.get('children', []):
+                    existing_kws.add(child.lower())
 
         new_data = {}
-        kws_clean = [k.strip() for k in kws if k.strip()]
+        kws_clean = []
+        for k in kws:
+            k_strip = k.strip()
+            if k_strip and k_strip.lower() not in existing_kws:
+                kws_clean.append(k_strip)
+
         total = len(kws_clean) or 1  # evitar división por 0
 
         # --- FASE 1: BÚSQUEDA (0-45%) ---
