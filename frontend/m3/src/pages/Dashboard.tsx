@@ -60,6 +60,17 @@ interface HeroMetricProps {
   tone: string;
 }
 
+export const getVisibleSelectedGscSite = (
+  selectedSite: string,
+  filteredGscSites: Array<{ siteUrl: string }>,
+) => {
+  if (!selectedSite) {
+    return '';
+  }
+
+  return filteredGscSites.some((site) => site.siteUrl === selectedSite) ? selectedSite : '';
+};
+
 const HeroMetric: React.FC<HeroMetricProps> = ({ title, value, description, tone }) => (
   <div className={`rounded-2xl p-5 text-white shadow-lg ${tone}`}>
     <div className="text-xs font-bold uppercase tracking-[0.2em] opacity-80">{title}</div>
@@ -120,6 +131,11 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
 
     return gscSites.filter((site) => site.siteUrl.toLowerCase().includes(normalizedQuery));
   }, [gscSiteQuery, gscSites]);
+
+  const visibleSelectedGscSite = useMemo(
+    () => getVisibleSelectedGscSite(selectedSite, filteredGscSites),
+    [filteredGscSites, selectedSite],
+  );
 
   const badge = useMemo(() => {
     if (globalScore >= 95)
@@ -631,17 +647,26 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                       <Globe size={14} className="ml-1 text-slate-400" />
                       <select
                         className="w-full bg-transparent text-xs font-medium p-1.5 outline-none text-slate-700 dark:text-slate-300"
-                        value={selectedSite}
+                        value={visibleSelectedGscSite}
                         onChange={(e) => setSelectedSite(e.target.value)}
                       >
                         {filteredGscSites.length > 0 ? (
-                          filteredGscSites.map((site) => (
-                            <option key={site.siteUrl} value={site.siteUrl}>
-                              {site.siteUrl.replace('sc-domain:', '')}
-                            </option>
-                          ))
+                          <>
+                            {!visibleSelectedGscSite && (
+                              <option value="" disabled>
+                                Selecciona una propiedad
+                              </option>
+                            )}
+                            {filteredGscSites.map((site) => (
+                              <option key={site.siteUrl} value={site.siteUrl}>
+                                {site.siteUrl.replace('sc-domain:', '')}
+                              </option>
+                            ))}
+                          </>
                         ) : (
-                          <option value={selectedSite}>No hay propiedades que coincidan</option>
+                          <option value="" disabled>
+                            No hay propiedades que coincidan
+                          </option>
                         )}
                       </select>
                     </div>
