@@ -17,7 +17,6 @@ const SeoChecklistPage = lazy(() => import('./pages/SeoChecklistPage'));
 const Settings = lazy(() => import('./pages/Settings'));
 const AdminIdeasPage = lazy(() => import('./pages/admin/AdminIdeasPage'));
 
-// Portal Pages
 const LandingPage = lazy(() => import('./pages/portal/LandingPage'));
 const ClientsLogin = lazy(() => import('./pages/portal/ClientsLogin'));
 const ProjectsList = lazy(() => import('./pages/portal/ProjectsList'));
@@ -25,7 +24,7 @@ const ProjectLogin = lazy(() => import('./pages/portal/ProjectLogin'));
 const ProjectOverview = lazy(() => import('./pages/portal/ProjectOverview'));
 const OperatorPage = lazy(() => import('./pages/portal/OperatorPage'));
 
-const AppRoutes: React.FC = () => {
+export const AppRoutes: React.FC = () => {
   const {
     modules,
     globalScore,
@@ -52,7 +51,6 @@ const AppRoutes: React.FC = () => {
     deleteNote,
   } = useProject();
 
-  // Wrap the internal layout in a component to keep routes clean
   const InternalApp = (
     <Layout
       modules={modules}
@@ -70,13 +68,13 @@ const AppRoutes: React.FC = () => {
     >
       <Routes>
         <Route
-          path="/"
+          index
           element={
             <Dashboard modules={modules} globalScore={globalScore} onReset={resetCurrentProject} />
           }
         />
         <Route
-          path="/module/:id"
+          path="module/:id"
           element={
             <ModuleDetail
               modules={modules}
@@ -93,7 +91,7 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/client-roadmap"
+          path="client-roadmap"
           element={
             <ClientRoadmap
               modules={modules}
@@ -109,14 +107,14 @@ const AppRoutes: React.FC = () => {
             />
           }
         />
-        <Route path="/kanban" element={<KanbanBoard />} />
-        <Route path="/checklist" element={<SeoChecklistPage />} />
-        <Route path="/ai-roadmap" element={<AIRoadmap />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/challenge" element={<SpeedChallenge />} />
-        <Route path="/admin/ideas" element={<AdminIdeasPage />} />
+        <Route path="kanban" element={<KanbanBoard />} />
+        <Route path="checklist" element={<SeoChecklistPage />} />
+        <Route path="ai-roadmap" element={<AIRoadmap />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="challenge" element={<SpeedChallenge />} />
+        <Route path="admin/ideas" element={<AdminIdeasPage />} />
         <Route
-          path="/completed-tasks"
+          path="completed-tasks"
           element={
             <CompletedTasks
               completedTasks={currentClient?.completedTasksLog || []}
@@ -125,7 +123,7 @@ const AppRoutes: React.FC = () => {
             />
           }
         />
-        <Route path="*" element={<Navigate to="/app/" replace />} />
+        <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>
     </Layout>
   );
@@ -139,18 +137,13 @@ const AppRoutes: React.FC = () => {
       }
     >
       <Routes>
-        {/* Public Portal Routes (No Layout) */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/clientes" element={<ClientsLogin />} />
         <Route path="/clientes/dashboard" element={<ProjectsList />} />
         <Route path="/p/:slug" element={<ProjectLogin />} />
         <Route path="/c/:slug/overview" element={<ProjectOverview />} />
         <Route path="/operator" element={<OperatorPage />} />
-
-        {/* Internal App Routes (With Layout) - Mounted under /app */}
         <Route path="/app/*" element={InternalApp} />
-
-        {/* Catch all to redirect to landing or app depending on logic. For now landing. */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
