@@ -1,6 +1,7 @@
 import { SeoPage, ChecklistKey, AnalysisConfigPayload } from '../types/seoChecklist';
 import { analyzeUrl, AnalysisResponse } from '../services/pythonEngineClient';
 import { getPageQueries } from '../services/googleSearchConsole';
+import { normalizeSeoPageInput } from './seoUrlNormalizer';
 
 export const processAnalysisResult = (
   page: SeoPage,
@@ -71,6 +72,7 @@ export const processAnalysisResult = (
   }
 
   const updates: Partial<SeoPage> = {
+    url: page.url,
     lastAnalyzedAt: Date.now(),
     checklist: { ...page.checklist },
     advancedBlockedReason: result.advancedBlockedReason,
@@ -119,6 +121,7 @@ export const runPageAnalysis = async (
   page: SeoPage,
   analysisConfig?: AnalysisConfigPayload,
 ): Promise<Partial<SeoPage>> => {
+  const normalizedPage = normalizeSeoPageInput(page);
   let gscQueries: any[] = [];
 
   // Check if page already has GSC data (to avoid re-fetching and respect limits)
@@ -137,7 +140,7 @@ export const runPageAnalysis = async (
         const end = new Date().toISOString().split('T')[0];
         const start = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         // Limit to 50 as requested
-        gscQueries = await getPageQueries(token, site, page.url, start, end, 50);
+        gscQueries = await getPageQueries(token, site, normalizedPage.url, start, end, 50);
       } catch (e) {
         console.warn('Could not fetch GSC queries', e);
       }
@@ -145,15 +148,17 @@ export const runPageAnalysis = async (
   }
 
   const result = await analyzeUrl({
-    url: page.url,
-    kwPrincipal: page.kwPrincipal,
-    pageType: page.pageType,
-    geoTarget: page.geoTarget,
-    cluster: page.cluster,
-    pageId: page.id,
+    url: normalizedPage.url,
+    kwPrincipal: normalizedPage.kwPrincipal,
+    pageType: normalizedPage.pageType,
+    geoTarget: normalizedPage.geoTarget,
+    cluster: normalizedPage.cluster,
+    pageId: normalizedPage.id,
     gscQueries,
     analysisConfig,
   });
 
-  return processAnalysisResult(page, result, gscQueries);
+  const updates = processAnalysisResult(normalizedPage, result, gscQueries);
+  updates.url = normalizedPage.url;
+  return updates;
 };

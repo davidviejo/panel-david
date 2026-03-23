@@ -1,18 +1,43 @@
+const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
+
+const getWindowLocation = (): Location | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.location;
+};
+
+const normalizeConfiguredUrl = (value?: string): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimTrailingSlash(trimmed) : null;
+};
+
+const buildLocalBackendUrl = (port: string): string => {
+  const location = getWindowLocation();
+  const protocol = location?.protocol === 'https:' ? 'https:' : 'http:';
+  const hostname = location?.hostname || '127.0.0.1';
+
+  return `${protocol}//${hostname}:${port}`;
+};
+
 export const resolveApiUrl = (): string => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  const configured = normalizeConfiguredUrl(import.meta.env.VITE_API_URL);
+  if (configured) {
+    return configured;
   }
 
-  if (typeof window !== 'undefined' && window.location.hostname === '192.168.1.133') {
-    return 'http://192.168.1.133:5000';
-  }
-
-  return 'http://127.0.0.1:5000';
+  return buildLocalBackendUrl(import.meta.env.VITE_API_PORT || '5000');
 };
 
 export const resolveEngineUrl = (): string => {
-  if (import.meta.env.VITE_PYTHON_ENGINE_URL) {
-    return import.meta.env.VITE_PYTHON_ENGINE_URL;
+  const configured = normalizeConfiguredUrl(import.meta.env.VITE_PYTHON_ENGINE_URL);
+  if (configured) {
+    return configured;
   }
 
   return resolveApiUrl();
