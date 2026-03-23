@@ -3,764 +3,1004 @@
 {% block title %}Tendencias en Tiempo Real | MediaFlow SEO Suite{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-4">
+<div class="container-fluid px-3 py-4">
     <style>
-        .trends-page {
-            background: linear-gradient(180deg, rgba(248,250,252,0.98) 0%, rgba(241,245,249,0.96) 100%);
-            min-height: 100%;
-        }
-        .trends-hero {
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(14, 165, 233, 0.12);
-            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 45%, #06b6d4 100%);
-            color: #fff;
+        .tm-app {
+            display: flex;
+            min-height: calc(100vh - 120px);
+            background: #f8fafc;
             border-radius: 28px;
-            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+            overflow: hidden;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            box-shadow: 0 28px 60px rgba(15, 23, 42, 0.10);
         }
-        .trends-hero::before,
-        .trends-hero::after {
-            content: "";
-            position: absolute;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.08);
-            filter: blur(4px);
-        }
-        .trends-hero::before {
-            width: 240px;
-            height: 240px;
-            top: -90px;
-            right: -40px;
-        }
-        .trends-hero::after {
-            width: 180px;
-            height: 180px;
-            bottom: -70px;
-            left: 28%;
-        }
-        .trends-card,
-        .trends-metric-card,
-        .trends-result-card {
-            border: 1px solid rgba(148, 163, 184, 0.18);
-            border-radius: 24px;
-            background: rgba(255,255,255,0.95);
-            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
-        }
-        .trends-card-header {
+        .tm-sidebar {
+            width: 280px;
+            background: #0f172a;
+            color: #cbd5e1;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: 1.25rem 1.5rem 0;
+            flex-direction: column;
+            border-right: 1px solid rgba(148, 163, 184, 0.12);
         }
-        .trends-icon-badge {
-            width: 3rem;
-            height: 3rem;
-            border-radius: 18px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, rgba(37,99,235,0.14), rgba(14,165,233,0.18));
-            color: #0f172a;
-            font-size: 1.1rem;
-            box-shadow: inset 0 0 0 1px rgba(59,130,246,0.08);
-        }
-        .trends-label {
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: #64748b;
-            margin-bottom: 0.25rem;
-        }
-        .trends-metric-card {
-            padding: 1.1rem 1.2rem;
-            height: 100%;
-        }
-        .trends-metric-number {
-            font-size: 1.65rem;
-            line-height: 1;
-            font-weight: 800;
-            color: #0f172a;
-        }
-        .trends-help-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: grid;
-            gap: 0.9rem;
-        }
-        .trends-help-list li {
-            display: flex;
-            gap: 0.75rem;
-            align-items: flex-start;
-            color: #475569;
-            font-size: 0.95rem;
-        }
-        .trends-help-dot {
-            width: 2rem;
-            height: 2rem;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(14,165,233,0.12);
-            color: #0284c7;
-            font-size: 0.85rem;
-            flex-shrink: 0;
-            margin-top: 0.05rem;
-        }
-        .trends-form .form-control,
-        .trends-form .form-select,
-        .trends-form .input-group-text {
-            border-radius: 16px;
-            border-color: #dbeafe;
-            min-height: 52px;
-        }
-        .trends-form .input-group > .form-control {
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
-        }
-        .trends-form .input-group-text {
-            background: #eff6ff;
-            color: #2563eb;
-            border-right: 0;
-            padding-inline: 1rem;
-        }
-        .trends-form .form-control:focus,
-        .trends-form .form-select:focus {
-            border-color: #60a5fa;
-            box-shadow: 0 0 0 0.2rem rgba(59,130,246,0.14);
-        }
-        .trends-primary-btn {
-            min-height: 54px;
-            border: 0;
-            border-radius: 18px;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            box-shadow: 0 18px 36px rgba(34,197,94,0.24);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .trends-primary-btn:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 22px 44px rgba(34,197,94,0.3);
-        }
-        .trends-primary-btn:disabled {
-            opacity: 0.85;
-            box-shadow: none;
-        }
-        .trends-log {
-            background: #020617;
-            border-radius: 20px;
-            color: #7dd3fc;
-            min-height: 200px;
-            max-height: 260px;
-            overflow-y: auto;
-            padding: 1rem;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        }
-        .trends-log-entry {
-            white-space: pre-wrap;
-            padding-bottom: 0.4rem;
-            margin-bottom: 0.4rem;
+        .tm-brand {
+            padding: 1.5rem;
             border-bottom: 1px solid rgba(148, 163, 184, 0.12);
         }
-        .trends-log-entry:last-child {
-            border-bottom: 0;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        .trends-progress-shell {
-            border-radius: 18px;
-            background: #e2e8f0;
-            overflow: hidden;
-            height: 12px;
-        }
-        .trends-progress-shell .progress-bar {
-            border-radius: 18px;
-        }
-        .trends-result-card {
-            overflow: hidden;
-        }
-        .trends-result-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid rgba(226, 232, 240, 0.9);
-            background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.92));
-        }
-        .trends-table-wrap {
-            max-height: 620px;
-            overflow: auto;
-        }
-        .trends-table thead th {
-            position: sticky;
-            top: 0;
-            z-index: 1;
-            background: #f8fafc;
-            color: #475569;
-            font-size: 0.78rem;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .trends-table tbody tr {
-            transition: background-color 0.2s ease, transform 0.2s ease;
-        }
-        .trends-table tbody tr:hover {
-            background-color: rgba(239,246,255,0.92);
-        }
-        .trends-rank {
-            width: 2.2rem;
-            height: 2.2rem;
+        .tm-brand-mark {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 999px;
+            background: linear-gradient(135deg, #2563eb, #06b6d4);
+            color: white;
+            font-size: 0.8rem;
             font-weight: 800;
-            background: rgba(37,99,235,0.09);
+        }
+        .tm-nav {
+            padding: 1rem;
+            display: grid;
+            gap: 0.5rem;
+        }
+        .tm-nav-btn {
+            border: 0;
+            background: transparent;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.9rem 1rem;
+            border-radius: 16px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+        .tm-nav-btn:hover,
+        .tm-nav-btn.active {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            box-shadow: 0 14px 28px rgba(37, 99, 235, 0.25);
+        }
+        .tm-sidebar-status {
+            margin-top: auto;
+            padding: 1rem;
+        }
+        .tm-sidebar-card {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-radius: 18px;
+            padding: 1rem;
+        }
+        .tm-main {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .tm-header {
+            background: rgba(255,255,255,0.94);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(12px);
+        }
+        .tm-content {
+            padding: 1.5rem;
+            flex: 1;
+            overflow: auto;
+        }
+        .tm-view { display: none; }
+        .tm-view.active { display: block; }
+        .tm-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
+        }
+        .tm-stat-card {
+            padding: 1.25rem;
+            height: 100%;
+        }
+        .tm-stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+        }
+        .tm-accent-blue { background: #eff6ff; color: #2563eb; }
+        .tm-accent-cyan { background: #ecfeff; color: #0891b2; }
+        .tm-accent-emerald { background: #ecfdf5; color: #059669; }
+        .tm-accent-amber { background: #fffbeb; color: #d97706; }
+        .tm-btn-primary {
+            border: 0;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border-radius: 14px;
+            padding: 0.8rem 1.2rem;
+            font-weight: 600;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+        }
+        .tm-btn-primary:disabled {
+            opacity: 0.7;
+            box-shadow: none;
+        }
+        .tm-btn-ghost {
+            border: 1px solid #dbeafe;
+            background: #eff6ff;
             color: #1d4ed8;
+            border-radius: 14px;
+            padding: 0.8rem 1rem;
+            font-weight: 600;
         }
-        .trends-topic {
-            font-weight: 700;
-            color: #0f172a;
-        }
-        .trends-topic small {
-            display: block;
-            margin-top: 0.35rem;
-            color: #64748b;
-            font-weight: 500;
-        }
-        .trends-context {
-            color: #334155;
-            font-size: 0.95rem;
-        }
-        .trends-source-badge {
+        .tm-badge {
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
-            padding: 0.38rem 0.7rem;
             border-radius: 999px;
-            background: rgba(15,23,42,0.05);
-            color: #334155;
-            font-size: 0.82rem;
-            font-weight: 600;
+            padding: 0.35rem 0.7rem;
+            font-size: 0.74rem;
+            font-weight: 700;
         }
-        .trends-empty {
-            padding: 3rem 1.5rem;
-            text-align: center;
+        .tm-badge-p1 { background: #dbeafe; color: #1d4ed8; }
+        .tm-badge-p2 { background: #ecfeff; color: #0891b2; }
+        .tm-badge-p3 { background: #eff6ff; color: #2563eb; }
+        .tm-badge-discard { background: #f1f5f9; color: #64748b; }
+        .tm-badge-live { background: #dbeafe; color: #1d4ed8; }
+        .tm-progress-shell {
+            background: #e2e8f0;
+            border-radius: 999px;
+            height: 10px;
+            overflow: hidden;
+        }
+        .tm-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #06b6d4);
+            width: 0%;
+        }
+        .tm-log {
+            background: #0f172a;
+            color: #7dd3fc;
+            border-radius: 18px;
+            min-height: 180px;
+            max-height: 280px;
+            overflow: auto;
+            padding: 1rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+        .tm-log-entry { padding-bottom: 0.45rem; margin-bottom: 0.45rem; border-bottom: 1px solid rgba(148,163,184,0.16); white-space: pre-wrap; }
+        .tm-log-entry:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
+        .tm-chart-row + .tm-chart-row { margin-top: 1rem; }
+        .tm-chart-track {
+            height: 12px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+        .tm-chart-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #2563eb, #06b6d4);
+        }
+        .tm-table th {
+            background: #f8fafc;
             color: #64748b;
+            text-transform: uppercase;
+            font-size: 0.74rem;
+            letter-spacing: 0.04em;
         }
-        .trends-empty-icon {
-            width: 4rem;
-            height: 4rem;
-            border-radius: 24px;
-            background: rgba(59,130,246,0.08);
+        .tm-table td,
+        .tm-table th { padding: 0.95rem 1rem; }
+        .tm-table tbody tr:hover { background: #f8fafc; }
+        .tm-score {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             color: #2563eb;
-            display: inline-flex;
+            font-weight: 700;
+        }
+        .tm-empty {
+            text-align: center;
+            padding: 4rem 1.5rem;
+            color: #94a3b8;
+        }
+        .tm-empty-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 1rem;
+            border-radius: 999px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
-            margin-bottom: 1rem;
+            background: #eff6ff;
+            color: #2563eb;
+            font-size: 1.5rem;
+        }
+        .tm-brief-card {
+            position: relative;
+            overflow: hidden;
+            padding: 1.5rem;
+        }
+        .tm-brief-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #2563eb, #06b6d4);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .tm-brief-card:hover::before { opacity: 1; }
+        .tm-settings-input,
+        .tm-settings-textarea,
+        .tm-settings-select {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            padding: 0.85rem 1rem;
+            background: white;
+            outline: none;
+        }
+        .tm-settings-input:focus,
+        .tm-settings-textarea:focus,
+        .tm-settings-select:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 0.2rem rgba(59,130,246,0.12);
         }
         @media (max-width: 991.98px) {
-            .trends-hero {
-                border-radius: 24px;
-            }
-            .trends-table-wrap {
-                max-height: none;
-            }
+            .tm-app { flex-direction: column; }
+            .tm-sidebar { width: 100%; }
         }
     </style>
 
-    <div class="trends-page animate-fade-in">
-        <section class="trends-hero p-4 p-lg-5 mb-4">
-            <div class="row g-4 align-items-center position-relative">
-                <div class="col-xl-7">
-                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                        <span class="badge rounded-pill text-bg-light text-primary-emphasis px-3 py-2 fw-semibold">
-                            <i class="fas fa-broadcast-tower me-2"></i>Live · Últimas 24 horas
-                        </span>
-                        <span class="badge rounded-pill text-bg-dark px-3 py-2 fw-semibold border border-light-subtle">
-                            <i class="fas fa-globe-americas me-2"></i>Insights por país y categoría
-                        </span>
+    <div class="tm-app">
+        <aside class="tm-sidebar">
+            <div class="tm-brand">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <div class="tm-brand-mark">TM</div>
+                    <div>
+                        <div class="fw-bold text-white">Trends Media</div>
+                        <div class="small text-slate-400">Editorial Automation</div>
                     </div>
-                    <h1 class="display-6 fw-bold mb-3">Descubre qué temas están acelerando el interés de búsqueda ahora mismo.</h1>
-                    <p class="mb-0 text-white-50 fs-5 pe-xl-5">
-                        Prioriza oportunidades editoriales, detecta noticias que mueven el mercado y convierte tendencias en acciones SEO listas para ejecutar.
-                    </p>
                 </div>
-                <div class="col-xl-5">
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <div class="trends-metric-card bg-white bg-opacity-10 border border-white border-opacity-10 text-white">
-                                <div class="text-uppercase small fw-semibold text-white-50 mb-2">Cobertura</div>
-                                <div class="trends-metric-number text-white" id="metricGeo">{{ current_project.geo or 'ES' }}</div>
-                                <div class="small text-white-50 mt-2">Mercado base para capturar señales.</div>
+                <p class="small text-slate-500 mb-0">Flujo migrado desde <code>Tendencias-medios-main</code> usando sólo colores de marca.</p>
+            </div>
+
+            <nav class="tm-nav">
+                <button class="tm-nav-btn active" data-view="dashboard">
+                    <i class="fas fa-chart-line"></i><span>Dashboard</span>
+                </button>
+                <button class="tm-nav-btn" data-view="brief">
+                    <i class="fas fa-newspaper"></i><span>Generar Brief</span>
+                </button>
+                <button class="tm-nav-btn" data-view="settings">
+                    <i class="fas fa-gear"></i><span>Configuración</span>
+                </button>
+            </nav>
+
+            <div class="tm-sidebar-status">
+                <div class="tm-sidebar-card text-xs">
+                    <p class="fw-semibold text-slate-300 mb-1">Estado del sistema</p>
+                    <div class="d-flex align-items-center gap-2 text-cyan-300">
+                        <span class="d-inline-block rounded-circle bg-info" style="width:8px;height:8px;"></span>
+                        <span id="sidebarStatus">API conectada</span>
+                    </div>
+                    <div class="mt-2 text-slate-500">Última ejecución: <span id="sidebarLastRun">Pendiente</span></div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="tm-main">
+            <header class="tm-header">
+                <div>
+                    <h2 class="h4 fw-bold text-dark mb-1" id="pageTitle">Panel de Control</h2>
+                    <p class="text-muted mb-0" id="pageSubtitle">Radar editorial de tendencias en tiempo real.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button id="runPipelineBtn" class="tm-btn-primary" onclick="startPipeline()">
+                        <i class="fas fa-rotate me-2"></i><span id="runPipelineLabel">Analizar SERPs</span>
+                    </button>
+                    <button class="tm-btn-ghost" onclick="setView('settings')">
+                        <i class="fas fa-sliders me-2"></i>Ajustes
+                    </button>
+                </div>
+            </header>
+
+            <div class="tm-content">
+                <section id="dashboardView" class="tm-view active">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6 col-xl-3">
+                            <div class="tm-card tm-stat-card d-flex align-items-center gap-3">
+                                <div class="tm-stat-icon tm-accent-blue"><i class="fas fa-layer-group"></i></div>
+                                <div>
+                                    <div class="small text-muted">Fuentes Escaneadas</div>
+                                    <div class="fs-3 fw-bold text-dark" id="statSources">0</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-sm-6">
-                            <div class="trends-metric-card bg-white bg-opacity-10 border border-white border-opacity-10 text-white">
-                                <div class="text-uppercase small fw-semibold text-white-50 mb-2">Trends detectadas</div>
-                                <div class="trends-metric-number text-white" id="metricCount">0</div>
-                                <div class="small text-white-50 mt-2">Resultados listos para revisar.</div>
+                        <div class="col-md-6 col-xl-3">
+                            <div class="tm-card tm-stat-card d-flex align-items-center gap-3">
+                                <div class="tm-stat-icon tm-accent-cyan"><i class="fas fa-signal"></i></div>
+                                <div>
+                                    <div class="small text-muted">Items Detectados</div>
+                                    <div class="fs-3 fw-bold text-dark" id="statItems">0</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-12">
-                            <div class="trends-metric-card bg-white bg-opacity-10 border border-white border-opacity-10 text-white">
-                                <div class="d-flex align-items-start justify-content-between gap-3">
-                                    <div>
-                                        <div class="text-uppercase small fw-semibold text-white-50 mb-2">Última ejecución</div>
-                                        <div class="fw-bold fs-5" id="metricLastRun">Pendiente</div>
-                                        <div class="small text-white-50 mt-2">Actualiza el panorama en minutos y vuelve a ejecutar cuando cambie el contexto.</div>
-                                    </div>
-                                    <div class="rounded-circle bg-white bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
-                                        <i class="fas fa-chart-line fs-4 text-info"></i>
-                                    </div>
+                        <div class="col-md-6 col-xl-3">
+                            <div class="tm-card tm-stat-card d-flex align-items-center gap-3">
+                                <div class="tm-stat-icon tm-accent-emerald"><i class="fas fa-fire"></i></div>
+                                <div>
+                                    <div class="small text-muted">Alta Prioridad (P1)</div>
+                                    <div class="fs-3 fw-bold text-dark" id="statP1">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-3">
+                            <div class="tm-card tm-stat-card d-flex align-items-center gap-3">
+                                <div class="tm-stat-icon tm-accent-amber"><i class="fas fa-filter-circle-xmark"></i></div>
+                                <div>
+                                    <div class="small text-muted">Filtrados / Exploración</div>
+                                    <div class="fs-3 fw-bold text-dark" id="statDuplicates">0</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </section>
 
-        <div class="row g-4 align-items-start">
-            <div class="col-12 col-xl-4">
-                <div class="trends-card p-0 mb-4">
-                    <div class="trends-card-header">
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="trends-icon-badge"><i class="fas fa-sliders-h"></i></span>
-                            <div>
-                                <div class="trends-label">Configuración</div>
-                                <h2 class="h5 fw-bold text-slate-900 mb-0">Define el radar</h2>
-                            </div>
-                        </div>
-                        <span class="badge rounded-pill text-bg-primary-subtle text-primary fw-semibold px-3 py-2">Paso 1</span>
-                    </div>
-                    <div class="p-4 p-lg-4">
-                        <form id="trendsForm" class="trends-form">
-                            <div class="mb-3">
-                                <label for="geoInput" class="form-label fw-semibold text-slate-800">País objetivo</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-globe"></i></span>
-                                    <input class="form-control" list="geoOptions" name="geo" id="geoInput"
-                                           value="{{ current_project.geo or 'ES' }}"
-                                           placeholder="ES, US, MX..."
-                                           maxlength="2"
-                                           autocomplete="off">
-                                    <datalist id="geoOptions">
-                                        <option value="ES">España</option>
-                                        <option value="US">Estados Unidos</option>
-                                        <option value="MX">México</option>
-                                        <option value="AR">Argentina</option>
-                                        <option value="CO">Colombia</option>
-                                        <option value="CL">Chile</option>
-                                    </datalist>
+                    <div class="row g-4 mb-4">
+                        <div class="col-lg-6">
+                            <div class="tm-card p-4 h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h3 class="h5 fw-semibold mb-0">Tendencias de búsqueda</h3>
+                                    <span class="tm-badge tm-badge-live"><i class="fas fa-broadcast-tower"></i>En tiempo real</span>
                                 </div>
-                                <div class="form-text">Usa el código ISO de 2 letras para enfocar el mercado correcto.</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="catInput" class="form-label fw-semibold text-slate-800">Categoría</label>
-                                <select class="form-select" name="category" id="catInput">
-                                    <option value="h" selected>⚡ Todo (General)</option>
-                                    <option value="b">💰 Economía / Negocios</option>
-                                    <option value="m">🏥 Salud</option>
-                                    <option value="t">🤖 Ciencia / Tecnología</option>
-                                    <option value="s">⚽ Deportes</option>
-                                    <option value="e">🎬 Entretenimiento</option>
-                                </select>
-                                <div class="form-text">Filtra el ruido y quédate sólo con las conversaciones relevantes.</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="focusTermsInput" class="form-label fw-semibold text-slate-800">Temas o sectores prioritarios</label>
-                                <textarea class="form-control" name="focus_terms" id="focusTermsInput" rows="4" placeholder="Ej: medios, streaming, IA, publicidad digital, TV, podcasts"></textarea>
-                                <div class="form-text">Escribe verticales, entidades o temas separados por coma o salto de línea para priorizar tendencias útiles para tus clientes.</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="rankingModeInput" class="form-label fw-semibold text-slate-800">Modo de priorización</label>
-                                <select class="form-select" name="ranking_mode" id="rankingModeInput">
-                                    <option value="balanced" selected>Balanceado · mezcla relevancia y descubrimiento</option>
-                                    <option value="strict">Estricto · prioriza sólo coincidencias claras</option>
-                                    <option value="discovery">Exploración · deja pasar señales emergentes</option>
-                                </select>
-                                <div class="form-text">Útil para medios: usa <strong>Estricto</strong> para verticales muy definidos y <strong>Exploración</strong> para hunting editorial.</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="dataforseoLoginInput" class="form-label fw-semibold text-slate-800">DataForSEO login <span class="text-muted fw-normal">(opcional)</span></label>
-                                <input type="text" class="form-control" name="dataforseo_login" id="dataforseoLoginInput" placeholder="Se usará el login global si lo dejas vacío">
-                                <div class="form-text">Puedes sobreescribir aquí las credenciales guardadas en Settings.</div>
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="dataforseoPasswordInput" class="form-label fw-semibold text-slate-800">DataForSEO password <span class="text-muted fw-normal">(opcional)</span></label>
-                                <input type="password" class="form-control" name="dataforseo_password" id="dataforseoPasswordInput" placeholder="Se usará la password global si la dejas vacía">
-                                <div class="form-text">Este dashboard consulta directamente la API de DataForSEO para recuperar tendencias.</div>
-                            </div>
-
-                            <button type="button" id="analyzeBtn" class="btn trends-primary-btn w-100 fw-bold text-white" onclick="startTrends()">
-                                <i class="fas fa-bolt me-2"></i>Analizar tendencias ahora
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="trends-card p-4 mb-4">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <span class="trends-icon-badge"><i class="fas fa-lightbulb"></i></span>
-                        <div>
-                            <div class="trends-label">Recomendaciones</div>
-                            <h3 class="h6 fw-bold mb-0 text-slate-900">Cómo sacarle partido</h3>
-                        </div>
-                    </div>
-                    <ul class="trends-help-list">
-                        <li>
-                            <span class="trends-help-dot"><i class="fas fa-bullseye"></i></span>
-                            <span>Ejecuta primero en tu mercado principal y luego compara países para encontrar ángulos editoriales distintos.</span>
-                        </li>
-                        <li>
-                            <span class="trends-help-dot"><i class="fas fa-newspaper"></i></span>
-                            <span>Convierte los temas con más contexto en piezas rápidas: newsjacking, FAQs o actualizaciones de contenido evergreen.</span>
-                        </li>
-                        <li>
-                            <span class="trends-help-dot"><i class="fas fa-filter"></i></span>
-                            <span>Prueba distintas categorías para separar ruido mediático de oportunidades realmente accionables para SEO.</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="trends-card p-4 d-none" id="logSection">
-                    <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
-                        <div>
-                            <div class="trends-label">Actividad</div>
-                            <h3 class="h6 fw-bold mb-0 text-slate-900">Registro de ejecución</h3>
-                        </div>
-                        <span class="badge rounded-pill text-bg-dark">En vivo</span>
-                    </div>
-                    <div class="trends-log custom-scrollbar" id="logContent">&gt; Esperando nueva ejecución...</div>
-                </div>
-            </div>
-
-            <div class="col-12 col-xl-8">
-                <div id="errorAlert" class="alert alert-danger d-none border-0 shadow-sm rounded-4 mb-4" role="alert">
-                    <div class="d-flex align-items-start gap-3">
-                        <div class="fs-4"><i class="fas fa-triangle-exclamation"></i></div>
-                        <div class="flex-grow-1">
-                            <div class="fw-bold mb-1">No pudimos completar el análisis.</div>
-                            <span id="errorMsg">Ha ocurrido un error.</span>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="resetUI()">Reintentar</button>
-                    </div>
-                </div>
-
-                <div class="trends-card p-4 mb-4 d-none" id="progressSection">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-                        <div>
-                            <div class="trends-label">Progreso</div>
-                            <h3 class="h5 fw-bold mb-1 text-slate-900">Procesando señales de tendencia</h3>
-                            <small id="statusText" class="text-muted">Conectando con la fuente de datos...</small>
-                        </div>
-                        <span class="badge rounded-pill text-bg-success-subtle text-success fw-semibold px-3 py-2" id="progressBadge">0%</span>
-                    </div>
-                    <div class="progress trends-progress-shell" aria-label="Estado de ejecución">
-                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
-                    </div>
-                </div>
-
-                <div class="row g-3 mb-4" id="summaryCards">
-                    <div class="col-md-4">
-                        <div class="trends-metric-card">
-                            <div class="trends-label">Categoría activa</div>
-                            <div class="fw-bold fs-4 text-slate-900" id="summaryCategory">General</div>
-                            <div class="text-muted small mt-2">Filtro actual para analizar el ruido de mercado.</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="trends-metric-card">
-                            <div class="trends-label">Señales recuperadas</div>
-                            <div class="fw-bold fs-4 text-slate-900" id="summaryTotal">0</div>
-                            <div class="text-muted small mt-2">Temas listos para priorizar en tu workflow.</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="trends-metric-card">
-                            <div class="trends-label">Enfoque temático</div>
-                            <div class="fw-bold fs-5 text-slate-900" id="summaryFocus">Sin filtro</div>
-                            <div class="text-muted small mt-2">Temas usados para reordenar oportunidades.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="resultsSection" class="d-none">
-                    <div class="trends-result-card">
-                        <div class="trends-result-header d-flex flex-wrap justify-content-between align-items-center gap-3">
-                            <div>
-                                <div class="trends-label">Resultados</div>
-                                <h3 class="h4 fw-bold mb-1 text-slate-900">Radar de tendencias detectadas</h3>
-                                <p class="text-muted mb-0">Revisa los temas, entiende el contexto y abre la búsqueda para validar la oportunidad.</p>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span class="badge rounded-pill text-bg-light border text-dark px-3 py-2" id="resultsBadge">0 resultados</span>
-                                <span class="badge rounded-pill text-bg-primary-subtle text-primary px-3 py-2" id="resultsGeoBadge">{{ current_project.geo or 'ES' }}</span>
+                                <div id="dashboardChartEmpty" class="text-muted small">Ejecuta el análisis para visualizar tendencias.</div>
+                                <div id="dashboardChart"></div>
                             </div>
                         </div>
-                        <div class="trends-table-wrap" id="tableWrapper">
-                            <table class="table table-hover align-middle mb-0 trends-table" id="resultsTable">
+                        <div class="col-lg-6">
+                            <div class="tm-card p-4 h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h3 class="h5 fw-semibold mb-0">Estado del pipeline</h3>
+                                    <span class="tm-badge tm-badge-live" id="pipelineBadge">Idle</span>
+                                </div>
+                                <p class="text-muted small mb-2" id="pipelineStatusText">Pipeline listo. Inicia el análisis para buscar noticias en tiempo real, agruparlas por clusters y puntuarlas.</p>
+                                <div class="tm-progress-shell mb-4">
+                                    <div class="tm-progress-bar" id="progressBar"></div>
+                                </div>
+                                <div class="tm-log" id="logContent"><div class="tm-log-entry">&gt; Esperando nueva ejecución...</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tm-card overflow-hidden">
+                        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-light bg-opacity-50">
+                            <h3 class="h5 fw-semibold text-dark mb-0">Últimas Noticias Detectadas</h3>
+                            <span class="small text-muted" id="newsCountLabel">0 clusters</span>
+                        </div>
+                        <div id="dashboardEmptyState" class="tm-empty">
+                            <div class="tm-empty-icon"><i class="fas fa-magnifying-glass-chart"></i></div>
+                            <p class="mb-3">No hay datos analizados todavía.</p>
+                            <button class="tm-btn-primary" onclick="startPipeline()"><i class="fas fa-play me-2"></i>Ejecutar análisis ahora</button>
+                        </div>
+                        <div class="table-responsive d-none" id="dashboardTableWrap">
+                            <table class="table tm-table mb-0">
                                 <thead>
                                     <tr>
-                                        <th width="9%">#</th>
-                                        <th width="31%">Tema</th>
-                                        <th width="29%">Contexto</th>
-                                        <th width="20%">Prioridad</th>
-                                        <th width="20%">Acción</th>
+                                        <th>Prio</th>
+                                        <th>Score</th>
+                                        <th>Titular sugerido</th>
+                                        <th>Cluster</th>
+                                        <th>Fuente top</th>
                                     </tr>
                                 </thead>
-                                <tbody id="resultsBody"></tbody>
+                                <tbody id="dashboardTableBody"></tbody>
                             </table>
                         </div>
-                        <div id="emptyState" class="trends-empty d-none">
-                            <div class="trends-empty-icon"><i class="fas fa-magnifying-glass-chart"></i></div>
-                            <h4 class="fw-bold text-slate-900">No encontramos tendencias para esta combinación.</h4>
-                            <p class="mb-0">Prueba otro país o una categoría distinta para ampliar la cobertura del radar.</p>
+                    </div>
+                </section>
+
+                <section id="briefView" class="tm-view">
+                    <div id="briefLoadingState" class="tm-empty d-none">
+                        <div class="tm-empty-icon"><i class="fas fa-spinner fa-spin"></i></div>
+                        <h3 class="h4 fw-bold text-dark">Recopilando y procesando...</h3>
+                        <p class="text-muted mb-0" id="briefLoadingText">Preparando pipeline.</p>
+                    </div>
+
+                    <div id="briefEmptyState" class="tm-empty">
+                        <div class="tm-empty-icon"><i class="fas fa-newspaper"></i></div>
+                        <h3 class="h4 fw-bold text-dark">Generador de Briefs</h3>
+                        <p class="mb-4">Pipeline listo. Inicia el análisis para buscar noticias en tiempo real, agruparlas por clusters y puntuarlas.</p>
+                        <button class="tm-btn-primary" onclick="startPipeline()"><i class="fas fa-play me-2"></i>Iniciar Pipeline</button>
+                    </div>
+
+                    <div id="briefContentWrap" class="d-none">
+                        <div class="d-flex justify-content-between align-items-center bg-white p-4 rounded-4 border mb-4 shadow-sm sticky-top" style="top:1rem; z-index:5;">
+                            <div>
+                                <h2 class="h5 fw-bold text-dark d-flex align-items-center gap-2 mb-1"><span class="rounded-circle bg-success" style="width:8px;height:8px;"></span>Brief generado</h2>
+                                <p class="text-muted small mb-0"><span id="briefClusterCount">0</span> clusters • <span id="briefPriorityCount">0</span> prioritarios • <span id="briefTime"></span></p>
+                            </div>
+                            <button class="tm-btn-primary" onclick="sendToEditorial()"><i class="fas fa-paper-plane me-2"></i>Enviar a Redacción</button>
+                        </div>
+
+                        <div class="row g-4">
+                            <div class="col-lg-8">
+                                <div class="d-flex align-items-center gap-2 mb-3 text-uppercase small fw-bold text-muted">
+                                    <i class="fas fa-file-lines text-primary"></i>
+                                    <span>Temas prioritarios</span>
+                                </div>
+                                <div id="briefPriorityList"></div>
+                            </div>
+                            <div class="col-lg-4">
+                                <h3 class="text-uppercase small fw-bold text-muted mb-3">Descartados / Baja Prioridad</h3>
+                                <div class="tm-card shadow-sm" id="briefDiscardedList"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </section>
+
+                <section id="settingsView" class="tm-view">
+                    <div class="row g-4">
+                        <div class="col-xl-7">
+                            <div class="tm-card p-4 mb-4">
+                                <h3 class="h5 fw-bold text-dark mb-4"><i class="fas fa-key me-2 text-primary"></i>Credenciales API</h3>
+                                <div class="mb-3">
+                                    <label class="form-label fw-medium">Google Gemini API Key <span class="text-muted fw-normal">(Opcional)</span></label>
+                                    <input id="settingsGeminiApiKey" type="password" class="tm-settings-input" placeholder="Dejar vacío para usar variable de entorno">
+                                </div>
+                                <div>
+                                    <label class="form-label fw-medium">SerpApi Key (Scraping Real)</label>
+                                    <input id="settingsSerpApiKey" type="password" class="tm-settings-input" placeholder="Introduce tu SerpApi Key">
+                                    <p class="small text-muted mt-2 mb-0">Se conserva para replicar la configuración de la app original, aunque este dashboard sigue ejecutando el análisis desde el backend actual.</p>
+                                </div>
+                            </div>
+
+                            <div class="tm-card p-4">
+                                <h3 class="h5 fw-bold text-dark mb-4"><i class="fas fa-magnifying-glass me-2 text-info"></i>Configuración de Búsqueda (SERPs)</h3>
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Queries automatizadas</label>
+                                        <textarea id="settingsSearchQueries" class="tm-settings-textarea" rows="10" placeholder="Una query por línea..."></textarea>
+                                        <p class="small text-muted mt-2 mb-0">El sistema usará estas líneas como stack editorial de referencia.</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="border rounded-4 p-3 h-100 bg-light">
+                                            <h4 class="fw-semibold text-dark fs-6 mb-2">Fuentes Objetivo (Prioridad)</h4>
+                                            <p class="small text-muted">El sistema priorizará noticias y enfoques pensados para estas fuentes:</p>
+                                            <div id="targetSourcesPreview" class="d-flex flex-wrap gap-2"></div>
+                                            <label class="form-label fw-medium mt-3">Editar fuentes objetivo</label>
+                                            <textarea id="settingsTargetSources" class="tm-settings-textarea" rows="7" placeholder="Una fuente por línea..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-5">
+                            <div class="tm-card p-4 mb-4">
+                                <h3 class="h5 fw-bold text-dark mb-4"><i class="fas fa-sliders me-2 text-primary"></i>Parámetros del radar</h3>
+                                <div class="mb-3">
+                                    <label class="form-label fw-medium">País objetivo</label>
+                                    <input id="settingsGeo" class="tm-settings-input" maxlength="2" placeholder="ES, US, MX...">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-medium">Categoría</label>
+                                    <select id="settingsCategory" class="tm-settings-select">
+                                        <option value="h">General</option>
+                                        <option value="b">Economía / Negocios</option>
+                                        <option value="m">Salud</option>
+                                        <option value="t">Ciencia / Tecnología</option>
+                                        <option value="s">Deportes</option>
+                                        <option value="e">Entretenimiento</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-medium">Modo de priorización</label>
+                                    <select id="settingsRankingMode" class="tm-settings-select">
+                                        <option value="balanced">Balanceado</option>
+                                        <option value="strict">Estricto</option>
+                                        <option value="discovery">Exploración</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-medium">Focus terms</label>
+                                    <textarea id="settingsFocusTerms" class="tm-settings-textarea" rows="4" placeholder="medios, streaming, IA, publicidad"></textarea>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">DataForSEO login</label>
+                                        <input id="settingsDataforseoLogin" class="tm-settings-input" placeholder="Opcional">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">DataForSEO password</label>
+                                        <input id="settingsDataforseoPassword" type="password" class="tm-settings-input" placeholder="Opcional">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tm-card p-4">
+                                <div class="d-grid gap-2">
+                                    <button class="tm-btn-primary" onclick="saveSettings()"><i class="fas fa-floppy-disk me-2"></i>Guardar configuración</button>
+                                    <button class="tm-btn-ghost" onclick="applySettingsToRuntime()"><i class="fas fa-rotate me-2"></i>Aplicar al radar</button>
+                                </div>
+                                <div id="settingsSavedMessage" class="small text-success mt-3 d-none">Configuración guardada correctamente.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 
 <script>
-    let intervalId;
-    let currentJobId = null;
-
-    const CATEGORY_LABELS = {
+    const STORAGE_KEY = 'trends_media_dashboard_settings_v2';
+    const CATEGORY_MAP = {
         h: 'General',
-        b: 'Economía / Negocios',
+        b: 'Economía',
         m: 'Salud',
-        t: 'Ciencia / Tecnología',
-        s: 'Deportes',
-        e: 'Entretenimiento'
+        t: 'Innovación',
+        s: 'Eventos',
+        e: 'Otros'
+    };
+    const DEFAULT_SETTINGS = {
+        geminiApiKey: '',
+        serpApiKey: '',
+        searchQueries: [
+            'medios digitales tendencias',
+            'streaming plataformas audiencia',
+            'publicidad digital campañas',
+            'televisión audiencia programación',
+            'podcasts industria medios',
+            'inteligencia artificial medios'
+        ],
+        targetSources: ['Economía 3', 'Expansión', 'Cinco Días', 'MarketingDirecto', 'El Confidencial'],
+        geo: '{{ current_project.geo or "ES" }}',
+        category: 'h',
+        focus_terms: '',
+        ranking_mode: 'balanced',
+        dataforseo_login: '',
+        dataforseo_password: ''
     };
 
-    function updateSummary() {
-        const geoValue = document.getElementById('geoInput').value.trim().toUpperCase() || '{{ current_project.geo or "ES" }}';
-        const categoryValue = document.getElementById('catInput').value;
-        const categoryLabel = CATEGORY_LABELS[categoryValue] || 'General';
-        const focusValue = document.getElementById('focusTermsInput').value.trim();
-        const focusLabel = focusValue ? focusValue.split(/[,\n]/).map((term) => term.trim()).filter(Boolean).slice(0, 3).join(' · ') : 'Sin filtro';
+    let currentView = 'dashboard';
+    let pipelineStatus = 'idle';
+    let statusMessage = '';
+    let stats = { sourcesScanned: 0, itemsFound: 0, highPriority: 0, duplicatesRemoved: 0 };
+    let currentJobId = null;
+    let intervalId = null;
+    let newsClusters = [];
 
-        document.getElementById('metricGeo').textContent = geoValue;
-        document.getElementById('resultsGeoBadge').textContent = geoValue;
-        document.getElementById('summaryCategory').textContent = categoryLabel;
-        document.getElementById('summaryFocus').textContent = focusLabel;
+    function getSettings() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return { ...DEFAULT_SETTINGS };
+            const parsed = JSON.parse(raw);
+            return {
+                ...DEFAULT_SETTINGS,
+                ...parsed,
+                searchQueries: Array.isArray(parsed.searchQueries) ? parsed.searchQueries : DEFAULT_SETTINGS.searchQueries,
+                targetSources: Array.isArray(parsed.targetSources) ? parsed.targetSources : DEFAULT_SETTINGS.targetSources,
+            };
+        } catch (error) {
+            return { ...DEFAULT_SETTINGS };
+        }
     }
 
-    function setProgress(progress, label) {
-        const safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
-        document.getElementById('progressBar').style.width = `${safeProgress}%`;
-        document.getElementById('progressBar').setAttribute('aria-valuenow', String(safeProgress));
-        document.getElementById('progressBadge').textContent = `${safeProgress}%`;
-        document.getElementById('statusText').textContent = label || 'Procesando...';
+    function saveSettingsToStorage(nextSettings) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextSettings));
     }
 
-    function resetUI() {
-        document.getElementById('geoInput').disabled = false;
-        document.getElementById('catInput').disabled = false;
-        document.getElementById('focusTermsInput').disabled = false;
-        document.getElementById('rankingModeInput').disabled = false;
-        document.getElementById('dataforseoLoginInput').disabled = false;
-        document.getElementById('dataforseoPasswordInput').disabled = false;
-
-        const btn = document.getElementById('analyzeBtn');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-bolt me-2"></i>Analizar tendencias ahora';
-
-        document.getElementById('progressSection').classList.add('d-none');
+    function getPriorityBadge(priority) {
+        if (priority === 'P1') return 'tm-badge tm-badge-p1';
+        if (priority === 'P2') return 'tm-badge tm-badge-p2';
+        if (priority === 'P3') return 'tm-badge tm-badge-p3';
+        return 'tm-badge tm-badge-discard';
     }
 
-    function showLoading() {
-        document.getElementById('geoInput').disabled = true;
-        document.getElementById('catInput').disabled = true;
-        document.getElementById('focusTermsInput').disabled = true;
-        document.getElementById('rankingModeInput').disabled = true;
-        document.getElementById('dataforseoLoginInput').disabled = true;
-        document.getElementById('dataforseoPasswordInput').disabled = true;
-
-        const btn = document.getElementById('analyzeBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analizando...';
-
-        document.getElementById('resultsSection').classList.add('d-none');
-        document.getElementById('errorAlert').classList.add('d-none');
-        document.getElementById('emptyState').classList.add('d-none');
-        document.getElementById('resultsTable').classList.remove('d-none');
-
-        document.getElementById('progressSection').classList.remove('d-none');
-        document.getElementById('logSection').classList.remove('d-none');
-        document.getElementById('logContent').innerHTML = '<div class="trends-log-entry">&gt; Iniciando análisis...</div>';
-        setProgress(10, 'Preparando solicitud...');
-        updateSummary();
+    function categoryFromItem(item) {
+        return CATEGORY_MAP[item.category_code || getSettings().category] || 'Otros';
     }
 
-    function showError(msg) {
-        document.getElementById('errorMsg').textContent = msg || 'Ha ocurrido un error desconocido.';
-        document.getElementById('errorAlert').classList.remove('d-none');
-        document.getElementById('progressSection').classList.add('d-none');
-        resetUI();
+    function buildReasoning(item, settings) {
+        const matchText = item.matched_terms?.length ? `Coincide con ${item.matched_terms.join(', ')}.` : 'No tiene match directo con los focus terms.';
+        return `${item.opportunity_note || 'Tendencia útil para monitorizar.'} ${matchText}`;
+    }
+
+    function computePriority(item) {
+        const score = Number(item.relevance_score || 0);
+        if (score >= 60) return 'P1';
+        if (score >= 25) return 'P2';
+        if (score > 0) return 'P3';
+        return 'DISCARD';
+    }
+
+    function normalizeResultsToClusters(items) {
+        const settings = getSettings();
+        return (items || []).map((item, index) => {
+            const priority = computePriority(item);
+            const topic = item.topic || 'Tema sin título';
+            const context = item.context || 'Sin contexto adicional disponible.';
+            return {
+                cluster_id: `cluster-${index}-${topic.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}`,
+                title: topic,
+                score: Number(item.relevance_score || 0),
+                top_source: item.traffic || 'Google Trends',
+                coverage_count: item.matched_terms?.length ? item.matched_terms.length + 1 : 1,
+                articles: [{ url: item.google_link || '#', snippet: context }],
+                ai_analysis: {
+                    suggestedTitle: topic,
+                    summary: context,
+                    priority,
+                    category: categoryFromItem(item),
+                    reasoning: buildReasoning(item, settings)
+                },
+                raw: item
+            };
+        });
+    }
+
+    function setView(view) {
+        currentView = view;
+        document.querySelectorAll('.tm-nav-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === view));
+        document.querySelectorAll('.tm-view').forEach((el) => el.classList.remove('active'));
+        document.getElementById(`${view}View`).classList.add('active');
+
+        const titleMap = {
+            dashboard: ['Panel de Control', 'Comunidad Valenciana • Noticias & Eventos'],
+            brief: ['Generador de Contenido', 'Brief editorial priorizado a partir del pipeline de tendencias.'],
+            settings: ['Configuración', 'Credenciales, queries y parámetros persistentes del radar.']
+        };
+        document.getElementById('pageTitle').textContent = titleMap[view][0];
+        document.getElementById('pageSubtitle').textContent = titleMap[view][1];
+    }
+
+    function renderSettings() {
+        const settings = getSettings();
+        document.getElementById('settingsGeminiApiKey').value = settings.geminiApiKey;
+        document.getElementById('settingsSerpApiKey').value = settings.serpApiKey;
+        document.getElementById('settingsSearchQueries').value = settings.searchQueries.join('\n');
+        document.getElementById('settingsTargetSources').value = settings.targetSources.join('\n');
+        document.getElementById('settingsGeo').value = settings.geo;
+        document.getElementById('settingsCategory').value = settings.category;
+        document.getElementById('settingsRankingMode').value = settings.ranking_mode;
+        document.getElementById('settingsFocusTerms').value = settings.focus_terms;
+        document.getElementById('settingsDataforseoLogin').value = settings.dataforseo_login;
+        document.getElementById('settingsDataforseoPassword').value = settings.dataforseo_password;
+        renderTargetSourcesPreview(settings.targetSources);
+    }
+
+    function renderTargetSourcesPreview(sources) {
+        const wrap = document.getElementById('targetSourcesPreview');
+        wrap.innerHTML = '';
+        (sources || []).forEach((source) => {
+            const badge = document.createElement('span');
+            badge.className = 'tm-badge tm-badge-discard';
+            badge.textContent = source;
+            wrap.appendChild(badge);
+        });
+    }
+
+    function saveSettings() {
+        const next = {
+            geminiApiKey: document.getElementById('settingsGeminiApiKey').value.trim(),
+            serpApiKey: document.getElementById('settingsSerpApiKey').value.trim(),
+            searchQueries: document.getElementById('settingsSearchQueries').value.split('\n').map((s) => s.trim()).filter(Boolean),
+            targetSources: document.getElementById('settingsTargetSources').value.split('\n').map((s) => s.trim()).filter(Boolean),
+            geo: document.getElementById('settingsGeo').value.trim().toUpperCase() || DEFAULT_SETTINGS.geo,
+            category: document.getElementById('settingsCategory').value,
+            focus_terms: document.getElementById('settingsFocusTerms').value.trim(),
+            ranking_mode: document.getElementById('settingsRankingMode').value,
+            dataforseo_login: document.getElementById('settingsDataforseoLogin').value.trim(),
+            dataforseo_password: document.getElementById('settingsDataforseoPassword').value.trim(),
+        };
+        saveSettingsToStorage(next);
+        renderSettings();
+        applySettingsToRuntime();
+        const msg = document.getElementById('settingsSavedMessage');
+        msg.classList.remove('d-none');
+        clearTimeout(saveSettings._timer);
+        saveSettings._timer = setTimeout(() => msg.classList.add('d-none'), 2000);
+    }
+
+    function applySettingsToRuntime() {
+        const settings = getSettings();
+        document.getElementById('sidebarStatus').textContent = `Geo ${settings.geo} · ${CATEGORY_MAP[settings.category] || 'General'}`;
+    }
+
+    function updatePipelineUI() {
+        const badge = document.getElementById('pipelineBadge');
+        const runButton = document.getElementById('runPipelineBtn');
+        const runLabel = document.getElementById('runPipelineLabel');
+        const statusText = document.getElementById('pipelineStatusText');
+        const loadingText = document.getElementById('briefLoadingText');
+        statusText.textContent = statusMessage || 'Pipeline listo. Inicia el análisis para buscar noticias en tiempo real, agruparlas por clusters y puntuarlas.';
+        loadingText.textContent = statusMessage || 'Preparando pipeline.';
+
+        badge.className = 'tm-badge tm-badge-live';
+        if (pipelineStatus === 'fetching') {
+            badge.textContent = 'Fetching';
+            runLabel.textContent = 'Escaneando...';
+            runButton.disabled = true;
+        } else if (pipelineStatus === 'analyzing') {
+            badge.textContent = 'Analyzing';
+            runLabel.textContent = 'Analizando...';
+            runButton.disabled = true;
+        } else if (pipelineStatus === 'done') {
+            badge.textContent = 'Done';
+            runLabel.textContent = 'Actualizar SERPs';
+            runButton.disabled = false;
+        } else if (pipelineStatus === 'error') {
+            badge.textContent = 'Error';
+            runLabel.textContent = 'Reintentar';
+            runButton.disabled = false;
+        } else {
+            badge.textContent = 'Idle';
+            runLabel.textContent = newsClusters.length ? 'Actualizar SERPs' : 'Analizar SERPs';
+            runButton.disabled = false;
+        }
+        document.getElementById('briefLoadingState').classList.toggle('d-none', !(pipelineStatus === 'fetching' || pipelineStatus === 'analyzing'));
+    }
+
+    function updateProgress(value) {
+        document.getElementById('progressBar').style.width = `${Math.max(0, Math.min(100, value || 0))}%`;
     }
 
     function renderLogs(logs) {
-        const logContainer = document.getElementById('logContent');
-        const entries = (logs || []).map((line) => `<div class="trends-log-entry">&gt; ${line}</div>`).join('');
-        logContainer.innerHTML = entries || '<div class="trends-log-entry">&gt; Esperando nueva ejecución...</div>';
-        logContainer.scrollTop = logContainer.scrollHeight;
+        const log = document.getElementById('logContent');
+        const entries = (logs || []).map((line) => `<div class="tm-log-entry">&gt; ${line}</div>`).join('');
+        log.innerHTML = entries || '<div class="tm-log-entry">&gt; Esperando nueva ejecución...</div>';
+        log.scrollTop = log.scrollHeight;
     }
 
-    function setLastRun() {
-        const formatter = new Intl.DateTimeFormat('es-ES', {
-            day: '2-digit',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit'
+    function renderStats() {
+        document.getElementById('statSources').textContent = String(stats.sourcesScanned);
+        document.getElementById('statItems').textContent = String(stats.itemsFound);
+        document.getElementById('statP1').textContent = String(stats.highPriority);
+        document.getElementById('statDuplicates').textContent = String(stats.duplicatesRemoved);
+    }
+
+    function renderDashboardChart() {
+        const wrap = document.getElementById('dashboardChart');
+        const empty = document.getElementById('dashboardChartEmpty');
+        wrap.innerHTML = '';
+        if (!newsClusters.length) {
+            empty.classList.remove('d-none');
+            return;
+        }
+        empty.classList.add('d-none');
+        const chartData = newsClusters.slice(0, 5);
+        const max = Math.max(...chartData.map((item) => item.score || 1), 1);
+        chartData.forEach((item) => {
+            const row = document.createElement('div');
+            row.className = 'tm-chart-row';
+            const pct = Math.max(10, Math.round((item.score / max) * 100));
+            row.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2 small">
+                    <span class="fw-semibold text-dark">${item.title}</span>
+                    <span class="${getPriorityBadge(item.ai_analysis.priority)}">${item.ai_analysis.priority}</span>
+                </div>
+                <div class="tm-chart-track"><div class="tm-chart-fill" style="width:${pct}%"></div></div>`;
+            wrap.appendChild(row);
         });
-        document.getElementById('metricLastRun').textContent = formatter.format(new Date());
     }
 
-    async function startTrends() {
-        const geoInput = document.getElementById('geoInput');
-        const geoVal = geoInput.value.trim().toUpperCase();
-        geoInput.value = geoVal;
+    function renderDashboardTable() {
+        const empty = document.getElementById('dashboardEmptyState');
+        const tableWrap = document.getElementById('dashboardTableWrap');
+        const body = document.getElementById('dashboardTableBody');
+        body.innerHTML = '';
+        document.getElementById('newsCountLabel').textContent = `${newsClusters.length} clusters`;
 
-        if (geoVal.length !== 2) {
-            alert('El código de país debe tener exactamente 2 letras (ej: ES, US).');
+        if (!newsClusters.length) {
+            empty.classList.remove('d-none');
+            tableWrap.classList.add('d-none');
             return;
         }
 
-        updateSummary();
-        const formData = new FormData(document.getElementById('trendsForm'));
+        empty.classList.add('d-none');
+        tableWrap.classList.remove('d-none');
+        newsClusters.slice(0, 5).forEach((item) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><span class="${getPriorityBadge(item.ai_analysis.priority)}">${item.ai_analysis.priority}</span></td>
+                <td><span class="tm-score">${item.score}</span></td>
+                <td class="fw-semibold text-dark">${item.ai_analysis.suggestedTitle}</td>
+                <td class="text-muted">${item.ai_analysis.category}</td>
+                <td class="text-muted">${item.top_source}</td>`;
+            body.appendChild(row);
+        });
+    }
 
-        showLoading();
+    function renderBrief() {
+        const empty = document.getElementById('briefEmptyState');
+        const wrap = document.getElementById('briefContentWrap');
+        const priorityList = document.getElementById('briefPriorityList');
+        const discardedList = document.getElementById('briefDiscardedList');
 
-        try {
-            const req = await fetch('/trends/start', { method: 'POST', body: formData });
-            const resp = await req.json();
-            if (resp.status === 'started') {
-                currentJobId = resp.job_id;
-                if (intervalId) clearInterval(intervalId);
-                intervalId = setInterval(checkStatus, 1000);
-            } else {
-                showError('No se pudo iniciar el análisis.');
-            }
-        } catch (e) {
-            showError('Error de conexión: ' + e);
+        if (!newsClusters.length) {
+            empty.classList.remove('d-none');
+            wrap.classList.add('d-none');
+            return;
+        }
+
+        empty.classList.add('d-none');
+        wrap.classList.remove('d-none');
+        const p1 = newsClusters.filter((item) => item.ai_analysis.priority === 'P1');
+        const p2 = newsClusters.filter((item) => item.ai_analysis.priority === 'P2');
+        const discarded = newsClusters.filter((item) => ['P3', 'DISCARD'].includes(item.ai_analysis.priority));
+        const validItems = [...p1, ...p2];
+
+        document.getElementById('briefClusterCount').textContent = String(newsClusters.length);
+        document.getElementById('briefPriorityCount').textContent = String(p1.length);
+        document.getElementById('briefTime').textContent = new Date().toLocaleTimeString('es-ES');
+
+        priorityList.innerHTML = '';
+        if (!validItems.length) {
+            priorityList.innerHTML = '<div class="tm-card p-5 text-center text-muted">No se encontraron noticias de alta prioridad en esta ejecución.</div>';
+        } else {
+            validItems.forEach((item) => {
+                const extraSources = Math.max(0, item.coverage_count - 1);
+                const card = document.createElement('div');
+                card.className = 'tm-card tm-brief-card mb-4';
+                card.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="${getPriorityBadge(item.ai_analysis.priority)}">${item.ai_analysis.priority}</span>
+                            <span class="tm-badge tm-badge-discard">${item.ai_analysis.category}</span>
+                        </div>
+                        <div class="small text-muted"><i class="fas fa-chart-simple me-1"></i><span class="tm-score">${item.score}</span></div>
+                    </div>
+                    <h3 class="h4 fw-bold text-dark mb-2">${item.ai_analysis.suggestedTitle}</h3>
+                    <p class="text-muted mb-4">${item.ai_analysis.summary}</p>
+                    <div class="bg-light border rounded-4 p-3 mb-4">
+                        <p class="text-uppercase small fw-bold text-muted mb-1">Interés editorial</p>
+                        <p class="small mb-0 text-dark fst-italic">"${item.ai_analysis.reasoning}"</p>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center text-muted small border-top pt-3">
+                        <div class="d-flex flex-wrap gap-3">
+                            <span>Fuente principal: <span class="fw-medium text-dark">${item.top_source}</span></span>
+                            ${extraSources ? `<span class="text-primary">+${extraSources} fuentes extra</span>` : ''}
+                        </div>
+                        <a href="${item.raw.google_link || '#'}" target="_blank" rel="noreferrer" class="text-decoration-none text-primary fw-semibold">Leer original <i class="fas fa-arrow-up-right-from-square ms-1"></i></a>
+                    </div>`;
+                priorityList.appendChild(card);
+            });
+        }
+
+        if (!discarded.length) {
+            discardedList.innerHTML = '<div class="p-4 text-center text-muted small">No hay items descartados.</div>';
+        } else {
+            discardedList.innerHTML = discarded.map((item) => `
+                <div class="p-4 border-bottom">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h4 class="fs-6 fw-semibold text-dark mb-0">${item.title}</h4>
+                        <span class="${getPriorityBadge(item.ai_analysis.priority)}">${item.ai_analysis.priority}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+                        <span>${item.top_source}</span>
+                        <span>Score: ${item.score}</span>
+                    </div>
+                    <p class="small mb-0 text-primary">${item.ai_analysis.reasoning}</p>
+                </div>`).join('');
         }
     }
 
-    async function checkStatus() {
-        if (!currentJobId) return;
+    function renderAll() {
+        renderStats();
+        renderDashboardChart();
+        renderDashboardTable();
+        renderBrief();
+        updatePipelineUI();
+    }
+
+    function setLastRun() {
+        const formatted = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }).format(new Date());
+        document.getElementById('sidebarLastRun').textContent = formatted;
+    }
+
+    async function startPipeline() {
+        const settings = getSettings();
+        pipelineStatus = 'fetching';
+        statusMessage = `Escaneando Google News (${settings.searchQueries.length} queries)...`;
+        updateProgress(10);
+        renderLogs(['Iniciando pipeline...', statusMessage]);
+        updatePipelineUI();
+
+        if (currentView === 'dashboard') {
+            setView('brief');
+        }
+
+        const formData = new FormData();
+        formData.append('geo', settings.geo || DEFAULT_SETTINGS.geo);
+        formData.append('category', settings.category || DEFAULT_SETTINGS.category);
+        formData.append('focus_terms', settings.focus_terms || '');
+        formData.append('ranking_mode', settings.ranking_mode || DEFAULT_SETTINGS.ranking_mode);
+        formData.append('dataforseo_login', settings.dataforseo_login || '');
+        formData.append('dataforseo_password', settings.dataforseo_password || '');
 
         try {
-            const res = await fetch(`/trends/status?job_id=${currentJobId}`);
-            if (!res.ok) {
-                clearInterval(intervalId);
-                showError('Error de red al consultar estado.');
-                return;
+            const response = await fetch('/trends/start', { method: 'POST', body: formData });
+            const data = await response.json();
+            if (data.status !== 'started') {
+                throw new Error('No se pudo iniciar el pipeline');
             }
+            currentJobId = data.job_id;
+            clearInterval(intervalId);
+            intervalId = setInterval(checkPipelineStatus, 1000);
+        } catch (error) {
+            pipelineStatus = 'error';
+            statusMessage = error.message || String(error);
+            renderLogs([`Error: ${statusMessage}`]);
+            updatePipelineUI();
+        }
+    }
 
-            const data = await res.json();
+    async function checkPipelineStatus() {
+        if (!currentJobId) return;
+        try {
+            const response = await fetch(`/trends/status?job_id=${currentJobId}`);
+            const data = await response.json();
+            if (data.error && !data.log) throw new Error(data.error);
 
-            if (data.error && !data.log) {
-                clearInterval(intervalId);
-                showError(data.error);
-                return;
-            }
+            renderLogs(data.log || []);
+            updateProgress(data.progress || 0);
 
-            if (data.log && data.log.length > 0) {
-                renderLogs(data.log);
-                const latestLog = data.log[data.log.length - 1];
-                setProgress(data.progress, latestLog);
-            } else {
-                setProgress(data.progress, 'Procesando señales...');
+            if (data.progress >= 50 && pipelineStatus !== 'analyzing') {
+                pipelineStatus = 'analyzing';
+                statusMessage = `Analizando ${Array.isArray(data.data) ? data.data.length : 0} temas con IA...`;
+                updatePipelineUI();
+            } else if (Array.isArray(data.log) && data.log.length) {
+                statusMessage = data.log[data.log.length - 1];
+                updatePipelineUI();
             }
 
             if (!data.active) {
                 clearInterval(intervalId);
-                resetUI();
+                if (data.error) throw new Error(data.error);
+                newsClusters = normalizeResultsToClusters(data.data || []);
+                pipelineStatus = 'done';
+                statusMessage = `Análisis completado: ${newsClusters.length} clusters listos.`;
+                stats = {
+                    sourcesScanned: Array.isArray(data.data) ? data.data.length : 0,
+                    itemsFound: newsClusters.length,
+                    highPriority: newsClusters.filter((item) => item.ai_analysis.priority === 'P1').length,
+                    duplicatesRemoved: newsClusters.filter((item) => ['P3', 'DISCARD'].includes(item.ai_analysis.priority)).length,
+                };
                 setLastRun();
-
-                if (data.error) {
-                    showError(data.error);
-                } else if (data.data && data.data.length > 0) {
-                    renderTable(data.data);
-                } else {
-                    document.getElementById('resultsSection').classList.remove('d-none');
-                    document.getElementById('emptyState').classList.remove('d-none');
-                    document.getElementById('resultsTable').classList.add('d-none');
-                    document.getElementById('summaryTotal').textContent = '0';
-                    document.getElementById('metricCount').textContent = '0';
-                    document.getElementById('resultsBadge').textContent = '0 resultados';
-                }
+                renderAll();
             }
-        } catch (e) {
+        } catch (error) {
             clearInterval(intervalId);
-            showError('Error al procesar estado: ' + e);
+            pipelineStatus = 'error';
+            statusMessage = error.message || String(error);
+            renderLogs([`Error: ${statusMessage}`]);
+            updatePipelineUI();
         }
     }
 
-    function renderTable(items) {
-        const tbody = document.getElementById('resultsBody');
-        tbody.innerHTML = '';
-
-        items.forEach((item, index) => {
-            const rank = item.rank || index + 1;
-            const topic = item.topic || 'Tema sin título';
-            const context = item.context || 'Sin contexto adicional disponible.';
-            const traffic = item.traffic || 'Tráfico no informado';
-            const link = item.google_link || '#';
-            const fitLabel = item.fit_label || 'Exploratoria';
-            const note = item.opportunity_note || 'Sin señal adicional';
-            const terms = Array.isArray(item.matched_terms) && item.matched_terms.length ? item.matched_terms.join(', ') : 'Sin match directo';
-
-            tbody.innerHTML += `
-                <tr>
-                    <td><span class="trends-rank">${rank}</span></td>
-                    <td>
-                        <div class="trends-topic">${topic}</div>
-                        <small>${traffic}</small>
-                    </td>
-                    <td class="trends-context">${context}</td>
-                    <td>
-                        <div class="d-flex flex-column align-items-start gap-2">
-                            <span class="trends-source-badge"><i class="fas fa-bullseye"></i>${fitLabel}</span>
-                            <small class="text-muted">${note}</small>
-                            <small class="text-muted"><strong>Match:</strong> ${terms}</small>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="d-flex flex-column align-items-start gap-2">
-                            <span class="trends-source-badge"><i class="fas fa-arrow-trend-up"></i>${traffic}</span>
-                            <a href="${link}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                <i class="fas fa-up-right-from-square me-1"></i>Ver búsqueda
-                            </a>
-                        </div>
-                    </td>
-                </tr>`;
-        });
-
-        document.getElementById('resultsSection').classList.remove('d-none');
-        document.getElementById('emptyState').classList.add('d-none');
-        document.getElementById('resultsTable').classList.remove('d-none');
-        document.getElementById('summaryTotal').textContent = String(items.length);
-        document.getElementById('metricCount').textContent = String(items.length);
-        document.getElementById('resultsBadge').textContent = `${items.length} resultado${items.length === 1 ? '' : 's'}`;
+    function sendToEditorial() {
+        alert(`Brief enviado a Slack (#redaccion-valencia) y Notion DB. ${newsClusters.length} clusters preparados.`);
     }
 
-    document.getElementById('geoInput').addEventListener('input', updateSummary);
-    document.getElementById('catInput').addEventListener('change', updateSummary);
-    document.getElementById('focusTermsInput').addEventListener('input', updateSummary);
-    document.getElementById('rankingModeInput').addEventListener('change', updateSummary);
-    updateSummary();
+    document.querySelectorAll('.tm-nav-btn').forEach((button) => {
+        button.addEventListener('click', () => setView(button.dataset.view));
+    });
+    document.getElementById('settingsTargetSources').addEventListener('input', (event) => {
+        renderTargetSourcesPreview(event.target.value.split('\n').map((value) => value.trim()).filter(Boolean));
+    });
+
+    renderSettings();
+    applySettingsToRuntime();
+    renderAll();
 </script>
 {% endblock %}
