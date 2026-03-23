@@ -1,108 +1,506 @@
 {% extends "base.html" %}
 
+{% block title %}Tendencias en Tiempo Real | MediaFlow SEO Suite{% endblock %}
+
 {% block content %}
-<div class="container-fluid p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>📈 Tendencias en Tiempo Real</h2>
-        <span class="badge bg-success">Live (Últimas 24h)</span>
-    </div>
+<div class="container-fluid px-4 py-4">
+    <style>
+        .trends-page {
+            background: linear-gradient(180deg, rgba(248,250,252,0.98) 0%, rgba(241,245,249,0.96) 100%);
+            min-height: 100%;
+        }
+        .trends-hero {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(14, 165, 233, 0.12);
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 45%, #06b6d4 100%);
+            color: #fff;
+            border-radius: 28px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+        }
+        .trends-hero::before,
+        .trends-hero::after {
+            content: "";
+            position: absolute;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            filter: blur(4px);
+        }
+        .trends-hero::before {
+            width: 240px;
+            height: 240px;
+            top: -90px;
+            right: -40px;
+        }
+        .trends-hero::after {
+            width: 180px;
+            height: 180px;
+            bottom: -70px;
+            left: 28%;
+        }
+        .trends-card,
+        .trends-metric-card,
+        .trends-result-card {
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 24px;
+            background: rgba(255,255,255,0.95);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+        }
+        .trends-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem 0;
+        }
+        .trends-icon-badge {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(37,99,235,0.14), rgba(14,165,233,0.18));
+            color: #0f172a;
+            font-size: 1.1rem;
+            box-shadow: inset 0 0 0 1px rgba(59,130,246,0.08);
+        }
+        .trends-label {
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+        .trends-metric-card {
+            padding: 1.1rem 1.2rem;
+            height: 100%;
+        }
+        .trends-metric-number {
+            font-size: 1.65rem;
+            line-height: 1;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .trends-help-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 0.9rem;
+        }
+        .trends-help-list li {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            color: #475569;
+            font-size: 0.95rem;
+        }
+        .trends-help-dot {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(14,165,233,0.12);
+            color: #0284c7;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            margin-top: 0.05rem;
+        }
+        .trends-form .form-control,
+        .trends-form .form-select,
+        .trends-form .input-group-text {
+            border-radius: 16px;
+            border-color: #dbeafe;
+            min-height: 52px;
+        }
+        .trends-form .input-group > .form-control {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        .trends-form .input-group-text {
+            background: #eff6ff;
+            color: #2563eb;
+            border-right: 0;
+            padding-inline: 1rem;
+        }
+        .trends-form .form-control:focus,
+        .trends-form .form-select:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 0.2rem rgba(59,130,246,0.14);
+        }
+        .trends-primary-btn {
+            min-height: 54px;
+            border: 0;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            box-shadow: 0 18px 36px rgba(34,197,94,0.24);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .trends-primary-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 22px 44px rgba(34,197,94,0.3);
+        }
+        .trends-primary-btn:disabled {
+            opacity: 0.85;
+            box-shadow: none;
+        }
+        .trends-log {
+            background: #020617;
+            border-radius: 20px;
+            color: #7dd3fc;
+            min-height: 200px;
+            max-height: 260px;
+            overflow-y: auto;
+            padding: 1rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+        .trends-log-entry {
+            white-space: pre-wrap;
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.4rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        }
+        .trends-log-entry:last-child {
+            border-bottom: 0;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .trends-progress-shell {
+            border-radius: 18px;
+            background: #e2e8f0;
+            overflow: hidden;
+            height: 12px;
+        }
+        .trends-progress-shell .progress-bar {
+            border-radius: 18px;
+        }
+        .trends-result-card {
+            overflow: hidden;
+        }
+        .trends-result-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+            background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.92));
+        }
+        .trends-table-wrap {
+            max-height: 620px;
+            overflow: auto;
+        }
+        .trends-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.78rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .trends-table tbody tr {
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .trends-table tbody tr:hover {
+            background-color: rgba(239,246,255,0.92);
+        }
+        .trends-rank {
+            width: 2.2rem;
+            height: 2.2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            font-weight: 800;
+            background: rgba(37,99,235,0.09);
+            color: #1d4ed8;
+        }
+        .trends-topic {
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .trends-topic small {
+            display: block;
+            margin-top: 0.35rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .trends-context {
+            color: #334155;
+            font-size: 0.95rem;
+        }
+        .trends-source-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.38rem 0.7rem;
+            border-radius: 999px;
+            background: rgba(15,23,42,0.05);
+            color: #334155;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .trends-empty {
+            padding: 3rem 1.5rem;
+            text-align: center;
+            color: #64748b;
+        }
+        .trends-empty-icon {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 24px;
+            background: rgba(59,130,246,0.08);
+            color: #2563eb;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 991.98px) {
+            .trends-hero {
+                border-radius: 24px;
+            }
+            .trends-table-wrap {
+                max-height: none;
+            }
+        }
+    </style>
 
-    <div class="row">
-        <!-- CONFIGURACIÓN -->
-        <div class="col-lg-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-primary text-white">
-                    <h6 class="m-0 fw-bold"><i class="fas fa-sliders-h"></i> Configuración</h6>
+    <div class="trends-page animate-fade-in">
+        <section class="trends-hero p-4 p-lg-5 mb-4">
+            <div class="row g-4 align-items-center position-relative">
+                <div class="col-xl-7">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        <span class="badge rounded-pill text-bg-light text-primary-emphasis px-3 py-2 fw-semibold">
+                            <i class="fas fa-broadcast-tower me-2"></i>Live · Últimas 24 horas
+                        </span>
+                        <span class="badge rounded-pill text-bg-dark px-3 py-2 fw-semibold border border-light-subtle">
+                            <i class="fas fa-globe-americas me-2"></i>Insights por país y categoría
+                        </span>
+                    </div>
+                    <h1 class="display-6 fw-bold mb-3">Descubre qué temas están acelerando el interés de búsqueda ahora mismo.</h1>
+                    <p class="mb-0 text-white-50 fs-5 pe-xl-5">
+                        Prioriza oportunidades editoriales, detecta noticias que mueven el mercado y convierte tendencias en acciones SEO listas para ejecutar.
+                    </p>
                 </div>
-                <div class="card-body">
-                    <form id="trendsForm">
-                        <div class="mb-3">
-                            <label for="geoInput" class="form-label fw-bold">País</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-globe"></i></span>
-                                <!-- AQUÍ LA MAGIA: AUTO-RELLENADO CON EL PROYECTO ACTUAL -->
-                                <input class="form-control" list="geoOptions" name="geo" id="geoInput"
-                                       value="{{ current_project.geo or 'ES' }}"
-                                       placeholder="ES, US, MX...">
-                                <datalist id="geoOptions">
-                                    <option value="ES">España</option>
-                                    <option value="US">Estados Unidos</option>
-                                    <option value="MX">México</option>
-                                    <option value="AR">Argentina</option>
-                                </datalist>
+                <div class="col-xl-5">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="trends-metric-card bg-white bg-opacity-10 border border-white border-opacity-10 text-white">
+                                <div class="text-uppercase small fw-semibold text-white-50 mb-2">Cobertura</div>
+                                <div class="trends-metric-number text-white" id="metricGeo">{{ current_project.geo or 'ES' }}</div>
+                                <div class="small text-white-50 mt-2">Mercado base para capturar señales.</div>
                             </div>
-                            <div class="form-text text-muted">Código de 2 letras (ISO).</div>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="catInput" class="form-label fw-bold">Categoría</label>
-                            <select class="form-select" name="category" id="catInput">
-                                <option value="h" selected>⚡ Todo (General)</option>
-                                <option value="b">💰 Economía / Negocios</option>
-                                <option value="m">🏥 Salud (Health)</option>
-                                <option value="t">🤖 Sci / Tech</option>
-                                <option value="s">⚽ Deportes</option>
-                                <option value="e">🎬 Entretenimiento</option>
-                            </select>
+                        <div class="col-sm-6">
+                            <div class="trends-metric-card bg-white bg-opacity-10 border border-white border-opacity-10 text-white">
+                                <div class="text-uppercase small fw-semibold text-white-50 mb-2">Trends detectadas</div>
+                                <div class="trends-metric-number text-white" id="metricCount">0</div>
+                                <div class="small text-white-50 mt-2">Resultados listos para revisar.</div>
+                            </div>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="apiKeyInput" class="form-label small text-muted">API Key SerpApi (Opcional)</label>
-                            <input type="password" class="form-control form-control-sm" name="api_key" id="apiKeyInput" placeholder="Sólo si tienes clave...">
+                        <div class="col-12">
+                            <div class="trends-metric-card bg-white bg-opacity-10 border border-white border-opacity-10 text-white">
+                                <div class="d-flex align-items-start justify-content-between gap-3">
+                                    <div>
+                                        <div class="text-uppercase small fw-semibold text-white-50 mb-2">Última ejecución</div>
+                                        <div class="fw-bold fs-5" id="metricLastRun">Pendiente</div>
+                                        <div class="small text-white-50 mt-2">Actualiza el panorama en minutos y vuelve a ejecutar cuando cambie el contexto.</div>
+                                    </div>
+                                    <div class="rounded-circle bg-white bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                                        <i class="fas fa-chart-line fs-4 text-info"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
-                        <button type="button" id="analyzeBtn" class="btn btn-success w-100 fw-bold py-2" onclick="startTrends()">
-                            <i class="fas fa-bolt"></i> ANALIZAR AHORA
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="card shadow mb-4 d-none" id="logSection">
-                <div class="card-header py-1 bg-dark text-white"><small>Log</small></div>
-                <div class="card-body bg-black text-info font-monospace p-2 small" style="height: 150px; overflow-y: auto;">
-                    <div id="logContent">> Esperando...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- RESULTADOS -->
-        <div class="col-lg-8">
-            <!-- ERROR ALERT -->
-            <div id="errorAlert" class="alert alert-danger d-none" role="alert">
-                <span id="errorMsg">Ha ocurrido un error.</span>
-                <button type="button" class="btn btn-sm btn-outline-danger float-end" onclick="resetUI()">Reintentar</button>
-            </div>
-
-            <div id="progressSection" class="d-none mb-3">
-                <div class="progress" style="height: 10px;">
-                    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
-                </div>
-                <small id="statusText" class="text-muted">Conectando...</small>
-            </div>
-
-            <div id="resultsSection" class="d-none">
-                <div class="card shadow border-0">
-                    <div class="card-header bg-white border-bottom">
-                        <h5 class="m-0 text-dark fw-bold">🔥 Hot Trends</h5>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th width="5%">#</th>
-                                    <th width="25%">Tema</th>
-                                    <th width="45%">Contexto</th>
-                                    <th width="25%">Fuente</th>
-                                </tr>
-                            </thead>
-                            <tbody id="resultsBody"></tbody>
-                        </table>
+                </div>
+            </div>
+        </section>
+
+        <div class="row g-4 align-items-start">
+            <div class="col-12 col-xl-4">
+                <div class="trends-card p-0 mb-4">
+                    <div class="trends-card-header">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="trends-icon-badge"><i class="fas fa-sliders-h"></i></span>
+                            <div>
+                                <div class="trends-label">Configuración</div>
+                                <h2 class="h5 fw-bold text-slate-900 mb-0">Define el radar</h2>
+                            </div>
+                        </div>
+                        <span class="badge rounded-pill text-bg-primary-subtle text-primary fw-semibold px-3 py-2">Paso 1</span>
                     </div>
-                    <!-- EMPTY STATE MSG -->
-                    <div id="emptyState" class="d-none p-4 text-center text-muted">
-                        <i class="fas fa-search fa-2x mb-2"></i><br>
-                        Sin resultados. Prueba otra categoría o país.
+                    <div class="p-4 p-lg-4">
+                        <form id="trendsForm" class="trends-form">
+                            <div class="mb-3">
+                                <label for="geoInput" class="form-label fw-semibold text-slate-800">País objetivo</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                                    <input class="form-control" list="geoOptions" name="geo" id="geoInput"
+                                           value="{{ current_project.geo or 'ES' }}"
+                                           placeholder="ES, US, MX..."
+                                           maxlength="2"
+                                           autocomplete="off">
+                                    <datalist id="geoOptions">
+                                        <option value="ES">España</option>
+                                        <option value="US">Estados Unidos</option>
+                                        <option value="MX">México</option>
+                                        <option value="AR">Argentina</option>
+                                        <option value="CO">Colombia</option>
+                                        <option value="CL">Chile</option>
+                                    </datalist>
+                                </div>
+                                <div class="form-text">Usa el código ISO de 2 letras para enfocar el mercado correcto.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="catInput" class="form-label fw-semibold text-slate-800">Categoría</label>
+                                <select class="form-select" name="category" id="catInput">
+                                    <option value="h" selected>⚡ Todo (General)</option>
+                                    <option value="b">💰 Economía / Negocios</option>
+                                    <option value="m">🏥 Salud</option>
+                                    <option value="t">🤖 Ciencia / Tecnología</option>
+                                    <option value="s">⚽ Deportes</option>
+                                    <option value="e">🎬 Entretenimiento</option>
+                                </select>
+                                <div class="form-text">Filtra el ruido y quédate sólo con las conversaciones relevantes.</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="apiKeyInput" class="form-label fw-semibold text-slate-800">API Key SerpApi <span class="text-muted fw-normal">(opcional)</span></label>
+                                <input type="password" class="form-control" name="api_key" id="apiKeyInput" placeholder="Añádela si quieres usar tu propia clave">
+                                <div class="form-text">Si no la indicas, el sistema utilizará el proveedor configurado por defecto.</div>
+                            </div>
+
+                            <button type="button" id="analyzeBtn" class="btn trends-primary-btn w-100 fw-bold text-white" onclick="startTrends()">
+                                <i class="fas fa-bolt me-2"></i>Analizar tendencias ahora
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="trends-card p-4 mb-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="trends-icon-badge"><i class="fas fa-lightbulb"></i></span>
+                        <div>
+                            <div class="trends-label">Recomendaciones</div>
+                            <h3 class="h6 fw-bold mb-0 text-slate-900">Cómo sacarle partido</h3>
+                        </div>
+                    </div>
+                    <ul class="trends-help-list">
+                        <li>
+                            <span class="trends-help-dot"><i class="fas fa-bullseye"></i></span>
+                            <span>Ejecuta primero en tu mercado principal y luego compara países para encontrar ángulos editoriales distintos.</span>
+                        </li>
+                        <li>
+                            <span class="trends-help-dot"><i class="fas fa-newspaper"></i></span>
+                            <span>Convierte los temas con más contexto en piezas rápidas: newsjacking, FAQs o actualizaciones de contenido evergreen.</span>
+                        </li>
+                        <li>
+                            <span class="trends-help-dot"><i class="fas fa-filter"></i></span>
+                            <span>Prueba distintas categorías para separar ruido mediático de oportunidades realmente accionables para SEO.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="trends-card p-4 d-none" id="logSection">
+                    <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+                        <div>
+                            <div class="trends-label">Actividad</div>
+                            <h3 class="h6 fw-bold mb-0 text-slate-900">Registro de ejecución</h3>
+                        </div>
+                        <span class="badge rounded-pill text-bg-dark">En vivo</span>
+                    </div>
+                    <div class="trends-log custom-scrollbar" id="logContent">&gt; Esperando nueva ejecución...</div>
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-8">
+                <div id="errorAlert" class="alert alert-danger d-none border-0 shadow-sm rounded-4 mb-4" role="alert">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="fs-4"><i class="fas fa-triangle-exclamation"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold mb-1">No pudimos completar el análisis.</div>
+                            <span id="errorMsg">Ha ocurrido un error.</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="resetUI()">Reintentar</button>
+                    </div>
+                </div>
+
+                <div class="trends-card p-4 mb-4 d-none" id="progressSection">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                        <div>
+                            <div class="trends-label">Progreso</div>
+                            <h3 class="h5 fw-bold mb-1 text-slate-900">Procesando señales de tendencia</h3>
+                            <small id="statusText" class="text-muted">Conectando con la fuente de datos...</small>
+                        </div>
+                        <span class="badge rounded-pill text-bg-success-subtle text-success fw-semibold px-3 py-2" id="progressBadge">0%</span>
+                    </div>
+                    <div class="progress trends-progress-shell" aria-label="Estado de ejecución">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4" id="summaryCards">
+                    <div class="col-md-4">
+                        <div class="trends-metric-card">
+                            <div class="trends-label">Categoría activa</div>
+                            <div class="fw-bold fs-4 text-slate-900" id="summaryCategory">General</div>
+                            <div class="text-muted small mt-2">Filtro actual para analizar el ruido de mercado.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="trends-metric-card">
+                            <div class="trends-label">Señales recuperadas</div>
+                            <div class="fw-bold fs-4 text-slate-900" id="summaryTotal">0</div>
+                            <div class="text-muted small mt-2">Temas listos para priorizar en tu workflow.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="trends-metric-card">
+                            <div class="trends-label">País analizado</div>
+                            <div class="fw-bold fs-4 text-slate-900" id="summaryGeo">{{ current_project.geo or 'ES' }}</div>
+                            <div class="text-muted small mt-2">Mercado que alimenta los resultados mostrados.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="resultsSection" class="d-none">
+                    <div class="trends-result-card">
+                        <div class="trends-result-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <div>
+                                <div class="trends-label">Resultados</div>
+                                <h3 class="h4 fw-bold mb-1 text-slate-900">Radar de tendencias detectadas</h3>
+                                <p class="text-muted mb-0">Revisa los temas, entiende el contexto y abre la búsqueda para validar la oportunidad.</p>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="badge rounded-pill text-bg-light border text-dark px-3 py-2" id="resultsBadge">0 resultados</span>
+                                <span class="badge rounded-pill text-bg-primary-subtle text-primary px-3 py-2" id="resultsGeoBadge">{{ current_project.geo or 'ES' }}</span>
+                            </div>
+                        </div>
+                        <div class="trends-table-wrap" id="tableWrapper">
+                            <table class="table table-hover align-middle mb-0 trends-table" id="resultsTable">
+                                <thead>
+                                    <tr>
+                                        <th width="9%">#</th>
+                                        <th width="31%">Tema</th>
+                                        <th width="38%">Contexto</th>
+                                        <th width="22%">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultsBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="emptyState" class="trends-empty d-none">
+                            <div class="trends-empty-icon"><i class="fas fa-magnifying-glass-chart"></i></div>
+                            <h4 class="fw-bold text-slate-900">No encontramos tendencias para esta combinación.</h4>
+                            <p class="mb-0">Prueba otro país o una categoría distinta para ampliar la cobertura del radar.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -114,18 +512,43 @@
     let intervalId;
     let currentJobId = null;
 
+    const CATEGORY_LABELS = {
+        h: 'General',
+        b: 'Economía / Negocios',
+        m: 'Salud',
+        t: 'Ciencia / Tecnología',
+        s: 'Deportes',
+        e: 'Entretenimiento'
+    };
+
+    function updateSummary() {
+        const geoValue = document.getElementById('geoInput').value.trim().toUpperCase() || '{{ current_project.geo or "ES" }}';
+        const categoryValue = document.getElementById('catInput').value;
+        const categoryLabel = CATEGORY_LABELS[categoryValue] || 'General';
+
+        document.getElementById('summaryGeo').textContent = geoValue;
+        document.getElementById('metricGeo').textContent = geoValue;
+        document.getElementById('resultsGeoBadge').textContent = geoValue;
+        document.getElementById('summaryCategory').textContent = categoryLabel;
+    }
+
+    function setProgress(progress, label) {
+        const safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
+        document.getElementById('progressBar').style.width = `${safeProgress}%`;
+        document.getElementById('progressBar').setAttribute('aria-valuenow', String(safeProgress));
+        document.getElementById('progressBadge').textContent = `${safeProgress}%`;
+        document.getElementById('statusText').textContent = label || 'Procesando...';
+    }
+
     function resetUI() {
-        // Re-enable inputs
         document.getElementById('geoInput').disabled = false;
         document.getElementById('catInput').disabled = false;
         document.getElementById('apiKeyInput').disabled = false;
 
-        // Re-enable button
         const btn = document.getElementById('analyzeBtn');
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-bolt"></i> ANALIZAR AHORA';
+        btn.innerHTML = '<i class="fas fa-bolt me-2"></i>Analizar tendencias ahora';
 
-        // Hide progress (keep log if wanted, but stop animation)
         document.getElementById('progressSection').classList.add('d-none');
     }
 
@@ -136,36 +559,55 @@
 
         const btn = document.getElementById('analyzeBtn');
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analizando...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analizando...';
 
         document.getElementById('resultsSection').classList.add('d-none');
         document.getElementById('errorAlert').classList.add('d-none');
         document.getElementById('emptyState').classList.add('d-none');
+        document.getElementById('resultsTable').classList.remove('d-none');
 
         document.getElementById('progressSection').classList.remove('d-none');
         document.getElementById('logSection').classList.remove('d-none');
-        document.getElementById('progressBar').style.width = '10%';
-        document.getElementById('logContent').innerHTML = '> Iniciando...';
+        document.getElementById('logContent').innerHTML = '<div class="trends-log-entry">&gt; Iniciando análisis...</div>';
+        setProgress(10, 'Preparando solicitud...');
+        updateSummary();
     }
 
     function showError(msg) {
-        document.getElementById('errorMsg').textContent = msg || "Ha ocurrido un error desconocido.";
+        document.getElementById('errorMsg').textContent = msg || 'Ha ocurrido un error desconocido.';
         document.getElementById('errorAlert').classList.remove('d-none');
         document.getElementById('progressSection').classList.add('d-none');
-        resetUI(); // Allow retry
+        resetUI();
+    }
+
+    function renderLogs(logs) {
+        const logContainer = document.getElementById('logContent');
+        const entries = (logs || []).map((line) => `<div class="trends-log-entry">&gt; ${line}</div>`).join('');
+        logContainer.innerHTML = entries || '<div class="trends-log-entry">&gt; Esperando nueva ejecución...</div>';
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    function setLastRun() {
+        const formatter = new Intl.DateTimeFormat('es-ES', {
+            day: '2-digit',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        document.getElementById('metricLastRun').textContent = formatter.format(new Date());
     }
 
     async function startTrends() {
         const geoInput = document.getElementById('geoInput');
-        let geoVal = geoInput.value.trim().toUpperCase();
-        geoInput.value = geoVal; // Update input with trimmed value
+        const geoVal = geoInput.value.trim().toUpperCase();
+        geoInput.value = geoVal;
 
-        // Validation
         if (geoVal.length !== 2) {
-            alert("El código de país debe tener exactamente 2 letras (ej: ES, US).");
+            alert('El código de país debe tener exactamente 2 letras (ej: ES, US).');
             return;
         }
 
+        updateSummary();
         const formData = new FormData(document.getElementById('trendsForm'));
 
         showLoading();
@@ -175,13 +617,13 @@
             const resp = await req.json();
             if (resp.status === 'started') {
                 currentJobId = resp.job_id;
-                if(intervalId) clearInterval(intervalId);
+                if (intervalId) clearInterval(intervalId);
                 intervalId = setInterval(checkStatus, 1000);
             } else {
-                showError("No se pudo iniciar el análisis.");
+                showError('No se pudo iniciar el análisis.');
             }
         } catch (e) {
-            showError("Error de conexión: " + e);
+            showError('Error de conexión: ' + e);
         }
     }
 
@@ -191,74 +633,91 @@
         try {
             const res = await fetch(`/trends/status?job_id=${currentJobId}`);
             if (!res.ok) {
-                console.error("Network response was not ok");
                 clearInterval(intervalId);
-                showError("Error de red al consultar estado.");
+                showError('Error de red al consultar estado.');
                 return;
             }
 
             const data = await res.json();
 
-            // Job Not Found or severe error
             if (data.error && !data.log) {
-                 clearInterval(intervalId);
-                 showError(data.error);
-                 return;
+                clearInterval(intervalId);
+                showError(data.error);
+                return;
             }
 
-            // Update Log
-            if(data.log && data.log.length > 0) {
-                // Keep the last few logs or all? Previous impl joined all.
-                // Assuming data.log is the full log array.
-                const logHtml = data.log.map(l => `<div>> ${l}</div>`).join('');
-                const logContainer = document.getElementById('logContent');
-                logContainer.innerHTML = logHtml;
-                logContainer.scrollTop = logContainer.scrollHeight;
+            if (data.log && data.log.length > 0) {
+                renderLogs(data.log);
+                const latestLog = data.log[data.log.length - 1];
+                setProgress(data.progress, latestLog);
+            } else {
+                setProgress(data.progress, 'Procesando señales...');
             }
 
-            // Update Progress
-            document.getElementById('progressBar').style.width = data.progress + '%';
-
-            // Completion check
             if (!data.active) {
                 clearInterval(intervalId);
                 resetUI();
+                setLastRun();
 
                 if (data.error) {
                     showError(data.error);
                 } else if (data.data && data.data.length > 0) {
                     renderTable(data.data);
                 } else {
-                    // Empty success
                     document.getElementById('resultsSection').classList.remove('d-none');
                     document.getElementById('emptyState').classList.remove('d-none');
-                    document.querySelector('#resultsSection table').classList.add('d-none');
+                    document.getElementById('resultsTable').classList.add('d-none');
+                    document.getElementById('summaryTotal').textContent = '0';
+                    document.getElementById('metricCount').textContent = '0';
+                    document.getElementById('resultsBadge').textContent = '0 resultados';
                 }
             }
         } catch (e) {
             clearInterval(intervalId);
-            showError("Error al procesar estado: " + e);
+            showError('Error al procesar estado: ' + e);
         }
     }
 
     function renderTable(items) {
         const tbody = document.getElementById('resultsBody');
         tbody.innerHTML = '';
-        items.forEach(item => {
+
+        items.forEach((item, index) => {
+            const rank = item.rank || index + 1;
+            const topic = item.topic || 'Tema sin título';
+            const context = item.context || 'Sin contexto adicional disponible.';
+            const traffic = item.traffic || 'Tráfico no informado';
+            const link = item.google_link || '#';
+
             tbody.innerHTML += `
                 <tr>
-                    <td class="fw-bold">${item.rank}</td>
-                    <td class="fw-bold text-primary">${item.topic}</td>
-                    <td class="small">${item.context}</td>
+                    <td><span class="trends-rank">${rank}</span></td>
                     <td>
-                        <small class="d-block text-muted mb-1" style="font-size: 0.75rem;">${item.traffic}</small>
-                        <a href="${item.google_link}" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>
+                        <div class="trends-topic">${topic}</div>
+                        <small>${traffic}</small>
+                    </td>
+                    <td class="trends-context">${context}</td>
+                    <td>
+                        <div class="d-flex flex-column align-items-start gap-2">
+                            <span class="trends-source-badge"><i class="fas fa-arrow-trend-up"></i>${traffic}</span>
+                            <a href="${link}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                <i class="fas fa-up-right-from-square me-1"></i>Ver búsqueda
+                            </a>
+                        </div>
                     </td>
                 </tr>`;
         });
+
         document.getElementById('resultsSection').classList.remove('d-none');
         document.getElementById('emptyState').classList.add('d-none');
-        document.querySelector('#resultsSection table').classList.remove('d-none');
+        document.getElementById('resultsTable').classList.remove('d-none');
+        document.getElementById('summaryTotal').textContent = String(items.length);
+        document.getElementById('metricCount').textContent = String(items.length);
+        document.getElementById('resultsBadge').textContent = `${items.length} resultado${items.length === 1 ? '' : 's'}`;
     }
+
+    document.getElementById('geoInput').addEventListener('input', updateSummary);
+    document.getElementById('catInput').addEventListener('change', updateSummary);
+    updateSummary();
 </script>
 {% endblock %}
