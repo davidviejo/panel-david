@@ -16,6 +16,7 @@ const AIRoadmap = lazy(() => import('./pages/AIRoadmap'));
 const SeoChecklistPage = lazy(() => import('./pages/SeoChecklistPage'));
 const Settings = lazy(() => import('./pages/Settings'));
 const AdminIdeasPage = lazy(() => import('./pages/admin/AdminIdeasPage'));
+const TrendsMediaPage = lazy(() => import('./pages/TrendsMediaPage'));
 
 const LandingPage = lazy(() => import('./pages/portal/LandingPage'));
 const ClientsLogin = lazy(() => import('./pages/portal/ClientsLogin'));
@@ -112,6 +113,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="ai-roadmap" element={<AIRoadmap />} />
         <Route path="settings" element={<Settings />} />
         <Route path="challenge" element={<SpeedChallenge />} />
+        <Route path="trends-media" element={<TrendsMediaPage />} />
         <Route path="admin/ideas" element={<AdminIdeasPage />} />
         <Route
           path="completed-tasks"

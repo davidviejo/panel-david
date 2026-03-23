@@ -2,7 +2,7 @@ export enum NewsPriority {
   P1 = 'P1',
   P2 = 'P2',
   P3 = 'P3',
-  DISCARD = 'DISCARD'
+  DISCARD = 'DISCARD',
 }
 
 export enum ClusterCategory {
@@ -12,7 +12,7 @@ export enum ClusterCategory {
   EVENTOS = 'Eventos',
   MOVILIDAD = 'Movilidad',
   ECONOMIA = 'Economía',
-  OTROS = 'Otros'
+  OTROS = 'Otros',
 }
 
 export interface AppSettings {
@@ -36,8 +36,6 @@ export interface DashboardStats {
   duplicatesRemoved: number;
 }
 
-// --- NEW TYPES FOR ADVANCED PIPELINE ---
-
 export interface ScoreBreakdown {
   recency: number;
   coverage: number;
@@ -48,28 +46,26 @@ export interface ScoreBreakdown {
 }
 
 export interface NewsArticle {
-  article_id: string; // Hash of URL
+  article_id: string;
   title: string;
   url: string;
   source_name: string;
-  published_at: string; // ISO String
+  published_at: string;
   thumbnail_url?: string;
-  position: number; // SERP position
-  keyword: string; // Query that found it
+  position: number;
+  keyword: string;
   snippet?: string;
 }
 
 export interface NewsCluster {
   cluster_id: string;
-  title: string; // Representative title
+  title: string;
   articles: NewsArticle[];
-  coverage_count: number; // Number of articles in cluster/story
+  coverage_count: number;
   latest_published_at: string;
   top_source: string;
   score: number;
   score_breakdown: ScoreBreakdown;
-  
-  // Fields populated by Gemini later
   ai_analysis?: {
     suggestedTitle: string;
     summary: string;
@@ -78,5 +74,3 @@ export interface NewsCluster {
     reasoning: string;
   };
 }
-
-export type ProcessedNewsItem = NewsCluster; // Alias for backward compatibility if needed, or migration
