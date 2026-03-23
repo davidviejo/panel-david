@@ -35,8 +35,11 @@ def dashboard():
 
 @gsc_bp.route('/gsc/data', methods=['POST'])
 def get_data():
-    project = get_active_project()
+    project = get_active_project() or {}
     domain = project.get('domain')
+
+    if not domain:
+        return jsonify({"error": "Selecciona un proyecto activo con dominio antes de consultar GSC."}), 400
 
     # Asegurar formato GSC (sc-domain:midominio.com o https://...)
     if not domain.startswith('http') and not domain.startswith('sc-domain:'):
@@ -73,15 +76,13 @@ def get_data():
                 })
         except Exception as e:
             logging.error(f"GSC Error: {str(e)}")
-            return jsonify({"error": "Error conectando a GSC. Verifica permisos."})
+            return jsonify({"error": "Error conectando a GSC. Verifica permisos."}), 502
 
     else:
         # --- MODO DEMO (Para que veas la gráfica sin configurar API) ---
-        # Generamos datos realistas basados en una curva aleatoria
         base_clicks = random.randint(100, 500)
         for i in range(28):
             day = (datetime.now() - timedelta(days=28-i)).strftime("%Y-%m-%d")
-            # Simular tendencia
             trend = (i * 2) + random.randint(-10, 20)
             clicks = max(0, base_clicks + trend)
             imps = clicks * random.randint(15, 25)
@@ -89,25 +90,61 @@ def get_data():
                 "date": day,
                 "clicks": clicks,
                 "impressions": imps,
-                "ctr": round((clicks/imps)*100, 2) if imps > 0 else 0,
+                "ctr": round((clicks / imps) * 100, 2) if imps > 0 else 0,
                 "position": round(random.uniform(8, 12), 1)
             })
 
-    # Preparar datos para Chart.js
+    totals = {
+        "clicks": sum(row['clicks'] for row in data_rows),
+        "impressions": sum(row['impressions'] for row in data_rows),
+    }
+    totals["ctr"] = round((totals['clicks'] / totals['impressions']) * 100, 2) if totals['impressions'] else 0
+    totals["avg_position"] = round(sum(row['position'] for row in data_rows) / len(data_rows), 1) if data_rows else 0
+
+    midpoint = max(1, len(data_rows) // 2)
+    previous_period = data_rows[:midpoint]
+    current_period = data_rows[midpoint:]
+
+    def metric_sum(rows, key):
+        return sum(row[key] for row in rows)
+
+    def metric_avg(rows, key):
+        return round(sum(row[key] for row in rows) / len(rows), 2) if rows else 0
+
+    periods = {
+        "previous": {
+            "clicks": metric_sum(previous_period, 'clicks'),
+            "impressions": metric_sum(previous_period, 'impressions'),
+            "ctr": metric_avg(previous_period, 'ctr'),
+            "position": metric_avg(previous_period, 'position'),
+        },
+        "current": {
+            "clicks": metric_sum(current_period, 'clicks'),
+            "impressions": metric_sum(current_period, 'impressions'),
+            "ctr": metric_avg(current_period, 'ctr'),
+            "position": metric_avg(current_period, 'position'),
+        }
+    }
+
     chart_data = {
         "labels": [r['date'] for r in data_rows],
         "clicks": [r['clicks'] for r in data_rows],
         "impressions": [r['impressions'] for r in data_rows],
-        "position": [r['position'] for r in data_rows]
+        "position": [r['position'] for r in data_rows],
+        "ctr": [r['ctr'] for r in data_rows]
     }
 
     return jsonify({
         "status": "success",
         "mode": "REAL" if service else "DEMO",
         "site": site_url,
+        "range": {
+            "start": start_date,
+            "end": end_date,
+            "days": len(data_rows)
+        },
         "chart": chart_data,
-        "totals": {
-            "clicks": sum(chart_data['clicks']),
-            "impressions": sum(chart_data['impressions'])
-        }
+        "rows": data_rows,
+        "totals": totals,
+        "periods": periods
     })
