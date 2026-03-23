@@ -31,6 +31,7 @@ import {
   ListChecks,
   Wrench as Tool,
   Lightbulb,
+  Newspaper,
 } from 'lucide-react';
 import { ModuleData, Client, ClientVertical, Note } from '../types';
 import ClientSwitcher from './ClientSwitcher';
@@ -132,7 +133,8 @@ const Layout: React.FC<LayoutProps> = ({
       path === '/app' ||
       path === '/app/' ||
       path.startsWith('/app/checklist') ||
-      path.startsWith('/app/challenge')
+      path.startsWith('/app/challenge') ||
+      path.startsWith('/app/trends-media')
     ) {
       return 'analitica';
     }
@@ -249,6 +251,13 @@ const Layout: React.FC<LayoutProps> = ({
               icon={<Zap size={20} />}
               label={t('nav.breaking_sim')}
               subLabel={t('nav.breaking_sim_sub')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <NavItem
+              to="/app/trends-media"
+              icon={<Newspaper size={20} />}
+              label="Trends Media"
+              subLabel="Brief editorial integrado"
               onClick={() => setIsMobileMenuOpen(false)}
             />
           </>

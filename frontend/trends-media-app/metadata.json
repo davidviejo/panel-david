@@ -1,5 +1,0 @@
-{
-  "name": "Valencia News Automator",
-  "description": "An automated editorial dashboard for aggregating, filtering, and prioritizing news and events for the Valencia region, powered by Gemini.",
-  "requestFramePermissions": []
-}
