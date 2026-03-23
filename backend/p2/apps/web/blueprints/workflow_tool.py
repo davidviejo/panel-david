@@ -26,7 +26,7 @@ def get_workflow_data():
             "desc": "Estrategia, Mercado y Keyword Research.",
             "color": "info",
             "steps": [
-                {"name": "EcoTrends", "url": "/trends/dashboard", "desc": "Paso 0: Oportunidades de mercado.", "icon": "fa-chart-line"},
+                {"name": "EcoTrends", "url": "/trends/media", "desc": "Paso 0: Oportunidades de mercado.", "icon": "fa-chart-line"},
                 {"name": "KW Discovery", "url": "/suggest", "desc": "Lluvia de ideas.", "icon": "fa-lightbulb"},
                 {"name": "SEO Cluster", "url": "/seo", "desc": "KR Maestro (Agrupación).", "icon": "fa-layer-group"},
                 {"name": "Content Gap", "url": "/gap", "desc": "Espionaje competidores.", "icon": "fa-balance-scale"}

@@ -4,7 +4,7 @@ Módulo para el análisis de tendencias económicas y de búsqueda.
 Integra DataForSEO para monitorizar temas virales en tiempo real.
 Gestiona trabajos en segundo plano utilizando SQLite.
 """
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, redirect, send_from_directory, url_for
 import threading
 import logging
 import json
@@ -20,6 +20,7 @@ trends_bp = Blueprint('trends_bp', __name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, '..', '..', '..', 'data', 'trends_jobs.db')
+TRENDS_MEDIA_DIST_DIR = os.path.join(BASE_DIR, '..', '..', '..', 'static', 'trends_media')
 
 _DB_INITIALIZED = False
 
@@ -186,7 +187,15 @@ def worker_realtime_trends(job_id, geo, category, focus_terms='', ranking_mode='
 
 @trends_bp.route('/trends/dashboard')
 def dashboard():
-    return render_template('trends/dashboard.html')
+    return redirect(url_for('trends_bp.trends_media_app'))
+
+@trends_bp.route('/trends/media')
+def trends_media_app():
+    return send_from_directory(TRENDS_MEDIA_DIST_DIR, 'index.html')
+
+@trends_bp.route('/trends/media/<path:asset_path>')
+def trends_media_assets(asset_path):
+    return send_from_directory(TRENDS_MEDIA_DIST_DIR, asset_path)
 
 @trends_bp.route('/trends/start', methods=['POST'])
 def start_analysis():
