@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { SeoPage, ChecklistKey, ChecklistItem } from '../types/seoChecklist';
 
@@ -71,25 +71,17 @@ export const enforceUniquePrimaryKeywords = (pages: SeoPage[]) => {
 
 export const useSeoChecklist = () => {
   const { currentClientId } = useProject();
-  const [pages, setPages] = useState<SeoPage[]>([]);
-
   const storageKey = `mediaflow_seo_checklist_${currentClientId}`;
-
-  // Load from storage when client changes
-  useEffect(() => {
-    if (!currentClientId) return;
+  const [pages, setPages] = useState<SeoPage[]>(() => {
+    if (!currentClientId) return [];
     try {
       const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        setPages(JSON.parse(saved));
-      } else {
-        setPages([]);
-      }
+      return saved ? JSON.parse(saved) : [];
     } catch (e) {
       console.error('Failed to parse SEO Checklist data', e);
-      setPages([]);
+      return [];
     }
-  }, [currentClientId, storageKey]);
+  });
 
   const addPages = useCallback(
     (newPages: SeoPage[]) => {

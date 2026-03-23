@@ -28,7 +28,7 @@ describe('Migration Benchmark', () => {
     }
 
     const start = performance.now();
-    // @ts-ignore - migrateModules is private
+    // @ts-expect-error - migrateModules is private
     ClientRepository.migrateModules(clients);
     const end = performance.now();
     console.log(`\n\n>>> Migration took ${end - start}ms for 2000 clients\n\n`);

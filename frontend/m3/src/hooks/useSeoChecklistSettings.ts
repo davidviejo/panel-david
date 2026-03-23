@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { SeoChecklistSettings } from '../types/seoChecklist';
 
@@ -21,31 +21,24 @@ const DEFAULT_SETTINGS: SeoChecklistSettings = {
 
 export const useSeoChecklistSettings = () => {
   const { currentClientId } = useProject();
-  const [settings, setSettings] = useState<SeoChecklistSettings>(DEFAULT_SETTINGS);
-
   const storageKey = currentClientId ? `mediaflow_seo_settings_${currentClientId}` : null;
-
-  useEffect(() => {
-    if (!storageKey) return;
+  const [settings, setSettings] = useState<SeoChecklistSettings>(() => {
+    if (!storageKey) return DEFAULT_SETTINGS;
     try {
       const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Merge with default to ensure new fields are present
-        setSettings({
-          ...DEFAULT_SETTINGS,
-          ...parsed,
-          serp: { ...DEFAULT_SETTINGS.serp, ...parsed.serp },
-          budgets: { ...DEFAULT_SETTINGS.budgets, ...parsed.budgets },
-        });
-      } else {
-        setSettings(DEFAULT_SETTINGS);
-      }
+      if (!saved) return DEFAULT_SETTINGS;
+      const parsed = JSON.parse(saved);
+      return {
+        ...DEFAULT_SETTINGS,
+        ...parsed,
+        serp: { ...DEFAULT_SETTINGS.serp, ...parsed.serp },
+        budgets: { ...DEFAULT_SETTINGS.budgets, ...parsed.budgets },
+      };
     } catch (e) {
       console.error('Failed to parse SEO settings', e);
-      setSettings(DEFAULT_SETTINGS);
+      return DEFAULT_SETTINGS;
     }
-  }, [storageKey]);
+  });
 
   const updateSettings = useCallback(
     (newSettings: Partial<SeoChecklistSettings>) => {

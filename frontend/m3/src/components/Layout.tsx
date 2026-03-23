@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -125,7 +125,36 @@ const Layout: React.FC<LayoutProps> = ({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [isEmergencyLoading, setIsEmergencyLoading] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('analitica');
+  const activeTab = useMemo<TabType>(() => {
+    const path = location.pathname;
+    if (
+      path === '/' ||
+      path === '/app' ||
+      path === '/app/' ||
+      path.startsWith('/app/checklist') ||
+      path.startsWith('/app/challenge')
+    ) {
+      return 'analitica';
+    }
+    if (
+      path.startsWith('/app/client-roadmap') ||
+      path.startsWith('/app/ai-roadmap') ||
+      path.startsWith('/app/module')
+    ) {
+      return 'estrategia';
+    }
+    if (
+      path.startsWith('/app/kanban') ||
+      path.startsWith('/app/settings') ||
+      path.startsWith('/app/completed-tasks')
+    ) {
+      return 'acciones';
+    }
+    if (path.startsWith('/app/admin')) {
+      return 'admin';
+    }
+    return 'analitica';
+  }, [location.pathname]);
 
   useEffect(() => {
     if (darkMode) {
@@ -137,40 +166,12 @@ const Layout: React.FC<LayoutProps> = ({
     }
   }, [darkMode]);
 
-  // Sync Tab with URL
-  useEffect(() => {
-    const path = location.pathname;
-    if (
-      path === '/' ||
-      path === '/app' ||
-      path === '/app/' ||
-      path.startsWith('/app/checklist') ||
-      path.startsWith('/app/challenge')
-    ) {
-      setActiveTab('analitica');
-    } else if (
-      path.startsWith('/app/client-roadmap') ||
-      path.startsWith('/app/ai-roadmap') ||
-      path.startsWith('/app/module')
-    ) {
-      setActiveTab('estrategia');
-    } else if (
-      path.startsWith('/app/kanban') ||
-      path.startsWith('/app/settings') ||
-      path.startsWith('/app/completed-tasks')
-    ) {
-      setActiveTab('acciones');
-    } else if (path.startsWith('/app/admin')) {
-      setActiveTab('admin');
-    }
-  }, [location.pathname]);
 
   const handleTabChange = (tab: TabType) => {
     if (tab === 'backend') {
       navigate('/operator');
       return;
     }
-    setActiveTab(tab);
     switch (tab) {
       case 'analitica':
         navigate('/app/');

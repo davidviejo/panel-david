@@ -61,3 +61,6 @@ test('ProjectContext value stability', async () => {
   // The consumer should NOT re-render.
   expect(onRenderMock).toHaveBeenCalledTimes(1);
 });
+
+
+ConsumerComponent.displayName = 'ConsumerComponent';

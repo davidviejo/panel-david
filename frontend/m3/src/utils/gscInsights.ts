@@ -426,7 +426,7 @@ export const analyzeGSCInsights = ({
       current.position >= thresholds.stagnantTraffic.positionMin &&
       current.position <= thresholds.stagnantTraffic.positionMax &&
       current.ctr <= thresholds.stagnantTraffic.maxCtr &&
-      (!!previous ? Math.abs(relativeClickChange || 0) <= thresholds.stagnantTraffic.maxRelativeDelta : true) &&
+      (previous ? Math.abs(relativeClickChange || 0) <= thresholds.stagnantTraffic.maxRelativeDelta : true) &&
       Math.abs(deltaPosition) <= thresholds.stagnantTraffic.maxPositionDelta,
   );
   if (stagnantTraffic.length > 0) {

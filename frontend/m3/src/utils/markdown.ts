@@ -1,7 +1,7 @@
 export const renderMarkdown = (text: string): string => {
   if (!text) return '';
 
-  let html = text
+  const html = text
     // Basic sanitization
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

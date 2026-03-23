@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { evaluateHeadlineChallenge } from '../services/geminiService';
 import { Clock, Zap, Trophy, AlertTriangle, Play } from 'lucide-react';
 
@@ -28,12 +28,20 @@ const SpeedChallenge: React.FC = () => {
   const [result, setResult] = useState<string>('');
   const timerRef = useRef<number | null>(null);
 
+  const handleSubmit = useCallback(async () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setGameState('scoring');
+    const evaluation = await evaluateHeadlineChallenge(headline, currentChallenge.keywords);
+    setResult(evaluation);
+    setGameState('result');
+  }, [currentChallenge.keywords, headline]);
+
   useEffect(() => {
     if (gameState === 'playing') {
       timerRef.current = window.setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
-            handleSubmit();
+            void handleSubmit();
             return 0;
           }
           return prev - 1;
@@ -43,7 +51,7 @@ const SpeedChallenge: React.FC = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [gameState]);
+  }, [gameState, handleSubmit]);
 
   const startGame = (challengeId: number) => {
     setCurrentChallenge(CHALLENGES.find((c) => c.id === challengeId) || CHALLENGES[0]);
@@ -52,13 +60,6 @@ const SpeedChallenge: React.FC = () => {
     setGameState('playing');
   };
 
-  const handleSubmit = async () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setGameState('scoring');
-    const evaluation = await evaluateHeadlineChallenge(headline, currentChallenge.keywords);
-    setResult(evaluation);
-    setGameState('result');
-  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20 text-slate-900 dark:text-slate-100">

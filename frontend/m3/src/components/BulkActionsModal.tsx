@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Check } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { useToast } from './ui/ToastContext';
@@ -41,12 +41,7 @@ const BulkActionsModal: React.FC<BulkActionsModalProps> = ({ isOpen, onClose }) 
 
   const [targetModuleId, setTargetModuleId] = useState<number>(defaultModuleId);
 
-  // Update targetModuleId when modules change or on open if not set
-  useEffect(() => {
-    if (isOpen) {
-      setTargetModuleId(defaultModuleId);
-    }
-  }, [isOpen, defaultModuleId]);
+  const effectiveTargetModuleId = isOpen ? defaultModuleId : targetModuleId;
 
   const urlList = useMemo(
     () =>
@@ -93,7 +88,7 @@ const BulkActionsModal: React.FC<BulkActionsModalProps> = ({ isOpen, onClose }) 
     urlList.forEach((url) => {
       selectedActions.forEach((action) => {
         tasksToCreate.push({
-          moduleId: targetModuleId,
+          moduleId: effectiveTargetModuleId,
           title: `${action} - ${url}`,
           description: `Acción masiva: ${action} para la URL ${url}`,
           impact: 'Medium',
@@ -140,7 +135,7 @@ const BulkActionsModal: React.FC<BulkActionsModalProps> = ({ isOpen, onClose }) 
               Módulo Destino
             </label>
             <select
-              value={targetModuleId}
+              value={effectiveTargetModuleId}
               onChange={(e) => setTargetModuleId(Number(e.target.value))}
               className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
             >

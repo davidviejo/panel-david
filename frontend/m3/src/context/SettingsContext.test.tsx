@@ -52,3 +52,6 @@ describe('SettingsContext Performance', () => {
     expect(onRenderMock).toHaveBeenCalledTimes(1);
   });
 });
+
+
+ConsumerComponent.displayName = 'ConsumerComponent';

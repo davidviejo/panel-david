@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Task } from '../types';
 import { X, Save, FileText, CheckCircle2, Circle, Calendar } from 'lucide-react';
 
@@ -19,22 +19,19 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   onUpdateTaskDetails,
   onToggleTask,
 }) => {
-  const [notes, setNotes] = useState('');
-  const [impact, setImpact] = useState<'High' | 'Medium' | 'Low'>('Medium');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const taskDraft = useMemo(() => ({
+    notes: task?.userNotes || '',
+    impact: task?.impact || 'Medium',
+    title: task?.title || '',
+    description: task?.description || '',
+    dueDate: task?.dueDate || '',
+  }), [task]);
 
-  // Keep local state in sync if task props change while modal is open
-  useEffect(() => {
-    if (task) {
-      setNotes(task.userNotes || '');
-      setImpact(task.impact || 'Medium');
-      setTitle(task.title || '');
-      setDescription(task.description || '');
-      setDueDate(task.dueDate || '');
-    }
-  }, [task]);
+  const [notes, setNotes] = useState(taskDraft.notes);
+  const [impact, setImpact] = useState<'High' | 'Medium' | 'Low'>(taskDraft.impact);
+  const [title, setTitle] = useState(taskDraft.title);
+  const [description, setDescription] = useState(taskDraft.description);
+  const [dueDate, setDueDate] = useState(taskDraft.dueDate);
 
   if (!isOpen || !task || moduleId === null) return null;
 

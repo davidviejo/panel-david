@@ -348,3 +348,6 @@ const ModuleTaskItem: React.FC<ModuleTaskItemProps> = memo(
 );
 
 export default ModuleTaskItem;
+
+
+ModuleTaskItem.displayName = 'ModuleTaskItem';

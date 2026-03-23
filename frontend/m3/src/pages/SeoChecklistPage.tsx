@@ -62,19 +62,18 @@ const SeoChecklistPage: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Batch Job State
-  const [jobs, setJobs] = useState<BatchJobStatus[]>([]);
+  const [jobs, setJobs] = useState<BatchJobStatus[]>(() => {
+    const savedJobs = localStorage.getItem('mediaflow_batch_jobs');
+    if (!savedJobs) return [];
+    try {
+      return JSON.parse(savedJobs);
+    } catch (e) {
+      console.error('Failed to parse saved jobs', e);
+      return [];
+    }
+  });
   const [isMonitorOpen, setIsMonitorOpen] = useState(false);
 
-  useEffect(() => {
-    const savedJobs = localStorage.getItem('mediaflow_batch_jobs');
-    if (savedJobs) {
-      try {
-        setJobs(JSON.parse(savedJobs));
-      } catch (e) {
-        console.error('Failed to parse saved jobs', e);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     localStorage.setItem('mediaflow_batch_jobs', JSON.stringify(jobs));

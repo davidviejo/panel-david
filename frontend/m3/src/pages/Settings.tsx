@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Save, Key, AlertTriangle } from 'lucide-react';
 import { useToast } from '../components/ui/ToastContext';
 import { useSettings } from '../context/SettingsContext';
@@ -18,17 +18,6 @@ const Settings: React.FC = () => {
 
   const [gscClientId, setGscClientId] = useState(settings.gscClientId || '');
 
-  useEffect(() => {
-    setOpenaiKey(settings.openaiApiKey || '');
-    setGeminiKey(settings.geminiApiKey || '');
-    setMistralKey(settings.mistralApiKey || '');
-
-    setOpenaiModel(settings.openaiModel || 'gpt-4o');
-    setGeminiModel(settings.geminiModel || 'gemini-1.5-pro');
-    setMistralModel(settings.mistralModel || 'mistral-large-latest');
-
-    setGscClientId(settings.gscClientId || '');
-  }, [settings]);
 
   const handleSave = () => {
     updateSettings({

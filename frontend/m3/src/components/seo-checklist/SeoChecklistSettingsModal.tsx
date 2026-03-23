@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Settings, Database, DollarSign, Target, Shield, AlertTriangle } from 'lucide-react';
 import { SeoChecklistSettings, Capabilities } from '../../types/seoChecklist';
 
@@ -19,23 +19,20 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
 }) => {
   const [formData, setFormData] = useState<SeoChecklistSettings>(settings);
 
-  useEffect(() => {
-    if (isOpen) {
-      setFormData(settings);
-    }
-  }, [isOpen, settings]);
+  const effectiveFormData = isOpen ? settings : formData;
 
   if (!isOpen) return null;
 
   const handleChange = (section: keyof SeoChecklistSettings, key: string, value: any) => {
     setFormData((prev) => {
+      const base = isOpen ? settings : prev;
       if (section === 'competitorsMode') {
-        return { ...prev, competitorsMode: value };
+        return { ...base, competitorsMode: value };
       }
       return {
         ...prev,
         [section]: {
-          ...prev[section as 'serp' | 'budgets'],
+          ...base[section as 'serp' | 'budgets'],
           [key]: value,
         },
       };
@@ -43,7 +40,7 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
   };
 
   const handleSave = () => {
-    onSave(formData);
+    onSave(effectiveFormData);
     onClose();
   };
 
@@ -91,7 +88,7 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={formData.serp.enabled}
+                      checked={effectiveFormData.serp.enabled}
                       onChange={(e) => handleChange('serp', 'enabled', e.target.checked)}
                       className="sr-only peer"
                     />
@@ -104,9 +101,9 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                     Proveedor
                   </label>
                   <select
-                    value={formData.serp.provider}
+                    value={effectiveFormData.serp.provider}
                     onChange={(e) => handleChange('serp', 'provider', e.target.value)}
-                    disabled={!formData.serp.enabled}
+                    disabled={!effectiveFormData.serp.enabled}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                   >
                     <option
@@ -213,7 +210,7 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                   </label>
                   <input
                     type="number"
-                    value={formData.serp.maxKeywordsPerUrl}
+                    value={effectiveFormData.serp.maxKeywordsPerUrl}
                     onChange={(e) => {
                       const val = parseInt(e.target.value) || 0;
                       const limit = capabilities?.limits.maxKeywordsPerUrl || Infinity;
@@ -222,7 +219,7 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                       }
                       handleChange('serp', 'maxKeywordsPerUrl', Math.min(val, limit));
                     }}
-                    disabled={!formData.serp.enabled}
+                    disabled={!effectiveFormData.serp.enabled}
                     max={capabilities?.limits.maxKeywordsPerUrl}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                   />
@@ -238,7 +235,7 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                   </label>
                   <input
                     type="number"
-                    value={formData.serp.maxCompetitorsPerKeyword}
+                    value={effectiveFormData.serp.maxCompetitorsPerKeyword}
                     onChange={(e) => {
                       const val = parseInt(e.target.value) || 0;
                       const limit = capabilities?.limits.maxCompetitorsPerKeyword || Infinity;
@@ -247,7 +244,7 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                       }
                       handleChange('serp', 'maxCompetitorsPerKeyword', Math.min(val, limit));
                     }}
-                    disabled={!formData.serp.enabled}
+                    disabled={!effectiveFormData.serp.enabled}
                     max={capabilities?.limits.maxCompetitorsPerKeyword}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                   />
@@ -275,7 +272,7 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                 </label>
                 <input
                   type="number"
-                  value={formData.budgets.maxUrlsPerBatch}
+                  value={effectiveFormData.budgets.maxUrlsPerBatch}
                   onChange={(e) => {
                     const val = parseInt(e.target.value) || 0;
                     const limit = capabilities?.limits.maxUrlsPerBatch || Infinity;
@@ -304,7 +301,7 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                   />
                   <input
                     type="number"
-                    value={formData.budgets.dailyBudget}
+                    value={effectiveFormData.budgets.dailyBudget}
                     onChange={(e) =>
                       handleChange('budgets', 'dailyBudget', parseFloat(e.target.value) || 0)
                     }
@@ -323,7 +320,7 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                   />
                   <input
                     type="number"
-                    value={formData.budgets.maxEstimatedCostPerBatch}
+                    value={effectiveFormData.budgets.maxEstimatedCostPerBatch}
                     onChange={(e) =>
                       handleChange(
                         'budgets',
@@ -357,7 +354,7 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                   type="radio"
                   name="competitorsMode"
                   value="autoFromSerp"
-                  checked={formData.competitorsMode === 'autoFromSerp'}
+                  checked={effectiveFormData.competitorsMode === 'autoFromSerp'}
                   onChange={() => handleChange('competitorsMode', '', 'autoFromSerp')}
                   className="mt-1 text-purple-600 focus:ring-purple-500"
                 />

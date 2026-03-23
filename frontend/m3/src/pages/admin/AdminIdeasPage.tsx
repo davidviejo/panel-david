@@ -9,15 +9,14 @@ interface Idea {
   createdAt: string;
 }
 
-const AdminIdeasPage: React.FC = () => {
-  const [ideas, setIdeas] = useState<Idea[]>([
+const INITIAL_IDEAS: Idea[] = [
     {
       id: '1',
       title: 'Integración con API de Google Search Console',
       description:
         'Automatizar la obtención de datos de clics, impresiones y posiciones para mostrar un gráfico de tendencia en el Dashboard general.',
       status: 'pending',
-      createdAt: new Date().toISOString(),
+      createdAt: '2026-03-23T00:00:00.000Z',
     },
     {
       id: '2',
@@ -25,9 +24,12 @@ const AdminIdeasPage: React.FC = () => {
       description:
         'Avisar a los usuarios (clientes y operadores) cuando haya un cambio de estado en una tarea crítica del Roadmap o en un módulo.',
       status: 'in_progress',
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      createdAt: '2026-03-22T00:00:00.000Z',
     },
-  ]);
+]
+
+const AdminIdeasPage: React.FC = () => {
+  const [ideas, setIdeas] = useState<Idea[]>(INITIAL_IDEAS);
 
   const [newIdeaTitle, setNewIdeaTitle] = useState('');
   const [newIdeaDesc, setNewIdeaDesc] = useState('');
@@ -41,7 +43,7 @@ const AdminIdeasPage: React.FC = () => {
       title: newIdeaTitle,
       description: newIdeaDesc,
       status: 'pending',
-      createdAt: new Date().toISOString(),
+      createdAt: '2026-03-23T00:00:00.000Z',
     };
 
     setIdeas([newIdea, ...ideas]);

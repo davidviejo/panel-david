@@ -90,25 +90,19 @@ export const useGSCData = (
     }
   }, [sitesError, showError]);
 
-  useEffect(() => {
-    if (gscSites.length > 0) {
-      if (!selectedSite) {
-        setSelectedSite(gscSites[0].siteUrl);
-      } else {
-        const exists = gscSites.find((s) => s.siteUrl === selectedSite);
-        if (!exists) {
-          setSelectedSite(gscSites[0].siteUrl);
-        }
-      }
-    }
-  }, [gscSites, selectedSite]);
+  const resolvedSelectedSite =
+    gscSites.length === 0
+      ? selectedSite
+      : selectedSite && gscSites.some((site) => site.siteUrl === selectedSite)
+        ? selectedSite
+        : gscSites[0].siteUrl;
 
   const {
     data: siteData,
     isLoading: isLoadingData,
     error: dataError,
   } = useQuery({
-    queryKey: ['gscData', accessToken, selectedSite, startDate, endDate, comparisonMode],
+    queryKey: ['gscData', accessToken, resolvedSelectedSite, startDate, endDate, comparisonMode],
     queryFn: async () => {
       const finalEndDate = endDate || new Date().toISOString().split('T')[0];
       const finalStartDate =
@@ -121,10 +115,10 @@ export const useGSCData = (
 
       const [dateData, comparisonDateData, currentQueryPageData, previousQueryPageData] =
         await Promise.all([
-          getSearchAnalytics(accessToken!, selectedSite, finalStartDate, finalEndDate),
-          getSearchAnalytics(accessToken!, selectedSite, previousStartDate, previousEndDate),
-          getGSCQueryPageData(accessToken!, selectedSite, finalStartDate, finalEndDate),
-          getGSCQueryPageData(accessToken!, selectedSite, previousStartDate, previousEndDate),
+          getSearchAnalytics(accessToken!, resolvedSelectedSite, finalStartDate, finalEndDate),
+          getSearchAnalytics(accessToken!, resolvedSelectedSite, previousStartDate, previousEndDate),
+          getGSCQueryPageData(accessToken!, resolvedSelectedSite, finalStartDate, finalEndDate),
+          getGSCQueryPageData(accessToken!, resolvedSelectedSite, previousStartDate, previousEndDate),
         ]);
 
       const insights = await runAnalysisInWorker({
@@ -143,7 +137,7 @@ export const useGSCData = (
         },
       };
     },
-    enabled: !!accessToken && !!selectedSite,
+    enabled: !!accessToken && !!resolvedSelectedSite,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -162,7 +156,7 @@ export const useGSCData = (
 
   return {
     gscSites,
-    selectedSite,
+    selectedSite: resolvedSelectedSite,
     setSelectedSite,
     gscData: siteData?.gscData || [],
     comparisonGscData: siteData?.comparisonGscData || [],

@@ -53,6 +53,21 @@ interface DashboardProps {
   onReset?: () => void;
 }
 
+interface HeroMetricProps {
+  title: string;
+  value: string | number;
+  description: string;
+  tone: string;
+}
+
+const HeroMetric: React.FC<HeroMetricProps> = ({ title, value, description, tone }) => (
+  <div className={`rounded-2xl p-5 text-white shadow-lg ${tone}`}>
+    <div className="text-xs font-bold uppercase tracking-[0.2em] opacity-80">{title}</div>
+    <div className="text-3xl font-bold mt-3">{value}</div>
+    <div className="text-xs opacity-80 mt-2 line-clamp-3">{description}</div>
+  </div>
+);
+
 const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
   const navigate = useNavigate();
   const { success: showSuccess } = useToast();
@@ -310,23 +325,6 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
     </button>
   );
 
-  const HeroMetric = ({
-    title,
-    value,
-    description,
-    tone,
-  }: {
-    title: string;
-    value: string | number;
-    description: string;
-    tone: string;
-  }) => (
-    <div className={`rounded-2xl p-5 text-white shadow-lg ${tone}`}>
-      <div className="text-xs font-bold uppercase tracking-[0.2em] opacity-80">{title}</div>
-      <div className="text-3xl font-bold mt-3">{value}</div>
-      <div className="text-xs opacity-80 mt-2 line-clamp-3">{description}</div>
-    </div>
-  );
 
   return (
     <div className="space-y-8 animate-fade-in text-slate-900 dark:text-slate-100 relative">

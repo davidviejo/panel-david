@@ -343,3 +343,6 @@ const RoadmapTaskItem: React.FC<RoadmapTaskItemProps> = memo(
 );
 
 export default RoadmapTaskItem;
+
+
+RoadmapTaskItem.displayName = 'RoadmapTaskItem';

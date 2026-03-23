@@ -101,20 +101,13 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   );
   const [currentClientId, setCurrentClientId] = useState<string>(() => {
     const saved = ClientRepository.getCurrentClientId();
-    return saved || '';
+    if (saved && clients.find((c) => c.id === saved)) {
+      return saved;
+    }
+    return clients[0]?.id || '';
   });
 
   // --- Derived State ---
-  // Ensure valid currentClientId
-  useEffect(() => {
-    if (
-      clients.length > 0 &&
-      (!currentClientId || !clients.find((c) => c.id === currentClientId))
-    ) {
-      const firstId = clients[0].id;
-      setCurrentClientId(firstId);
-    }
-  }, [clients, currentClientId]);
 
   const currentClient = useMemo(
     () => clients.find((c) => c.id === currentClientId) || clients[0] || null,

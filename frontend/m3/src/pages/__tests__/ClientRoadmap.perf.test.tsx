@@ -73,7 +73,7 @@ const customRoadmapOrder = modules[0].tasks.map((t) => t.id);
 
 describe('ClientRoadmap Performance', () => {
   it('measures re-render performance when expanding a task', async () => {
-    let renderTimes: number[] = [];
+    const renderTimes: number[] = [];
     const onRender = (
       id: string,
       phase: string,
