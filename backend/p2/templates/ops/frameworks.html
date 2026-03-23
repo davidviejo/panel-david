@@ -12,12 +12,12 @@
                 </span>
                 <h1 class="display-6 fw-bold text-white mb-3">Frameworks SEO listos para ejecutar en consultoría real</h1>
                 <p class="lead text-white-50 mb-4 pe-xl-5">
-                    Convierte decenas de herramientas sueltas en flujos accionables. Elige un framework, sigue los pasos y salta a cada utilidad en el orden recomendado.
+                    Convierte decenas de herramientas sueltas en flujos accionables. Ahora puedes pedir el contexto una sola vez, generar una cola operativa y consolidar el resultado final del framework desde esta misma pantalla.
                 </p>
                 <div class="d-flex flex-wrap gap-2">
                     <span class="frameworks-chip"><strong>4</strong> recorridos guiados</span>
                     <span class="frameworks-chip"><strong>16</strong> pasos enlazados</span>
-                    <span class="frameworks-chip">Pensado para auditoría, contenido, migraciones y pruning</span>
+                    <span class="frameworks-chip">Con intake inicial, cola operativa y reporte unificado</span>
                 </div>
             </div>
             <div class="col-xl-4">
@@ -25,8 +25,8 @@
                     <p class="text-uppercase small fw-bold text-primary-emphasis mb-2">Cómo usar esta pantalla</p>
                     <ol class="small text-secondary mb-0 ps-3 d-grid gap-2">
                         <li>Selecciona el escenario operativo.</li>
-                        <li>Filtra por tipo de trabajo si quieres acotar opciones.</li>
-                        <li>Abre cada herramienta en una nueva pestaña y ejecuta la secuencia.</li>
+                        <li>Completa una sola vez el intake del proyecto.</li>
+                        <li>Ejecuta la cola, documenta hallazgos y exporta el reporte conjunto.</li>
                     </ol>
                 </div>
             </div>
@@ -57,8 +57,153 @@
         </div>
     </section>
 
+    <section class="frameworks-workspace card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4 p-lg-5">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+                <div>
+                    <span class="badge rounded-pill text-bg-primary-subtle text-primary-emphasis mb-2">Nuevo</span>
+                    <h2 class="h3 fw-bold mb-2">Orquestador del framework</h2>
+                    <p class="text-muted mb-0">Centraliza todo el briefing inicial, genera una cola de ejecución y documenta un reporte final sin ir reconstruyendo el contexto en cada paso.</p>
+                </div>
+                <div class="frameworks-status-summary d-flex flex-wrap gap-2">
+                    <span class="summary-pill"><strong id="queueStepCount">0</strong> pasos</span>
+                    <span class="summary-pill"><strong id="queueCompletedCount">0</strong> completados</span>
+                    <span class="summary-pill"><strong id="queuePendingCount">0</strong> pendientes</span>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-12 col-xl-5">
+                    <div class="workspace-panel rounded-4 p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+                            <div>
+                                <p class="text-uppercase small fw-bold text-muted mb-1">1. Intake inicial</p>
+                                <h3 class="h5 fw-bold mb-0">Solicita todo al principio</h3>
+                            </div>
+                            <span id="selectedFrameworkBadge" class="badge rounded-pill text-bg-dark">Sin framework</span>
+                        </div>
+                        <form id="frameworkIntakeForm" class="d-grid gap-3">
+                            <div>
+                                <label for="frameworkSelector" class="form-label fw-semibold">Framework</label>
+                                <select id="frameworkSelector" class="form-select" required>
+                                    <option value="">Selecciona un framework</option>
+                                    <option value="audit">Auditoría Express</option>
+                                    <option value="content">Estrategia Editorial</option>
+                                    <option value="migration">Migración Web</option>
+                                    <option value="cleanup">Content Pruning</option>
+                                </select>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="projectName" class="form-label fw-semibold">Proyecto / cliente</label>
+                                    <input id="projectName" class="form-control" placeholder="Ej: ecommerce ES" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="projectDomain" class="form-label fw-semibold">Dominio principal</label>
+                                    <input id="projectDomain" type="url" class="form-control" placeholder="https://dominio.com" required>
+                                </div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="primaryUrl" class="form-label fw-semibold">URL foco</label>
+                                    <input id="primaryUrl" type="url" class="form-control" placeholder="https://dominio.com/url" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="mainKeyword" class="form-label fw-semibold">Keyword / foco principal</label>
+                                    <input id="mainKeyword" class="form-control" placeholder="Ej: auditoría seo técnica">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="supportingUrls" class="form-label fw-semibold">URLs adicionales / competidores / muestras</label>
+                                <textarea id="supportingUrls" class="form-control" rows="3" placeholder="Una por línea"></textarea>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="geoTarget" class="form-label fw-semibold">Geo objetivo</label>
+                                    <input id="geoTarget" class="form-control" placeholder="Ej: España">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="successMetric" class="form-label fw-semibold">Métrica de éxito</label>
+                                    <input id="successMetric" class="form-control" placeholder="Ej: recuperar indexación, detectar quick wins">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="projectNotes" class="form-label fw-semibold">Notas de contexto</label>
+                                <textarea id="projectNotes" class="form-control" rows="4" placeholder="Restricciones, hipótesis, incidencias, prioridad del cliente..."></textarea>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 pt-2">
+                                <button type="submit" class="btn btn-dark btn-lg">Generar cola</button>
+                                <button type="button" id="resetQueueBtn" class="btn btn-outline-secondary btn-lg">Reiniciar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-12 col-xl-7">
+                    <div class="workspace-panel rounded-4 p-4 h-100">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                            <div>
+                                <p class="text-uppercase small fw-bold text-muted mb-1">2. Cola de análisis</p>
+                                <h3 class="h5 fw-bold mb-0">Ejecución secuencial y consolidación</h3>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" id="openNextStepBtn" class="btn btn-primary" disabled>Abrir siguiente paso</button>
+                                <button type="button" id="markCurrentDoneBtn" class="btn btn-outline-success" disabled>Marcar paso actual</button>
+                                <button type="button" id="copyReportBtn" class="btn btn-outline-dark" disabled>Copiar reporte</button>
+                            </div>
+                        </div>
+
+                        <div id="queueEmptyState" class="queue-empty rounded-4 p-4 text-center">
+                            <div class="display-6 mb-3">🧠</div>
+                            <h4 class="fw-bold mb-2">Todavía no hay cola preparada</h4>
+                            <p class="text-muted mb-0">Selecciona un framework y completa el intake para generar el plan de análisis, las aperturas directas y el reporte conjunto.</p>
+                        </div>
+
+                        <div id="queueContent" class="d-none">
+                            <div class="queue-context rounded-4 p-3 mb-3">
+                                <div class="row g-3 small">
+                                    <div class="col-md-6"><strong>Proyecto:</strong> <span id="contextProject">-</span></div>
+                                    <div class="col-md-6"><strong>Dominio:</strong> <span id="contextDomain">-</span></div>
+                                    <div class="col-md-6"><strong>URL foco:</strong> <span id="contextUrl">-</span></div>
+                                    <div class="col-md-6"><strong>Objetivo:</strong> <span id="contextGoal">-</span></div>
+                                </div>
+                            </div>
+
+                            <div id="queueList" class="d-grid gap-3 mb-4"></div>
+
+                            <div class="row g-4">
+                                <div class="col-12 col-lg-6">
+                                    <div class="report-panel rounded-4 p-3 h-100">
+                                        <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                            <h4 class="h6 fw-bold mb-0">Hallazgo del paso activo</h4>
+                                            <span id="currentStepLabel" class="badge rounded-pill text-bg-light">Sin paso activo</span>
+                                        </div>
+                                        <textarea id="stepFindingInput" class="form-control" rows="8" placeholder="Anota aquí el resultado, bloqueos, links útiles o decisión tomada para el paso activo..."></textarea>
+                                        <div class="d-flex flex-wrap gap-2 mt-3">
+                                            <button type="button" id="saveFindingBtn" class="btn btn-outline-primary" disabled>Guardar hallazgo</button>
+                                            <button type="button" id="completeAndAdvanceBtn" class="btn btn-success" disabled>Guardar y avanzar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-lg-6">
+                                    <div class="report-panel rounded-4 p-3 h-100">
+                                        <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                            <h4 class="h6 fw-bold mb-0">Reporte final conjunto</h4>
+                                            <span id="reportStatusBadge" class="badge rounded-pill text-bg-warning text-dark">Pendiente</span>
+                                        </div>
+                                        <div id="finalReportPreview" class="final-report-preview small"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section class="row g-4" id="frameworkGrid">
-        <div class="col-12 col-xl-6 framework-card" data-category="audit" data-search="auditoría express errores técnicos indexación hackeos robots fast status headers ssl cache">
+        <div class="col-12 col-xl-6 framework-card" data-category="audit" data-framework-id="audit" data-search="auditoría express errores técnicos indexación hackeos robots fast status headers ssl cache">
             <article class="card framework-shell h-100 border-0 shadow-sm rounded-4">
                 <div class="card-body p-4 p-lg-5">
                     <div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
@@ -112,22 +257,27 @@
                             <a href="/headers" class="btn btn-outline-primary">Headers</a>
                         </div>
                     </div>
+
+                    <div class="mt-4 d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-primary prepare-framework-btn" data-framework-target="audit">Preparar cola</button>
+                        <button type="button" class="btn btn-outline-dark use-framework-btn" data-framework-target="audit">Cargar en orquestador</button>
+                    </div>
                 </div>
             </article>
         </div>
 
-        <div class="col-12 col-xl-6 framework-card" data-category="content" data-search="estrategia editorial contenido calendario long tail cluster intención canibalización serp headers">
+        <div class="col-12 col-xl-6 framework-card" data-category="content" data-framework-id="content" data-search="estrategia editorial contenido calendario long tail cluster intención canibalización serp headers">
             <article class="card framework-shell h-100 border-0 shadow-sm rounded-4">
                 <div class="card-body p-4 p-lg-5">
                     <div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
                         <div>
                             <div class="framework-icon bg-success-subtle text-success">✍️</div>
                             <h2 class="h3 fw-bold text-success mt-3 mb-2">Estrategia Editorial</h2>
-                            <p class="text-muted mb-0">Flujo para construir calendarios de contenido con intención clara y menor riesgo de canibalización.</p>
+                            <p class="text-muted mb-0">Flujo para construir calendarios editoriales, descubrir temas y redactar con intención clara desde el primer briefing.</p>
                         </div>
                         <div class="framework-meta text-end">
                             <span class="badge rounded-pill text-bg-success-subtle text-success-emphasis mb-2">Contenido</span>
-                            <p class="small text-muted mb-0">Útil para planning mensual y arquitectura de topics.</p>
+                            <p class="small text-muted mb-0">Ideal para planificación, briefs y expansión semántica.</p>
                         </div>
                     </div>
 
@@ -170,11 +320,16 @@
                             <a href="/structure" class="btn btn-outline-success">Header Map</a>
                         </div>
                     </div>
+
+                    <div class="mt-4 d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-success prepare-framework-btn" data-framework-target="content">Preparar cola</button>
+                        <button type="button" class="btn btn-outline-dark use-framework-btn" data-framework-target="content">Cargar en orquestador</button>
+                    </div>
                 </div>
             </article>
         </div>
 
-        <div class="col-12 col-xl-6 framework-card" data-category="migration" data-search="migración staging live htaccess redirect indexación dominio rediseño diff checker">
+        <div class="col-12 col-xl-6 framework-card" data-category="migration" data-framework-id="migration" data-search="migración staging live htaccess redirect indexación dominio rediseño diff checker">
             <article class="card framework-shell h-100 border-0 shadow-sm rounded-4">
                 <div class="card-body p-4 p-lg-5">
                     <div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
@@ -228,11 +383,16 @@
                             <a href="/indexer" class="btn btn-outline-warning">Index Check</a>
                         </div>
                     </div>
+
+                    <div class="mt-4 d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-warning prepare-framework-btn" data-framework-target="migration">Preparar cola</button>
+                        <button type="button" class="btn btn-outline-dark use-framework-btn" data-framework-target="migration">Cargar en orquestador</button>
+                    </div>
                 </div>
             </article>
         </div>
 
-        <div class="col-12 col-xl-6 framework-card" data-category="cleanup" data-search="content pruning limpieza contenido tóxico antiguo decay canibalización orphan thin content code bloat">
+        <div class="col-12 col-xl-6 framework-card" data-category="cleanup" data-framework-id="cleanup" data-search="content pruning limpieza contenido tóxico antiguo decay canibalización orphan thin content code bloat">
             <article class="card framework-shell h-100 border-0 shadow-sm rounded-4">
                 <div class="card-body p-4 p-lg-5">
                     <div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
@@ -285,6 +445,11 @@
                             </div>
                             <a href="/ratio" class="btn btn-outline-danger">Code Ratio</a>
                         </div>
+                    </div>
+
+                    <div class="mt-4 d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-danger prepare-framework-btn" data-framework-target="cleanup">Preparar cola</button>
+                        <button type="button" class="btn btn-outline-dark use-framework-btn" data-framework-target="cleanup">Cargar en orquestador</button>
                     </div>
                 </div>
             </article>
@@ -344,7 +509,8 @@
         letter-spacing: 0.02em;
     }
 
-    .frameworks-chip {
+    .frameworks-chip,
+    .summary-pill {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
@@ -357,13 +523,25 @@
         font-size: 0.92rem;
     }
 
-    .frameworks-panel {
+    .summary-pill {
+        background: #eff6ff;
+        color: #1e3a8a;
+        border-color: #bfdbfe;
+    }
+
+    .frameworks-panel,
+    .workspace-panel,
+    .report-panel,
+    .queue-context {
         background: rgba(255,255,255,0.94);
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+        border: 1px solid #e2e8f0;
     }
 
     .frameworks-toolbar .form-control,
-    .frameworks-toolbar .input-group-text {
+    .frameworks-toolbar .input-group-text,
+    .workspace-panel .form-control,
+    .workspace-panel .form-select {
         border-color: #dbe4f0;
     }
 
@@ -402,12 +580,19 @@
         font-size: 1.65rem;
     }
 
-    .framework-outcome {
+    .framework-outcome,
+    .queue-empty,
+    .final-report-preview {
         background: #f8fafc;
         border: 1px solid #e2e8f0;
     }
 
-    .framework-step {
+    .queue-empty {
+        border-style: dashed;
+    }
+
+    .framework-step,
+    .queue-item {
         display: grid;
         grid-template-columns: auto 1fr auto;
         gap: 1rem;
@@ -418,7 +603,29 @@
         background: #fff;
     }
 
-    .step-number {
+    .queue-item.active {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .queue-item.completed {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+
+    .queue-item.pending {
+        border-style: dashed;
+    }
+
+    .queue-item-controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+
+    .step-number,
+    .queue-badge-number {
         width: 2rem;
         height: 2rem;
         border-radius: 999px;
@@ -432,17 +639,26 @@
         flex-shrink: 0;
     }
 
-    .framework-step h3 {
+    .framework-step h3,
+    .queue-item h3 {
         margin: 0 0 0.2rem;
         font-size: 1rem;
         font-weight: 700;
         color: #0f172a;
     }
 
-    .framework-step p {
+    .framework-step p,
+    .queue-item p {
         margin: 0;
         font-size: 0.92rem;
         color: #64748b;
+    }
+
+    .final-report-preview {
+        padding: 1rem;
+        min-height: 320px;
+        white-space: pre-wrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
 
     .framework-card.is-hidden {
@@ -450,11 +666,14 @@
     }
 
     @media (max-width: 991.98px) {
-        .framework-step {
+        .framework-step,
+        .queue-item {
             grid-template-columns: auto 1fr;
         }
 
-        .framework-step .btn {
+        .framework-step .btn,
+        .queue-item .btn,
+        .queue-item-controls {
             grid-column: 1 / -1;
             width: 100%;
         }
@@ -466,11 +685,84 @@
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const FRAMEWORK_DEFINITIONS = {
+            audit: {
+                label: 'Auditoría Express',
+                goalFallback: 'Detectar bloqueos técnicos e incidencias graves.',
+                outcome: 'Identificar bloqueos de indexación, acceso y señales de infraestructura comprometida.',
+                steps: [
+                    { title: 'Busca fugas de indexación y hackeos', description: 'Footprint en Google y páginas sospechosas.', path: '/dorks' },
+                    { title: 'Comprueba si Googlebot puede entrar', description: 'Validación inicial de robots.txt y rastreo.', path: '/robots' },
+                    { title: 'Verifica códigos de estado', description: 'Control rápido de respuestas críticas.', path: '/fast' },
+                    { title: 'Revisa SSL y caché', description: 'Headers, políticas de caché y coherencia técnica.', path: '/headers' }
+                ]
+            },
+            content: {
+                label: 'Estrategia Editorial',
+                goalFallback: 'Descubrir oportunidades y organizar el roadmap editorial.',
+                outcome: 'Definir ideas, clusters, riesgos de canibalización y referencias de estructura.',
+                steps: [
+                    { title: 'Encuentra ideas long-tail', description: 'Demanda, preguntas y oportunidades.', path: '/suggest' },
+                    { title: 'Agrupa por intención', description: 'Separación informacional, comercial y transaccional.', path: '/seo' },
+                    { title: 'Detecta canibalización SERP', description: 'Evita solapamientos y duplicidad.', path: '/overlap' },
+                    { title: 'Modela los encabezados del líder', description: 'Estructura ganadora para briefing.', path: '/structure' }
+                ]
+            },
+            migration: {
+                label: 'Migración Web',
+                goalFallback: 'Minimizar pérdidas en una migración o lanzamiento.',
+                outcome: 'Controlar diferencias, redirects y capacidad de indexación de la nueva versión.',
+                steps: [
+                    { title: 'Compara staging vs live', description: 'Diferencias antes del despliegue.', path: '/diff' },
+                    { title: 'Genera reglas 301', description: 'Protección de equity y rutas históricas.', path: '/migration' },
+                    { title: 'Evita cadenas de redirección', description: 'Limpieza de loops y hops.', path: '/redirect' },
+                    { title: 'Verifica indexación final', description: 'Comprobación posterior al cambio.', path: '/indexer' }
+                ]
+            },
+            cleanup: {
+                label: 'Content Pruning',
+                goalFallback: 'Priorizar consolidación, actualización o retirada de contenido.',
+                outcome: 'Detectar piezas obsoletas, canibalizaciones, páginas huérfanas y thin content.',
+                steps: [
+                    { title: 'Detecta posts caducados', description: 'URLs con pérdida de tracción.', path: '/decay' },
+                    { title: 'Revisa canibalización de títulos', description: 'Competencia interna entre URLs.', path: '/cannibal' },
+                    { title: 'Encuentra páginas huérfanas', description: 'Activos sin soporte interno.', path: '/orphan' },
+                    { title: 'Prioriza thin content o code bloat', description: 'Páginas con poco valor útil.', path: '/ratio' }
+                ]
+            }
+        };
+
         const searchInput = document.getElementById('frameworkSearch');
         const filterButtons = Array.from(document.querySelectorAll('.btn-filter'));
         const cards = Array.from(document.querySelectorAll('.framework-card'));
         const emptyState = document.getElementById('frameworkEmptyState');
+        const frameworkSelector = document.getElementById('frameworkSelector');
+        const selectedFrameworkBadge = document.getElementById('selectedFrameworkBadge');
+        const intakeForm = document.getElementById('frameworkIntakeForm');
+        const resetQueueBtn = document.getElementById('resetQueueBtn');
+        const queueEmptyState = document.getElementById('queueEmptyState');
+        const queueContent = document.getElementById('queueContent');
+        const queueList = document.getElementById('queueList');
+        const openNextStepBtn = document.getElementById('openNextStepBtn');
+        const markCurrentDoneBtn = document.getElementById('markCurrentDoneBtn');
+        const copyReportBtn = document.getElementById('copyReportBtn');
+        const saveFindingBtn = document.getElementById('saveFindingBtn');
+        const completeAndAdvanceBtn = document.getElementById('completeAndAdvanceBtn');
+        const currentStepLabel = document.getElementById('currentStepLabel');
+        const stepFindingInput = document.getElementById('stepFindingInput');
+        const finalReportPreview = document.getElementById('finalReportPreview');
+        const reportStatusBadge = document.getElementById('reportStatusBadge');
+        const queueStepCount = document.getElementById('queueStepCount');
+        const queueCompletedCount = document.getElementById('queueCompletedCount');
+        const queuePendingCount = document.getElementById('queuePendingCount');
+        const contextProject = document.getElementById('contextProject');
+        const contextDomain = document.getElementById('contextDomain');
+        const contextUrl = document.getElementById('contextUrl');
+        const contextGoal = document.getElementById('contextGoal');
+        const prepareFrameworkButtons = Array.from(document.querySelectorAll('.prepare-framework-btn, .use-framework-btn'));
+
         let activeFilter = 'all';
+        let queueState = null;
 
         function applyFilters() {
             const query = (searchInput?.value || '').trim().toLowerCase();
@@ -490,6 +782,225 @@
             emptyState.classList.toggle('d-none', visibleCount > 0);
         }
 
+        function syncFrameworkSelection(frameworkId) {
+            frameworkSelector.value = frameworkId;
+            const framework = FRAMEWORK_DEFINITIONS[frameworkId];
+            selectedFrameworkBadge.textContent = framework ? framework.label : 'Sin framework';
+            frameworkSelector.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function getFormContext() {
+            const frameworkId = frameworkSelector.value;
+            const framework = FRAMEWORK_DEFINITIONS[frameworkId];
+            const supportingItems = document.getElementById('supportingUrls').value
+                .split('\n')
+                .map((item) => item.trim())
+                .filter(Boolean);
+
+            return {
+                frameworkId,
+                framework,
+                projectName: document.getElementById('projectName').value.trim(),
+                projectDomain: document.getElementById('projectDomain').value.trim(),
+                primaryUrl: document.getElementById('primaryUrl').value.trim(),
+                mainKeyword: document.getElementById('mainKeyword').value.trim(),
+                supportingItems,
+                geoTarget: document.getElementById('geoTarget').value.trim(),
+                successMetric: document.getElementById('successMetric').value.trim(),
+                projectNotes: document.getElementById('projectNotes').value.trim()
+            };
+        }
+
+        function buildStepUrl(path, context) {
+            const params = new URLSearchParams();
+            if (context.projectDomain) params.set('domain', context.projectDomain);
+            if (context.primaryUrl) params.set('url', context.primaryUrl);
+            if (context.mainKeyword) params.set('q', context.mainKeyword);
+            if (context.geoTarget) params.set('geo', context.geoTarget);
+            if (context.supportingItems.length) params.set('targets', context.supportingItems.join(','));
+            return `${path}${params.toString() ? `?${params.toString()}` : ''}`;
+        }
+
+        function createQueueState(context) {
+            return {
+                frameworkId: context.frameworkId,
+                frameworkLabel: context.framework.label,
+                createdAt: new Date().toISOString(),
+                context,
+                currentStepIndex: 0,
+                steps: context.framework.steps.map((step, index) => ({
+                    ...step,
+                    number: index + 1,
+                    status: index === 0 ? 'active' : 'pending',
+                    result: '',
+                    url: buildStepUrl(step.path, context)
+                }))
+            };
+        }
+
+        function escapeHtml(value) {
+            return (value || '').replace(/[&<>\"']/g, function (match) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' })[match];
+            });
+        }
+
+        function renderQueue() {
+            const hasQueue = Boolean(queueState);
+            queueEmptyState.classList.toggle('d-none', hasQueue);
+            queueContent.classList.toggle('d-none', !hasQueue);
+            openNextStepBtn.disabled = !hasQueue;
+            copyReportBtn.disabled = !hasQueue;
+
+            if (!hasQueue) {
+                queueList.innerHTML = '';
+                finalReportPreview.textContent = '';
+                stepFindingInput.value = '';
+                saveFindingBtn.disabled = true;
+                completeAndAdvanceBtn.disabled = true;
+                markCurrentDoneBtn.disabled = true;
+                currentStepLabel.textContent = 'Sin paso activo';
+                reportStatusBadge.textContent = 'Pendiente';
+                reportStatusBadge.className = 'badge rounded-pill text-bg-warning text-dark';
+                queueStepCount.textContent = '0';
+                queueCompletedCount.textContent = '0';
+                queuePendingCount.textContent = '0';
+                return;
+            }
+
+            const completedCount = queueState.steps.filter((step) => step.status === 'completed').length;
+            const pendingCount = queueState.steps.length - completedCount;
+            const activeStep = queueState.steps[queueState.currentStepIndex] || queueState.steps[queueState.steps.length - 1];
+
+            contextProject.textContent = queueState.context.projectName || '-';
+            contextDomain.textContent = queueState.context.projectDomain || '-';
+            contextUrl.textContent = queueState.context.primaryUrl || '-';
+            contextGoal.textContent = queueState.context.successMetric || queueState.context.framework.goalFallback;
+            currentStepLabel.textContent = activeStep ? `Paso ${activeStep.number}` : 'Sin paso activo';
+            queueStepCount.textContent = String(queueState.steps.length);
+            queueCompletedCount.textContent = String(completedCount);
+            queuePendingCount.textContent = String(pendingCount);
+
+            saveFindingBtn.disabled = !activeStep;
+            completeAndAdvanceBtn.disabled = !activeStep;
+            markCurrentDoneBtn.disabled = !activeStep;
+            stepFindingInput.value = activeStep?.result || '';
+
+            queueList.innerHTML = queueState.steps.map((step, index) => {
+                const isActive = step.status === 'active';
+                const statusLabel = step.status === 'completed' ? 'Completado' : isActive ? 'En curso' : 'Pendiente';
+                const statusClass = step.status === 'completed' ? 'text-bg-success' : isActive ? 'text-bg-primary' : 'text-bg-light';
+                return `
+                    <div class="queue-item ${step.status}" data-step-index="${index}">
+                        <span class="queue-badge-number">${step.number}</span>
+                        <div>
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                <h3>${escapeHtml(step.title)}</h3>
+                                <span class="badge rounded-pill ${statusClass}">${statusLabel}</span>
+                            </div>
+                            <p>${escapeHtml(step.description)}</p>
+                            <div class="small text-muted mt-2"><strong>Input compartido:</strong> ${escapeHtml(queueState.context.primaryUrl || queueState.context.projectDomain)} · ${escapeHtml(queueState.context.mainKeyword || queueState.context.successMetric || queueState.context.framework.goalFallback)}</div>
+                            ${step.result ? `<div class="small mt-2"><strong>Hallazgo:</strong> ${escapeHtml(step.result)}</div>` : ''}
+                        </div>
+                        <div class="queue-item-controls">
+                            <a href="${step.url}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Abrir</a>
+                            <button type="button" class="btn btn-sm btn-outline-secondary focus-step-btn" data-step-index="${index}">Enfocar</button>
+                            <button type="button" class="btn btn-sm btn-outline-success complete-step-btn" data-step-index="${index}">Completar</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const allDone = completedCount === queueState.steps.length;
+            reportStatusBadge.textContent = allDone ? 'Completado' : `En progreso · ${completedCount}/${queueState.steps.length}`;
+            reportStatusBadge.className = allDone
+                ? 'badge rounded-pill text-bg-success'
+                : 'badge rounded-pill text-bg-warning text-dark';
+
+            const supportBlock = queueState.context.supportingItems.length
+                ? `Activos de apoyo: ${queueState.context.supportingItems.join(', ')}`
+                : 'Activos de apoyo: no especificados';
+            const notesBlock = queueState.context.projectNotes || 'Sin notas adicionales.';
+            const reportLines = [
+                `Framework: ${queueState.frameworkLabel}`,
+                `Proyecto: ${queueState.context.projectName}`,
+                `Dominio: ${queueState.context.projectDomain}`,
+                `URL foco: ${queueState.context.primaryUrl}`,
+                `Keyword principal: ${queueState.context.mainKeyword || 'No indicada'}`,
+                `Geo objetivo: ${queueState.context.geoTarget || 'No indicado'}`,
+                `Objetivo de negocio: ${queueState.context.successMetric || queueState.context.framework.goalFallback}`,
+                supportBlock,
+                '',
+                'Contexto inicial:',
+                notesBlock,
+                '',
+                'Resumen ejecutivo:',
+                queueState.framework.outcome,
+                '',
+                'Estado por paso:'
+            ];
+
+            queueState.steps.forEach((step) => {
+                reportLines.push(`${step.number}. ${step.title} [${step.status.toUpperCase()}]`);
+                reportLines.push(step.result ? `   - Hallazgo: ${step.result}` : '   - Hallazgo: pendiente de documentar.');
+            });
+
+            if (allDone) {
+                reportLines.push('');
+                reportLines.push('Conclusión conjunta:');
+                reportLines.push('Todos los análisis del framework fueron completados y consolidados en una única salida operativa lista para compartir con cliente o equipo.');
+            }
+
+            finalReportPreview.textContent = reportLines.join('\n');
+        }
+
+        function updateActiveStep(nextIndex) {
+            if (!queueState) return;
+            const normalizedIndex = Math.max(0, Math.min(nextIndex, queueState.steps.length - 1));
+            queueState.steps.forEach((step, index) => {
+                if (step.status !== 'completed') {
+                    step.status = index === normalizedIndex ? 'active' : 'pending';
+                }
+            });
+            queueState.currentStepIndex = normalizedIndex;
+            renderQueue();
+        }
+
+        function saveFinding() {
+            if (!queueState) return;
+            const activeStep = queueState.steps[queueState.currentStepIndex];
+            if (!activeStep) return;
+            activeStep.result = stepFindingInput.value.trim();
+            renderQueue();
+        }
+
+        function completeStep(index) {
+            if (!queueState) return;
+            const step = queueState.steps[index];
+            if (!step) return;
+            if (index === queueState.currentStepIndex) {
+                step.result = stepFindingInput.value.trim();
+            }
+            step.status = 'completed';
+            const nextPendingIndex = queueState.steps.findIndex((item) => item.status !== 'completed');
+            if (nextPendingIndex >= 0) {
+                queueState.currentStepIndex = nextPendingIndex;
+                queueState.steps.forEach((item, itemIndex) => {
+                    if (item.status !== 'completed') {
+                        item.status = itemIndex === nextPendingIndex ? 'active' : 'pending';
+                    }
+                });
+            }
+            renderQueue();
+        }
+
+        function openStep(index) {
+            if (!queueState) return;
+            const step = queueState.steps[index];
+            if (!step) return;
+            window.open(step.url, '_blank', 'noopener');
+            updateActiveStep(index);
+        }
+
         filterButtons.forEach((button) => {
             button.addEventListener('click', function () {
                 activeFilter = button.dataset.filter || 'all';
@@ -498,7 +1009,76 @@
             });
         });
 
+        prepareFrameworkButtons.forEach((button) => {
+            button.addEventListener('click', function () {
+                const frameworkId = button.dataset.frameworkTarget;
+                syncFrameworkSelection(frameworkId);
+            });
+        });
+
+        frameworkSelector.addEventListener('change', function () {
+            const framework = FRAMEWORK_DEFINITIONS[frameworkSelector.value];
+            selectedFrameworkBadge.textContent = framework ? framework.label : 'Sin framework';
+        });
+
+        intakeForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const context = getFormContext();
+            if (!context.framework) return;
+            queueState = createQueueState(context);
+            renderQueue();
+        });
+
+        resetQueueBtn.addEventListener('click', function () {
+            intakeForm.reset();
+            queueState = null;
+            selectedFrameworkBadge.textContent = 'Sin framework';
+            renderQueue();
+        });
+
+        openNextStepBtn.addEventListener('click', function () {
+            if (!queueState) return;
+            openStep(queueState.currentStepIndex);
+        });
+
+        markCurrentDoneBtn.addEventListener('click', function () {
+            if (!queueState) return;
+            completeStep(queueState.currentStepIndex);
+        });
+
+        saveFindingBtn.addEventListener('click', saveFinding);
+
+        completeAndAdvanceBtn.addEventListener('click', function () {
+            if (!queueState) return;
+            completeStep(queueState.currentStepIndex);
+        });
+
+        copyReportBtn.addEventListener('click', async function () {
+            if (!queueState) return;
+            try {
+                await navigator.clipboard.writeText(finalReportPreview.textContent || '');
+                copyReportBtn.textContent = 'Reporte copiado';
+                setTimeout(() => {
+                    copyReportBtn.textContent = 'Copiar reporte';
+                }, 1800);
+            } catch (error) {
+                console.error('No se pudo copiar el reporte', error);
+            }
+        });
+
+        queueList.addEventListener('click', function (event) {
+            const focusButton = event.target.closest('.focus-step-btn');
+            const completeButton = event.target.closest('.complete-step-btn');
+            if (focusButton) {
+                updateActiveStep(Number(focusButton.dataset.stepIndex));
+            }
+            if (completeButton) {
+                completeStep(Number(completeButton.dataset.stepIndex));
+            }
+        });
+
         searchInput?.addEventListener('input', applyFilters);
+        renderQueue();
         applyFilters();
     });
 </script>
