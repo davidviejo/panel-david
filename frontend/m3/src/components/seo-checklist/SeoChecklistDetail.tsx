@@ -46,6 +46,7 @@ export const SeoChecklistDetail: React.FC<Props> = ({
   const [editForm, setEditForm] = useState({
     url: page.url,
     kwPrincipal: page.kwPrincipal,
+    isBrandKeyword: page.isBrandKeyword || false,
     pageType: page.pageType,
     cluster: page.cluster || '',
     competitors: page.competitors || [],
@@ -57,6 +58,7 @@ export const SeoChecklistDetail: React.FC<Props> = ({
     setEditForm({
       url: page.url,
       kwPrincipal: page.kwPrincipal,
+      isBrandKeyword: page.isBrandKeyword || false,
       pageType: page.pageType,
       cluster: page.cluster || '',
       competitors: page.competitors || [],
@@ -72,7 +74,8 @@ export const SeoChecklistDetail: React.FC<Props> = ({
   const handleSave = () => {
     onUpdatePage(page.id, {
       url: normalizeSeoUrl(editForm.url),
-      kwPrincipal: editForm.kwPrincipal,
+      kwPrincipal: editForm.isBrandKeyword ? '' : editForm.kwPrincipal,
+      isBrandKeyword: editForm.isBrandKeyword,
       pageType: editForm.pageType,
       cluster: editForm.cluster,
       competitors: editForm.competitors,
@@ -144,8 +147,27 @@ export const SeoChecklistDetail: React.FC<Props> = ({
                     type="text"
                     value={editForm.kwPrincipal}
                     onChange={(e) => setEditForm({ ...editForm, kwPrincipal: e.target.value })}
+                    disabled={editForm.isBrandKeyword}
+                    placeholder={
+                      editForm.isBrandKeyword ? 'Sin keyword principal por tratarse de marca' : ''
+                    }
                     className="w-full px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
+                  <label className="mt-2 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={editForm.isBrandKeyword}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          isBrandKeyword: e.target.checked,
+                          kwPrincipal: e.target.checked ? '' : prev.kwPrincipal,
+                        }))
+                      }
+                      className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                    />
+                    Excluir asignación de KW principal porque es una keyword de marca
+                  </label>
                 </div>
                 <div className="flex-1">
                   <label className="text-xs text-slate-500 font-semibold uppercase">Tipo</label>
@@ -237,7 +259,7 @@ export const SeoChecklistDetail: React.FC<Props> = ({
               </h1>
               <div className="flex items-center gap-3 text-sm text-slate-500 mt-1 flex-wrap">
                 <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-xs font-bold">
-                  {page.kwPrincipal}
+                  {page.isBrandKeyword ? 'KW de marca' : page.kwPrincipal || 'Sin keyword principal'}
                 </span>
                 <span>{page.pageType}</span>
                 {page.cluster && <span>• {page.cluster}</span>}

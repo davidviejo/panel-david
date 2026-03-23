@@ -36,6 +36,7 @@ const mockPage: SeoPage = {
   id: 'page-1',
   url: 'https://example.com/test',
   kwPrincipal: 'test keyword',
+  isBrandKeyword: false,
   pageType: 'Article',
   cluster: 'Test Cluster',
   checklist: {
@@ -113,6 +114,7 @@ describe('SeoChecklistDetail', () => {
     expect(onUpdatePage).toHaveBeenCalledWith('page-1', {
       url: 'https://example.com/test',
       kwPrincipal: 'new keyword',
+      isBrandKeyword: false,
       pageType: 'Product',
       cluster: 'Test Cluster',
       competitors: [],
@@ -148,5 +150,34 @@ describe('SeoChecklistDetail', () => {
 
     // Check it went back to view mode and original value is displayed
     expect(screen.getByText('test keyword')).toBeDefined();
+  });
+
+  it('permite excluir la kw principal cuando es una keyword de marca', () => {
+    const onUpdatePage = vi.fn();
+    render(
+      <SeoChecklistDetail
+        page={mockPage}
+        onUpdatePage={onUpdatePage}
+        onUpdateChecklistItem={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle('Editar detalles'));
+
+    const brandToggle = screen.getByLabelText(
+      'Excluir asignación de KW principal porque es una keyword de marca',
+    );
+    fireEvent.click(brandToggle);
+    fireEvent.click(screen.getByTitle('Guardar cambios'));
+
+    expect(onUpdatePage).toHaveBeenCalledWith('page-1', {
+      url: 'https://example.com/test',
+      kwPrincipal: '',
+      isBrandKeyword: true,
+      pageType: 'Article',
+      cluster: 'Test Cluster',
+      competitors: [],
+    });
   });
 });

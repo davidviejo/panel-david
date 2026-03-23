@@ -42,6 +42,7 @@ export interface SeoPage {
   id: string;
   url: string;
   kwPrincipal: string;
+  isBrandKeyword?: boolean;
   pageType: string;
   geoTarget?: string;
   cluster?: string;

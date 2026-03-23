@@ -118,7 +118,7 @@ export const processAnalysisResult = (
   const resolvedGscMetrics =
     gscMetrics || page.gscMetrics || buildGscMetricsFromQueries(gscQueries);
   const currentGscQueries = result.items?.OPORTUNIDADES?.autoData?.gscQueries || gscQueries;
-  const inferredKeyword = isKeywordMissing(page.kwPrincipal)
+  const inferredKeyword = !page.isBrandKeyword && isKeywordMissing(page.kwPrincipal)
     ? pickBestGscKeyword(currentGscQueries)
     : null;
 
