@@ -36,11 +36,16 @@ import { useToast } from '../components/ui/ToastContext';
 import { Skeleton } from '../components/ui/Skeleton';
 import { Spinner } from '../components/ui/Spinner';
 import { useGSCAuth } from '../hooks/useGSCAuth';
-import { useGSCData } from '../hooks/useGSCData';
+import { GSCComparisonMode, useGSCData } from '../hooks/useGSCData';
 import { GSCDateRangeControl } from '../components/GSCDateRangeControl';
 import { InsightDetailModal } from '../components/InsightDetailModal';
 import { SeoInsight, SeoInsightCategory } from '../types/seoInsights';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+
+const GSC_COMPARISON_MODE_LABELS: Record<GSCComparisonMode, string> = {
+  previous_period: 'Periodo anterior',
+  previous_year: 'Mismo periodo del año pasado',
+};
 
 interface DashboardProps {
   modules: ModuleData[];
@@ -55,8 +60,11 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [selectedInsight, setSelectedInsight] = useState<SeoInsight | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<SeoInsightCategory | 'all'>('all');
-  const [selectedPriority, setSelectedPriority] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [selectedPriority, setSelectedPriority] = useState<'all' | 'high' | 'medium' | 'low'>(
+    'all',
+  );
   const [gscSiteQuery, setGscSiteQuery] = useState('');
+  const [comparisonMode, setComparisonMode] = useState<GSCComparisonMode>('previous_period');
 
   const [startDate, setStartDate] = useState<string>(() => {
     const d = new Date();
@@ -82,10 +90,11 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
     selectedSite,
     setSelectedSite,
     gscData,
+    comparisonGscData,
     comparisonPeriod,
     isLoadingGsc,
     insights: { insights, groupedInsights, topOpportunities, topRisks, topQueries },
-  } = useGSCData(gscAccessToken, startDate, endDate);
+  } = useGSCData(gscAccessToken, startDate, endDate, comparisonMode);
 
   const filteredGscSites = useMemo(() => {
     const normalizedQuery = gscSiteQuery.trim().toLowerCase();
@@ -197,6 +206,31 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
     }, 1500);
   };
 
+  const gscChartData = useMemo(() => {
+    const maxLength = Math.max(gscData.length, comparisonGscData.length);
+
+    return Array.from({ length: maxLength }, (_, index) => {
+      const currentRow = gscData[index];
+      const comparisonRow = comparisonGscData[index];
+
+      return {
+        label: currentRow?.keys?.[0] || comparisonRow?.keys?.[0] || `Fila ${index + 1}`,
+        currentClicks: currentRow?.clicks ?? null,
+        currentImpressions: currentRow?.impressions ?? null,
+        comparisonClicks: comparisonRow?.clicks ?? null,
+        comparisonImpressions: comparisonRow?.impressions ?? null,
+      };
+    });
+  }, [gscData, comparisonGscData]);
+
+  const comparisonSummary = useMemo(() => {
+    if (!comparisonPeriod) {
+      return 'Sin comparativa disponible.';
+    }
+
+    return `${GSC_COMPARISON_MODE_LABELS[comparisonPeriod.mode]}: ${comparisonPeriod.previous.startDate} a ${comparisonPeriod.previous.endDate}`;
+  }, [comparisonPeriod]);
+
   const priorityLabel: Record<'high' | 'medium' | 'low', string> = {
     high: 'Alta',
     medium: 'Media',
@@ -227,40 +261,66 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
             <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
               {insight.visualContext.categoryLabel}
             </span>
-            <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${priorityStyles[insight.priority]}`}>
+            <span
+              className={`text-[10px] px-2 py-1 rounded-full font-bold ${priorityStyles[insight.priority]}`}
+            >
               Prioridad {priorityLabel[insight.priority]}
             </span>
-            <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${severityStyles[insight.severity]}`}>
+            <span
+              className={`text-[10px] px-2 py-1 rounded-full font-bold ${severityStyles[insight.severity]}`}
+            >
               {insight.severity}
             </span>
           </div>
           <h3 className="font-bold text-slate-900 dark:text-white text-base">{insight.title}</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-3">{insight.summary}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-3">
+            {insight.summary}
+          </p>
         </div>
         <div className="text-right min-w-[74px]">
-          <div className="text-2xl font-bold text-slate-900 dark:text-white">{insight.affectedCount}</div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white">
+            {insight.affectedCount}
+          </div>
           <div className="text-xs text-slate-400">elementos</div>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3 mt-4 text-xs">
         <div className="rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3">
           <div className="text-slate-400 uppercase tracking-wide">Score</div>
-          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">{insight.score}</div>
+          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">
+            {insight.score}
+          </div>
         </div>
         <div className="rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3">
           <div className="text-slate-400 uppercase tracking-wide">Oportunidad</div>
-          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">{insight.opportunity}</div>
+          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">
+            {insight.opportunity}
+          </div>
         </div>
         <div className="rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3">
           <div className="text-slate-400 uppercase tracking-wide">Confianza</div>
-          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">{insight.confidence}</div>
+          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">
+            {insight.confidence}
+          </div>
         </div>
       </div>
-      <div className="mt-4 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{insight.reason}</div>
+      <div className="mt-4 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+        {insight.reason}
+      </div>
     </button>
   );
 
-  const HeroMetric = ({ title, value, description, tone }: { title: string; value: string | number; description: string; tone: string }) => (
+  const HeroMetric = ({
+    title,
+    value,
+    description,
+    tone,
+  }: {
+    title: string;
+    value: string | number;
+    description: string;
+    tone: string;
+  }) => (
     <div className={`rounded-2xl p-5 text-white shadow-lg ${tone}`}>
       <div className="text-xs font-bold uppercase tracking-[0.2em] opacity-80">{title}</div>
       <div className="text-3xl font-bold mt-3">{value}</div>
@@ -273,7 +333,10 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
       {selectedInsight && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <ErrorBoundary>
-            <InsightDetailModal insight={selectedInsight} onClose={() => setSelectedInsight(null)} />
+            <InsightDetailModal
+              insight={selectedInsight}
+              onClose={() => setSelectedInsight(null)}
+            />
           </ErrorBoundary>
         </div>
       )}
@@ -290,9 +353,12 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
               </button>
             </div>
             <p className="text-sm text-slate-500 mb-4 leading-relaxed">
-              Introduce el <strong>Client ID</strong> de tu proyecto en Google Cloud para conectar Search Console.
+              Introduce el <strong>Client ID</strong> de tu proyecto en Google Cloud para conectar
+              Search Console.
             </p>
-            <label className="block text-xs font-bold uppercase text-slate-400 mb-1">OAuth 2.0 Client ID</label>
+            <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+              OAuth 2.0 Client ID
+            </label>
             <input
               type="text"
               className="w-full p-3 border rounded-lg mb-4 bg-slate-50 dark:bg-slate-900 dark:border-slate-700 font-mono text-sm"
@@ -314,7 +380,9 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-3">
             Visión General de Madurez
-            <span className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${badge.color} border border-black/5`}>
+            <span
+              className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${badge.color} border border-black/5`}
+            >
               {badge.title}
             </span>
           </h2>
@@ -325,7 +393,10 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
         <div className="flex items-center gap-2">
           {!googleUser ? (
             <>
-              <button onClick={() => setShowGscConfig(true)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+              <button
+                onClick={() => setShowGscConfig(true)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
                 <Settings size={20} />
               </button>
               <button
@@ -339,11 +410,17 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
           ) : (
             <div className="flex items-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 pr-4 shadow-sm">
               <div className="relative">
-                <img src={googleUser.picture} alt="Avatar" className="w-8 h-8 rounded-full border border-slate-200" />
+                <img
+                  src={googleUser.picture}
+                  alt="Avatar"
+                  className="w-8 h-8 rounded-full border border-slate-200"
+                />
                 <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full"></div>
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">{googleUser.name}</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">
+                  {googleUser.name}
+                </span>
                 <span className="text-[10px] text-slate-400 leading-tight">{googleUser.email}</span>
               </div>
               <button onClick={handleLogoutGsc} className="ml-2 text-slate-400 hover:text-red-500">
@@ -387,7 +464,9 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
         <HeroMetric
           title="Oportunidades top"
           value={topOpportunities.length}
-          description={topOpportunities[0]?.title || 'Sin oportunidades destacadas en este periodo.'}
+          description={
+            topOpportunities[0]?.title || 'Sin oportunidades destacadas en este periodo.'
+          }
           tone="bg-gradient-to-br from-emerald-500 to-teal-600"
         />
         <HeroMetric
@@ -398,8 +477,8 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
         />
         <HeroMetric
           title="Comparativa"
-          value={comparisonPeriod ? `${comparisonPeriod.previous.startDate} → ${comparisonPeriod.previous.endDate}` : 'N/A'}
-          description="Cada insight compara el periodo actual contra la ventana previa equivalente cuando hay datos suficientes."
+          value={comparisonPeriod ? GSC_COMPARISON_MODE_LABELS[comparisonPeriod.mode] : 'N/A'}
+          description={comparisonSummary}
           tone="bg-gradient-to-br from-blue-500 to-indigo-600"
         />
       </section>
@@ -409,7 +488,8 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
           <div>
             <h3 className="font-bold text-lg">Motor de insights SEO</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Del dato GSC al diagnóstico: origen, regla, prioridad y acción quedan trazados en una estructura homogénea.
+              Del dato GSC al diagnóstico: origen, regla, prioridad y acción quedan trazados en una
+              estructura homogénea.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -427,7 +507,9 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
             <select
               className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm"
               value={selectedPriority}
-              onChange={(e) => setSelectedPriority(e.target.value as 'all' | 'high' | 'medium' | 'low')}
+              onChange={(e) =>
+                setSelectedPriority(e.target.value as 'all' | 'high' | 'medium' | 'low')
+              }
             >
               <option value="all">Todas las prioridades</option>
               <option value="high">Alta</option>
@@ -449,10 +531,15 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {groupedInsights.map((group) => (
-            <div key={group.category} className="rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-5">
+            <div
+              key={group.category}
+              className="rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-5"
+            >
               <div className="flex items-center justify-between gap-3 mb-2">
                 <h4 className="font-bold text-slate-900 dark:text-white">{group.label}</h4>
-                <span className={`text-xs px-2 py-1 rounded-full font-bold ${priorityStyles[group.topPriority]}`}>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full font-bold ${priorityStyles[group.topPriority]}`}
+                >
                   Prioridad {priorityLabel[group.topPriority]}
                 </span>
               </div>
@@ -466,12 +553,18 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                   >
                     <div className="flex justify-between gap-3">
                       <div>
-                        <div className="font-semibold text-sm text-slate-900 dark:text-white">{insight.title}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{insight.summary}</div>
+                        <div className="font-semibold text-sm text-slate-900 dark:text-white">
+                          {insight.title}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                          {insight.summary}
+                        </div>
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold">{insight.score}</div>
-                        <div className="text-[10px] uppercase tracking-wide text-slate-400">score</div>
+                        <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                          score
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -496,7 +589,9 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                     <TrendingUp size={24} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-slate-800 dark:text-white">Rendimiento en Búsqueda</h3>
+                    <h3 className="font-bold text-lg text-slate-800 dark:text-white">
+                      Rendimiento en Búsqueda
+                    </h3>
                     <div className="text-xs text-slate-500 font-medium flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-green-500"></span>
                       Datos reales de Search Console
@@ -514,6 +609,15 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                     }}
                   />
                   <div className="flex flex-col gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 min-w-[240px]">
+                    <select
+                      className="w-full bg-white dark:bg-slate-950 text-xs font-medium px-2 py-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                      value={comparisonMode}
+                      onChange={(e) => setComparisonMode(e.target.value as GSCComparisonMode)}
+                      aria-label="Tipo de comparativa GSC"
+                    >
+                      <option value="previous_period">Comparar con periodo pasado</option>
+                      <option value="previous_year">Comparar con año pasado</option>
+                    </select>
                     <div className="flex items-center gap-2">
                       <Search size={14} className="ml-1 text-slate-400" />
                       <input
@@ -539,9 +643,7 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                             </option>
                           ))
                         ) : (
-                          <option value={selectedSite}>
-                            No hay propiedades que coincidan
-                          </option>
+                          <option value={selectedSite}>No hay propiedades que coincidan</option>
                         )}
                       </select>
                     </div>
@@ -554,7 +656,9 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                 {comparisonPeriod && (
                   <>
                     {' '}
-                    · Comparado contra <strong>{comparisonPeriod.previous.startDate}</strong> a <strong>{comparisonPeriod.previous.endDate}</strong>
+                    · {GSC_COMPARISON_MODE_LABELS[comparisonPeriod.mode]}:{' '}
+                    <strong>{comparisonPeriod.previous.startDate}</strong> a{' '}
+                    <strong>{comparisonPeriod.previous.endDate}</strong>
                   </>
                 )}
               </div>
@@ -566,18 +670,31 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                     <Skeleton width="60%" height="20px" />
                     <span className="text-sm">Sincronizando datos de Google...</span>
                   </div>
-                ) : gscData.length > 0 ? (
+                ) : gscChartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={gscData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <AreaChart
+                      data={gscChartData}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
                       <defs>
                         <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
                           <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
-                      <XAxis dataKey="keys[0]" hide axisLine={false} tickLine={false} />
-                      <YAxis orientation="right" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="#e2e8f0"
+                        opacity={0.5}
+                      />
+                      <XAxis dataKey="label" hide axisLine={false} tickLine={false} />
+                      <YAxis
+                        orientation="right"
+                        tick={{ fontSize: 10, fill: '#94a3b8' }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
                       <Tooltip
                         contentStyle={{
                           borderRadius: '12px',
@@ -588,15 +705,47 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                         }}
                         labelStyle={{ color: '#64748b', fontSize: '12px', marginBottom: '4px' }}
                       />
-                      <Area type="monotone" dataKey="clicks" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorClicks)" name="Clics" activeDot={{ r: 6, strokeWidth: 0 }} />
-                      <Area type="monotone" dataKey="impressions" stroke="#94a3b8" strokeWidth={2} fillOpacity={0} strokeDasharray="5 5" name="Impresiones" />
+                      <Area
+                        type="monotone"
+                        dataKey="currentClicks"
+                        stroke="#3b82f6"
+                        strokeWidth={3}
+                        fillOpacity={1}
+                        fill="url(#colorClicks)"
+                        name="Clics actuales"
+                        activeDot={{ r: 6, strokeWidth: 0 }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="comparisonClicks"
+                        stroke="#0f766e"
+                        strokeWidth={2}
+                        fillOpacity={0}
+                        strokeDasharray="6 6"
+                        name={
+                          comparisonPeriod
+                            ? `Clics ${GSC_COMPARISON_MODE_LABELS[comparisonPeriod.mode]}`
+                            : 'Clics comparados'
+                        }
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="currentImpressions"
+                        stroke="#94a3b8"
+                        strokeWidth={2}
+                        fillOpacity={0}
+                        strokeDasharray="5 5"
+                        name="Impresiones actuales"
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                     <Search size={32} className="mb-2 opacity-50" />
                     <p className="text-sm">Sin datos disponibles para este periodo.</p>
-                    <p className="text-xs opacity-70">Prueba cambiando de propiedad o verifica tu Search Console.</p>
+                    <p className="text-xs opacity-70">
+                      Prueba cambiando de propiedad o verifica tu Search Console.
+                    </p>
                   </div>
                 )}
               </div>
@@ -610,14 +759,24 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                       <CheckCircle2 size={24} />
                     </div>
                   </div>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Tareas Completadas</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
+                    Tareas Completadas
+                  </p>
                   <h3 className="text-3xl font-bold mt-1">
-                    {modules.reduce((acc, m) => acc + m.tasks.filter((t) => t.status === 'completed').length, 0)}
-                    <span className="text-slate-300 dark:text-slate-600 text-lg ml-2 font-normal">/ {modules.reduce((acc, m) => acc + m.tasks.length, 0)}</span>
+                    {modules.reduce(
+                      (acc, m) => acc + m.tasks.filter((t) => t.status === 'completed').length,
+                      0,
+                    )}
+                    <span className="text-slate-300 dark:text-slate-600 text-lg ml-2 font-normal">
+                      / {modules.reduce((acc, m) => acc + m.tasks.length, 0)}
+                    </span>
                   </h3>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full mt-4">
-                  <div className="bg-blue-500 h-full rounded-full" style={{ width: `${globalScore}%` }}></div>
+                  <div
+                    className="bg-blue-500 h-full rounded-full"
+                    style={{ width: `${globalScore}%` }}
+                  ></div>
                 </div>
               </div>
 
@@ -631,11 +790,18 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                       Acción Requerida
                     </span>
                   </div>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Próxima Prioridad</p>
-                  <h3 className="text-xl font-bold mt-1 line-clamp-2">{nextModule ? nextModule.title : 'Todo Limpio'}</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
+                    Próxima Prioridad
+                  </p>
+                  <h3 className="text-xl font-bold mt-1 line-clamp-2">
+                    {nextModule ? nextModule.title : 'Todo Limpio'}
+                  </h3>
                 </div>
                 {nextModule && (
-                  <button onClick={() => navigate(`/app/module/${nextModule.id}`)} className="mt-4 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1">
+                  <button
+                    onClick={() => navigate(`/app/module/${nextModule.id}`)}
+                    className="mt-4 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1"
+                  >
                     Ir al Módulo <ArrowRight size={16} />
                   </button>
                 )}
@@ -650,10 +816,32 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.3} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                  <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#334155"
+                    opacity={0.3}
+                  />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#64748b', fontSize: 12 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#64748b', fontSize: 12 }}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    contentStyle={{
+                      borderRadius: '12px',
+                      border: 'none',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                  />
                   <Bar dataKey="score" radius={[6, 6, 0, 0]} barSize={40}>
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -670,16 +858,27 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
             <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
               <h3 className="font-bold mb-4 flex items-center gap-2">
                 <Flame className="text-orange-500" size={20} /> Top Consultas
-                <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase">GSC Data</span>
+                <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase">
+                  GSC Data
+                </span>
               </h3>
               <div className="space-y-3">
                 {topQueries.items.slice(0, 5).map((t, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer group">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer group"
+                  >
                     <div>
-                      <div className="text-sm font-semibold group-hover:text-blue-500 line-clamp-1">{t.keys[0]}</div>
-                      <div className="text-xs text-slate-400">Posición: {t.position.toFixed(1)}</div>
+                      <div className="text-sm font-semibold group-hover:text-blue-500 line-clamp-1">
+                        {t.keys[0]}
+                      </div>
+                      <div className="text-xs text-slate-400">
+                        Posición: {t.position.toFixed(1)}
+                      </div>
                     </div>
-                    <div className="text-xs font-bold text-slate-700 dark:text-slate-300">{t.clicks.toLocaleString()} clics</div>
+                    <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      {t.clicks.toLocaleString()} clics
+                    </div>
                   </div>
                 ))}
               </div>
@@ -689,7 +888,9 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
               <h3 className="font-bold mb-4 flex items-center gap-2">
                 <Flame className="text-slate-400" size={20} /> Top Consultas
               </h3>
-              <div className="text-sm text-slate-400 text-center py-4">Sin datos de consultas recientes.</div>
+              <div className="text-sm text-slate-400 text-center py-4">
+                Sin datos de consultas recientes.
+              </div>
             </div>
           )}
 
@@ -700,8 +901,21 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                   <PolarGrid stroke="#64748b" opacity={0.3} />
                   <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10 }} />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                  <Radar name="Madurez" dataKey="A" stroke="#3b82f6" strokeWidth={2} fill="#3b82f6" fillOpacity={0.3} />
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Radar
+                    name="Madurez"
+                    dataKey="A"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    fill="#3b82f6"
+                    fillOpacity={0.3}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '12px',
+                      border: 'none',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                  />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -722,23 +936,34 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
               className="group bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/5 transition-all cursor-pointer"
             >
               <div className="flex justify-between items-start mb-4">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nivel {m.levelRange}</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Nivel {m.levelRange}
+                </span>
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${progress === 100 ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-900 group-hover:text-blue-600 dark:group-hover:text-blue-400'}`}
                 >
                   M{m.id}
                 </div>
               </div>
-              <h3 className="font-bold text-slate-800 dark:text-white text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{m.title}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-2 h-10">{m.description}</p>
+              <h3 className="font-bold text-slate-800 dark:text-white text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                {m.title}
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-2 h-10">
+                {m.description}
+              </p>
 
               <div className="mt-6">
                 <div className="flex justify-between text-xs font-medium text-slate-400 mb-1">
                   <span>Progreso</span>
-                  <span>{completedCount}/{totalCount}</span>
+                  <span>
+                    {completedCount}/{totalCount}
+                  </span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                  <div className="bg-blue-500 h-full rounded-full" style={{ width: `${progress}%` }}></div>
+                  <div
+                    className="bg-blue-500 h-full rounded-full"
+                    style={{ width: `${progress}%` }}
+                  ></div>
                 </div>
               </div>
             </div>
