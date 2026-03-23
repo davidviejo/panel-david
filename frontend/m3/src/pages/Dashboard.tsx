@@ -31,6 +31,8 @@ import {
   X,
   Search,
   Globe,
+  HelpCircle,
+  Upload,
 } from 'lucide-react';
 import { useToast } from '../components/ui/ToastContext';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -41,6 +43,7 @@ import { GSCDateRangeControl } from '../components/GSCDateRangeControl';
 import { InsightDetailModal } from '../components/InsightDetailModal';
 import { SeoInsight, SeoInsightCategory } from '../types/seoInsights';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { buildIgnoredEntryKey, useSeoIgnoredItems } from '../hooks/useSeoIgnoredItems';
 
 const GSC_COMPARISON_MODE_LABELS: Record<GSCComparisonMode, string> = {
   previous_period: 'Periodo anterior',
@@ -91,6 +94,7 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
   );
   const [gscSiteQuery, setGscSiteQuery] = useState('');
   const [comparisonMode, setComparisonMode] = useState<GSCComparisonMode>('previous_period');
+  const [showInsightsHelp, setShowInsightsHelp] = useState(false);
 
   const [startDate, setStartDate] = useState<string>(() => {
     const d = new Date();
@@ -119,8 +123,16 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
     comparisonGscData,
     comparisonPeriod,
     isLoadingGsc,
-    insights: { insights, groupedInsights, topOpportunities, topRisks, topQueries },
+    insights: { insights, groupedInsights },
   } = useGSCData(gscAccessToken, startDate, endDate, comparisonMode);
+
+  const {
+    entries: ignoredEntries,
+    isIgnored,
+    ignoreRow,
+    unignoreKey,
+    importEntries,
+  } = useSeoIgnoredItems();
 
   const filteredGscSites = useMemo(() => {
     const normalizedQuery = gscSiteQuery.trim().toLowerCase();
@@ -198,27 +210,72 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
     [modules],
   );
 
+  const actionableInsights = useMemo(
+    () =>
+      insights
+        .map((insight) => {
+          const visibleRows = insight.relatedRows.filter((row) => !isIgnored(row));
+          return {
+            ...insight,
+            relatedRows: visibleRows,
+            affectedCount: visibleRows.length,
+          };
+        })
+        .filter((insight) => insight.relatedRows.length > 0),
+    [insights, isIgnored],
+  );
+
+  const actionableGroupedInsights = useMemo(
+    () =>
+      groupedInsights
+        .map((group) => ({
+          ...group,
+          insights: group.insights
+            .map((insight) => {
+              const visibleRows = insight.relatedRows.filter((row) => !isIgnored(row));
+              return {
+                ...insight,
+                relatedRows: visibleRows,
+                affectedCount: visibleRows.length,
+              };
+            })
+            .filter((insight) => insight.relatedRows.length > 0),
+        }))
+        .filter((group) => group.insights.length > 0),
+    [groupedInsights, isIgnored],
+  );
+
+  const actionableTopOpportunities = useMemo(
+    () => actionableInsights.filter((insight) => insight.category === 'opportunity').slice(0, 3),
+    [actionableInsights],
+  );
+
+  const actionableTopRisks = useMemo(
+    () => actionableInsights.filter((insight) => insight.category === 'risk').slice(0, 3),
+    [actionableInsights],
+  );
+
   const filteredInsights = useMemo(
     () =>
-      insights.filter((insight) => {
+      actionableInsights.filter((insight) => {
         const categoryMatch = selectedCategory === 'all' || insight.category === selectedCategory;
         const priorityMatch = selectedPriority === 'all' || insight.priority === selectedPriority;
         return categoryMatch && priorityMatch;
       }),
-    [insights, selectedCategory, selectedPriority],
+    [actionableInsights, selectedCategory, selectedPriority],
   );
 
   const categoryOptions = useMemo(
     () => [
       { value: 'all', label: 'Todas las categorías' },
-      ...groupedInsights.map((group) => ({ value: group.category, label: group.label })),
+      ...actionableGroupedInsights.map((group) => ({ value: group.category, label: group.label })),
     ],
-    [groupedInsights],
+    [actionableGroupedInsights],
   );
 
   const handleExport = () => {
     const date = new Date().toLocaleDateString();
-    const text = `REPORTE SEO MEDIAFLOW - ${date}\nPuntuación Global: ${globalScore}% (${badge.title})\nInsights activos: ${insights.length}\n\n${modules.map((m) => `${m.title}: ${m.tasks.filter((t) => t.status === 'completed').length}/${m.tasks.length}`).join('\n')}`;
+    const text = `REPORTE SEO MEDIAFLOW - ${date}\nPuntuación Global: ${globalScore}% (${badge.title})\nInsights activos: ${actionableInsights.length}\n\n${modules.map((m) => `${m.title}: ${m.tasks.filter((t) => t.status === 'completed').length}/${m.tasks.length}`).join('\n')}`;
     const blob = new Blob([text], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -341,7 +398,6 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
     </button>
   );
 
-
   return (
     <div className="space-y-8 animate-fade-in text-slate-900 dark:text-slate-100 relative">
       {selectedInsight && (
@@ -350,8 +406,92 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
             <InsightDetailModal
               insight={selectedInsight}
               onClose={() => setSelectedInsight(null)}
+              isIgnored={isIgnored}
+              onIgnoreRow={(row) => {
+                ignoreRow(row);
+                showSuccess('Fila marcada como ya gestionada.');
+              }}
+              onUnignoreRow={(key) => {
+                unignoreKey(key);
+                showSuccess('Fila reincorporada al análisis.');
+              }}
+              buildIgnoredKey={buildIgnoredEntryKey}
             />
           </ErrorBoundary>
+        </div>
+      )}
+
+      {showInsightsHelp && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <HelpCircle size={20} /> Ayuda · evitar reanalizar trabajo ya realizado
+                </h3>
+                <p className="text-sm text-slate-500 mt-2">
+                  Puedes excluir consultas/URLs ya gestionadas una a una o importando un listado en
+                  CSV.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowInsightsHelp(false)}
+                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
+                <div className="font-semibold text-slate-900 dark:text-white">
+                  Opción 1 · marcar desde cada insight
+                </div>
+                <ol className="mt-2 list-decimal pl-5 text-sm text-slate-600 dark:text-slate-300 space-y-2">
+                  <li>Abre un insight concreto.</li>
+                  <li>En cada fila usa el icono de bloquear para marcarla como "ya gestionada".</li>
+                  <li>
+                    La fila se ocultará aquí y dejará de entrar en futuros análisis del motor.
+                  </li>
+                </ol>
+              </div>
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
+                <div className="font-semibold text-slate-900 dark:text-white">
+                  Opción 2 · importar un sheet/CSV
+                </div>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                  Sube un CSV con cabeceras <strong>query</strong> y <strong>url</strong>, o con
+                  esas dos columnas en ese orden.
+                </p>
+                <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700">
+                  <Upload size={16} /> Importar CSV
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      const content = await file.text();
+                      const importedCount = importEntries(content);
+                      showSuccess(`${importedCount} filas añadidas a exclusiones.`);
+                      event.target.value = '';
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/20 dark:text-amber-200">
+              <div className="font-semibold">Formato recomendado del sheet</div>
+              <pre className="mt-2 overflow-x-auto rounded-lg bg-white/80 dark:bg-slate-900/50 p-3 text-xs">{`query,url
+mejores zapatillas running,https://dominio.com/running
+auditoria seo local,https://dominio.com/seo-local`}</pre>
+              <p className="mt-2">
+                Exclusiones guardadas actualmente: <strong>{ignoredEntries.length}</strong>.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -471,22 +611,22 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <HeroMetric
           title="Insights activos"
-          value={insights.length}
+          value={actionableInsights.length}
           description="Señales priorizadas por impacto, urgencia, confianza y facilidad de implementación."
           tone="bg-gradient-to-br from-slate-900 to-slate-700"
         />
         <HeroMetric
           title="Oportunidades top"
-          value={topOpportunities.length}
+          value={actionableTopOpportunities.length}
           description={
-            topOpportunities[0]?.title || 'Sin oportunidades destacadas en este periodo.'
+            actionableTopOpportunities[0]?.title || 'Sin oportunidades destacadas en este periodo.'
           }
           tone="bg-gradient-to-br from-emerald-500 to-teal-600"
         />
         <HeroMetric
           title="Riesgos top"
-          value={topRisks.length}
-          description={topRisks[0]?.title || 'No se detectan riesgos de alta prioridad.'}
+          value={actionableTopRisks.length}
+          description={actionableTopRisks[0]?.title || 'No se detectan riesgos de alta prioridad.'}
           tone="bg-gradient-to-br from-rose-500 to-red-700"
         />
         <HeroMetric
@@ -507,6 +647,13 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => setShowInsightsHelp(true)}
+              className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 text-sm font-medium text-blue-700 dark:text-blue-300 hover:border-blue-300"
+            >
+              <HelpCircle size={16} /> Ayuda
+            </button>
             <select
               className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm"
               value={selectedCategory}
@@ -544,7 +691,7 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {groupedInsights.map((group) => (
+          {actionableGroupedInsights.map((group) => (
             <div
               key={group.category}
               className="rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-5"

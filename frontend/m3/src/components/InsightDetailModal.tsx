@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, ExternalLink, Download, Search, Sparkles, Bot, Plus } from 'lucide-react';
+import { X, ExternalLink, Download, Search, Sparkles, Plus, Ban, Undo2, Bot } from 'lucide-react';
 import { SeoInsight } from '../types/seoInsights';
 import { generateSEOAnalysis } from '../services/geminiService';
 import { generateSEOAnalysisWithOpenAI } from '../services/openaiService';
@@ -10,9 +10,20 @@ import { useProject } from '../context/ProjectContext';
 interface InsightDetailModalProps {
   insight: SeoInsight;
   onClose: () => void;
+  isIgnored: (row: { keys: string[] }) => boolean;
+  onIgnoreRow: (row: { keys: string[] }) => void;
+  onUnignoreRow: (key: string) => void;
+  buildIgnoredKey: (query?: string, url?: string) => string;
 }
 
-export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insight, onClose }) => {
+export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({
+  insight,
+  onClose,
+  isIgnored,
+  onIgnoreRow,
+  onUnignoreRow,
+  buildIgnoredKey,
+}) => {
   const [filter, setFilter] = useState('');
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -23,11 +34,17 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insight,
   const filteredItems = useMemo(() => {
     const lowerFilter = filter.toLowerCase();
     return (
-      insight?.relatedRows?.filter((item) =>
-        item.keys?.some((k) => k?.toLowerCase().includes(lowerFilter)),
-      ) || []
+      insight?.relatedRows?.filter((item) => {
+        const matchesFilter = item.keys?.some((k) => k?.toLowerCase().includes(lowerFilter));
+        return matchesFilter && !isIgnored(item);
+      }) || []
     );
-  }, [insight?.relatedRows, filter]);
+  }, [insight?.relatedRows, filter, isIgnored]);
+
+  const ignoredItems = useMemo(
+    () => insight?.relatedRows?.filter((item) => isIgnored(item)) || [],
+    [insight?.relatedRows, isIgnored],
+  );
 
   const handleCreateTask = (item: any) => {
     let targetModule = modules.find((m) => m.isCustom || m.title.includes('Extras'));
@@ -82,7 +99,9 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insight,
 
   const handleAiAnalysis = async (provider: 'gemini' | 'openai' = 'gemini') => {
     if (!getApiKey(provider)) {
-      showError(`Configura tu API Key de ${provider === 'gemini' ? 'Gemini' : 'OpenAI'} en Ajustes.`);
+      showError(
+        `Configura tu API Key de ${provider === 'gemini' ? 'Gemini' : 'OpenAI'} en Ajustes.`,
+      );
       return;
     }
 
@@ -129,22 +148,31 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insight,
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">{insight.title}</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{insight.summary}</p>
         </div>
-        <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-500">
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-500"
+        >
           <X size={20} />
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
         <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4">
-          <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-2">Diagnóstico</div>
+          <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-2">
+            Diagnóstico
+          </div>
           <p className="text-sm text-slate-700 dark:text-slate-300">{insight.reason}</p>
         </div>
         <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4">
-          <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-2">Acción recomendada</div>
+          <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-2">
+            Acción recomendada
+          </div>
           <p className="text-sm text-slate-700 dark:text-slate-300">{insight.action}</p>
         </div>
         <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4">
-          <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-2">Priorización</div>
+          <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-2">
+            Priorización
+          </div>
           <div className="grid grid-cols-3 gap-3 text-sm">
             <div>
               <div className="text-slate-400">Score</div>
@@ -161,10 +189,15 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insight,
           </div>
         </div>
         <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4">
-          <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-2">Evidencia</div>
+          <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 mb-2">
+            Evidencia
+          </div>
           <div className="space-y-2">
             {insight.evidence.map((item, index) => (
-              <div key={`${item.label}-${index}`} className="text-sm text-slate-700 dark:text-slate-300">
+              <div
+                key={`${item.label}-${index}`}
+                className="text-sm text-slate-700 dark:text-slate-300"
+              >
                 <strong>{item.label}</strong>: {item.value}
                 {item.context ? <span className="text-slate-400"> · {item.context}</span> : null}
               </div>
@@ -184,22 +217,66 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insight,
             onChange={(e) => setFilter(e.target.value)}
           />
         </div>
-        <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors">
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors"
+        >
           <Download size={16} /> CSV
         </button>
       </div>
 
       {aiAnalysis && (
         <div className="mx-6 mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-100 dark:border-purple-800 animate-in fade-in slide-in-from-top-2 relative">
-          <button onClick={() => setAiAnalysis(null)} className="absolute top-2 right-2 text-slate-400 hover:text-slate-600">
+          <button
+            onClick={() => setAiAnalysis(null)}
+            className="absolute top-2 right-2 text-slate-400 hover:text-slate-600"
+          >
             <X size={16} />
           </button>
           <h4 className="text-purple-800 dark:text-purple-300 font-bold text-sm mb-2 flex items-center gap-2">
             <Sparkles size={16} /> Análisis IA
           </h4>
-          <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">{aiAnalysis}</div>
+          <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+            {aiAnalysis}
+          </div>
         </div>
       )}
+
+      <div className="px-4 pb-2">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/20 p-4 text-sm text-amber-900 dark:text-amber-200">
+          <div className="font-semibold">Evitar reanalizar lo ya gestionado</div>
+          <p className="mt-1 text-amber-800 dark:text-amber-300">
+            Marca consultas/URLs como resueltas para que desaparezcan de este insight y de futuros
+            análisis del motor SEO.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3 text-xs">
+            <span className="rounded-full bg-white/80 dark:bg-slate-900/60 px-3 py-1 border border-amber-200 dark:border-amber-900">
+              Activos: {filteredItems.length}
+            </span>
+            <span className="rounded-full bg-white/80 dark:bg-slate-900/60 px-3 py-1 border border-amber-200 dark:border-amber-900">
+              Omitidos: {ignoredItems.length}
+            </span>
+          </div>
+          {ignoredItems.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {ignoredItems.slice(0, 6).map((item, index) => {
+                const ignoredKey = buildIgnoredKey(item.keys?.[0], item.keys?.[1]);
+                return (
+                  <button
+                    key={`${ignoredKey}-${index}`}
+                    onClick={() => onUnignoreRow(ignoredKey)}
+                    className="inline-flex items-center gap-1 rounded-full border border-amber-300 dark:border-amber-800 px-3 py-1 bg-white dark:bg-slate-900 text-xs hover:border-amber-500 transition-colors"
+                    title="Volver a incluir en el análisis"
+                  >
+                    <Undo2 size={12} />
+                    {item.keys?.[0] || 'Fila omitida'}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      </div>
 
       <div className="overflow-auto flex-1 p-4">
         <table className="w-full text-sm text-left">
@@ -217,13 +294,27 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insight,
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {filteredItems.length > 0 ? (
               filteredItems.map((item, i) => (
-                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-200 truncate max-w-[200px]" title={item.keys[0]}>
+                <tr
+                  key={i}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  <td
+                    className="px-4 py-3 font-medium text-slate-700 dark:text-slate-200 truncate max-w-[200px]"
+                    title={item.keys[0]}
+                  >
                     {item.keys[0]}
                   </td>
-                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400 truncate max-w-[200px]" title={item.keys[1]}>
+                  <td
+                    className="px-4 py-3 text-slate-500 dark:text-slate-400 truncate max-w-[200px]"
+                    title={item.keys[1]}
+                  >
                     {item.keys[1] ? (
-                      <a href={item.keys[1]} target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 flex items-center gap-1">
+                      <a
+                        href={item.keys[1]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-blue-500 flex items-center gap-1"
+                      >
                         {item.keys[1].replace('https://', '').split('/').pop() || '/'}
                         <ExternalLink size={10} />
                       </a>
@@ -231,18 +322,35 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insight,
                       '-'
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-slate-600 dark:text-slate-300">{item.clicks.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right font-mono text-slate-500">{item.impressions.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right font-mono text-slate-500">{(item.ctr * 100).toFixed(1)}%</td>
-                  <td className="px-4 py-3 text-right font-mono font-bold text-blue-600 dark:text-blue-400">{item.position.toFixed(1)}</td>
+                  <td className="px-4 py-3 text-right font-mono text-slate-600 dark:text-slate-300">
+                    {item.clicks.toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-slate-500">
+                    {item.impressions.toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-slate-500">
+                    {(item.ctr * 100).toFixed(1)}%
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono font-bold text-blue-600 dark:text-blue-400">
+                    {item.position.toFixed(1)}
+                  </td>
                   <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => handleCreateTask(item)}
-                      className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg transition-colors"
-                      title="Convertir en Tarea"
-                    >
-                      <Plus size={16} />
-                    </button>
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={() => handleCreateTask(item)}
+                        className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg transition-colors"
+                        title="Convertir en Tarea"
+                      >
+                        <Plus size={16} />
+                      </button>
+                      <button
+                        onClick={() => onIgnoreRow(item)}
+                        className="p-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-lg transition-colors"
+                        title="Marcar como ya gestionado"
+                      >
+                        <Ban size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -258,7 +366,9 @@ export const InsightDetailModal: React.FC<InsightDetailModalProps> = ({ insight,
       </div>
 
       <div className="p-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 flex justify-between items-center">
-        <span>Mostrando {filteredItems.length} de {insight.affectedCount} items totales.</span>
+        <span>
+          Mostrando {filteredItems.length} de {insight.affectedCount} items totales.
+        </span>
         <div className="flex gap-2">
           <button
             onClick={() => handleAiAnalysis('gemini')}
