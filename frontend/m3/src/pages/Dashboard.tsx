@@ -56,6 +56,7 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
   const [selectedInsight, setSelectedInsight] = useState<SeoInsight | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<SeoInsightCategory | 'all'>('all');
   const [selectedPriority, setSelectedPriority] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [gscSiteQuery, setGscSiteQuery] = useState('');
 
   const [startDate, setStartDate] = useState<string>(() => {
     const d = new Date();
@@ -85,6 +86,16 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
     isLoadingGsc,
     insights: { insights, groupedInsights, topOpportunities, topRisks, topQueries },
   } = useGSCData(gscAccessToken, startDate, endDate);
+
+  const filteredGscSites = useMemo(() => {
+    const normalizedQuery = gscSiteQuery.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return gscSites;
+    }
+
+    return gscSites.filter((site) => site.siteUrl.toLowerCase().includes(normalizedQuery));
+  }, [gscSiteQuery, gscSites]);
 
   const badge = useMemo(() => {
     if (globalScore >= 95)
@@ -502,19 +513,38 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                       setEndDate(end);
                     }}
                   />
-                  <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
-                    <Globe size={14} className="ml-2 text-slate-400" />
-                    <select
-                      className="bg-transparent text-xs font-medium p-1.5 outline-none text-slate-700 dark:text-slate-300 max-w-[180px]"
-                      value={selectedSite}
-                      onChange={(e) => setSelectedSite(e.target.value)}
-                    >
-                      {gscSites.map((site) => (
-                        <option key={site.siteUrl} value={site.siteUrl}>
-                          {site.siteUrl.replace('sc-domain:', '')}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="flex flex-col gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 min-w-[240px]">
+                    <div className="flex items-center gap-2">
+                      <Search size={14} className="ml-1 text-slate-400" />
+                      <input
+                        type="search"
+                        value={gscSiteQuery}
+                        onChange={(e) => setGscSiteQuery(e.target.value)}
+                        placeholder="Buscar propiedad"
+                        aria-label="Buscar propiedad de Search Console"
+                        className="w-full bg-transparent text-xs font-medium p-1 outline-none text-slate-700 placeholder:text-slate-400 dark:text-slate-300"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 border-t border-slate-200 dark:border-slate-700 pt-2">
+                      <Globe size={14} className="ml-1 text-slate-400" />
+                      <select
+                        className="w-full bg-transparent text-xs font-medium p-1.5 outline-none text-slate-700 dark:text-slate-300"
+                        value={selectedSite}
+                        onChange={(e) => setSelectedSite(e.target.value)}
+                      >
+                        {filteredGscSites.length > 0 ? (
+                          filteredGscSites.map((site) => (
+                            <option key={site.siteUrl} value={site.siteUrl}>
+                              {site.siteUrl.replace('sc-domain:', '')}
+                            </option>
+                          ))
+                        ) : (
+                          <option value={selectedSite}>
+                            No hay propiedades que coincidan
+                          </option>
+                        )}
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
