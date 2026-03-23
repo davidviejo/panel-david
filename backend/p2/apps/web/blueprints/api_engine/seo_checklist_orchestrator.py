@@ -61,7 +61,11 @@ def run_orchestrated_checklist(
     text_content = soup.get_text(" ", strip=True) if soup else ""
 
     # --- CONFIG & GUARDRAILS (Advanced Analysis) ---
-    user_settings = get_user_settings()
+    try:
+        user_settings = get_user_settings()
+    except Exception as exc:
+        logging.warning(f"Falling back to default user settings during checklist analysis: {exc}")
+        user_settings = {}
 
     advanced_mode = False
     advanced_blocked_reason = None
