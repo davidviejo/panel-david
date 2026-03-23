@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { X, Clipboard, Upload } from 'lucide-react';
 import { SeoPage, CHECKLIST_POINTS, ChecklistItem, ChecklistKey } from '../../types/seoChecklist';
 import { normalizeSeoUrl } from '../../utils/seoUrlNormalizer';
+import { useSettings } from '../../context/SettingsContext';
+import { isBrandTermMatch } from '../../utils/brandTerms';
 
 interface Props {
   isOpen: boolean;
@@ -13,6 +15,8 @@ interface Props {
 export const ImportUrlsModal: React.FC<Props> = ({ isOpen, onClose, onImport, existingPages }) => {
   const [inputText, setInputText] = useState('');
   const [ignoreDuplicates, setIgnoreDuplicates] = useState(true);
+  const { settings } = useSettings();
+  const brandTerms = useMemo(() => settings.brandTerms || [], [settings.brandTerms]);
 
   if (!isOpen) return null;
 
@@ -43,10 +47,14 @@ export const ImportUrlsModal: React.FC<Props> = ({ isOpen, onClose, onImport, ex
           };
         });
 
+        const kwPrincipal = parts[1];
+        const isBrandKeyword = isBrandTermMatch(kwPrincipal, brandTerms);
+
         newPages.push({
           id: crypto.randomUUID(),
           url: normalizeSeoUrl(parts[0]),
-          kwPrincipal: parts[1],
+          kwPrincipal: isBrandKeyword ? '' : kwPrincipal,
+          isBrandKeyword,
           pageType: parts[2] || 'Article',
           geoTarget: parts[3] || '',
           cluster: parts[4] || '',
@@ -106,6 +114,12 @@ export const ImportUrlsModal: React.FC<Props> = ({ isOpen, onClose, onImport, ex
               URL | Keyword Principal | Tipo Página | Geo (Opcional) | Cluster (Opcional)
             </code>
           </p>
+          {brandTerms.length > 0 && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mb-4">
+              Términos de marca activos: {brandTerms.join(', ')}. Si la keyword coincide, la URL
+              se importará como "KW de marca" y sin keyword principal asignada.
+            </p>
+          )}
 
           <textarea
             value={inputText}

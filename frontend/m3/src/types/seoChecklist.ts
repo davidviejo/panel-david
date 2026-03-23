@@ -70,6 +70,7 @@ export interface Capabilities {
 }
 
 export interface SeoChecklistSettings {
+  brandTerms?: string[];
   serp: {
     enabled: boolean;
     provider: 'serpapi' | 'dataforseo' | 'internal';

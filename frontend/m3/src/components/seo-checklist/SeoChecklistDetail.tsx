@@ -8,6 +8,7 @@ import {
 import { ChecklistItem } from './ChecklistItem';
 import { runPageAnalysis } from '../../utils/seoUtils';
 import { normalizeSeoUrl } from '../../utils/seoUrlNormalizer';
+import { useSeoChecklistSettings } from '../../hooks/useSeoChecklistSettings';
 import {
   Play,
   Loader2,
@@ -38,6 +39,7 @@ export const SeoChecklistDetail: React.FC<Props> = ({
   onUpdateChecklistItem,
   onBack,
 }) => {
+  const { settings } = useSeoChecklistSettings();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -104,7 +106,14 @@ export const SeoChecklistDetail: React.FC<Props> = ({
     setIsAnalyzing(true);
     setError(null);
     try {
-      const updates = await runPageAnalysis(page);
+      const updates = await runPageAnalysis(page, {
+        mode: settings.serp.enabled ? 'advanced' : 'basic',
+        serp: {
+          ...settings.serp,
+          confirmed: settings.serp.enabled,
+        },
+        budgets: settings.budgets,
+      });
       onUpdatePage(page.id, updates);
     } catch (err: any) {
       setError(err.message || 'Error de conexión con el motor de análisis.');

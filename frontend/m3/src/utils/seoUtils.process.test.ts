@@ -55,7 +55,9 @@ describe('processAnalysisResult', () => {
 
     const updates = processAnalysisResult(mockPage, result, gscQueries);
 
-    expect(updates.checklist?.OPORTUNIDADES.autoData.gscQueries).toEqual(gscQueries);
+    expect(updates.checklist?.OPORTUNIDADES.autoData.gscQueries).toEqual([
+      expect.objectContaining({ keys: ['test'], query: 'test', clicks: 10 }),
+    ]);
     expect(updates.checklist?.OPORTUNIDADES.autoData.kwPrincipalInGSC).toBe(true);
   });
 

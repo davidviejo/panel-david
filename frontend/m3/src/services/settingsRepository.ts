@@ -6,6 +6,7 @@ export interface AppSettings {
   mistralApiKey?: string;
   mistralModel?: string;
   gscClientId?: string;
+  brandTerms?: string[];
 }
 
 const SETTINGS_KEY = 'mediaflow_app_settings';
@@ -25,6 +26,7 @@ export class SettingsRepository {
     const legacyGscId = localStorage.getItem('mediaflow_gsc_client_id');
     return {
       gscClientId: legacyGscId || undefined,
+      brandTerms: [],
       openaiModel: 'gpt-4o',
       mistralModel: 'mistral-large-latest',
       geminiModel: 'gemini-1.5-pro',

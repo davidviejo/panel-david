@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Save, Key, AlertTriangle } from 'lucide-react';
 import { useToast } from '../components/ui/ToastContext';
 import { useSettings } from '../context/SettingsContext';
 import DataManagementPanel from '../components/DataManagementPanel';
+import { parseBrandTerms } from '../utils/brandTerms';
 
 const Settings: React.FC = () => {
   const { settings, updateSettings } = useSettings();
@@ -17,7 +18,9 @@ const Settings: React.FC = () => {
   const [mistralModel, setMistralModel] = useState(settings.mistralModel || 'mistral-large-latest');
 
   const [gscClientId, setGscClientId] = useState(settings.gscClientId || '');
+  const [brandTermsText, setBrandTermsText] = useState((settings.brandTerms || []).join('\n'));
 
+  const parsedBrandTerms = useMemo(() => parseBrandTerms(brandTermsText), [brandTermsText]);
 
   const handleSave = () => {
     updateSettings({
@@ -28,6 +31,7 @@ const Settings: React.FC = () => {
       geminiModel,
       mistralModel,
       gscClientId: gscClientId,
+      brandTerms: parsedBrandTerms,
     });
     success('Configuración guardada en el navegador.');
   };
@@ -178,6 +182,27 @@ const Settings: React.FC = () => {
           />
           <p className="text-xs text-slate-400">
             Necesario para conectar con GSC desde el navegador.
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 dark:border-slate-700 pb-4">
+          <h2 className="font-bold text-lg dark:text-white">Términos de marca</h2>
+        </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Keywords de marca a excluir como keyword principal
+          </label>
+          <textarea
+            value={brandTermsText}
+            onChange={(e) => setBrandTermsText(e.target.value)}
+            placeholder={"mi marca\nmarca oficial\nnombre comercial"}
+            className="w-full min-h-[140px] px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+          />
+          <p className="text-xs text-slate-400">
+            Introduce un término por línea o separado por comas. Se usará para marcar URLs como
+            de marca al importar o reasignar keywords en la checklist. Detectados: {parsedBrandTerms.length}.
           </p>
         </div>
       </div>

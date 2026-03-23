@@ -3,6 +3,7 @@ import { useProject } from '../context/ProjectContext';
 import { SeoChecklistSettings } from '../types/seoChecklist';
 
 const DEFAULT_SETTINGS: SeoChecklistSettings = {
+  brandTerms: [],
   serp: {
     enabled: false,
     provider: 'dataforseo',

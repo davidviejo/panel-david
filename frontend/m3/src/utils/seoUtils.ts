@@ -3,12 +3,55 @@ import { analyzeUrl, AnalysisResponse } from '../services/pythonEngineClient';
 import { getPageMetrics, getPageQueries } from '../services/googleSearchConsole';
 import { normalizeSeoPageInput } from './seoUrlNormalizer';
 
+
+const normalizeGscQueryRow = (row: any) => {
+  const query = row?.query || row?.keys?.[0] || '';
+  return {
+    ...row,
+    query,
+    keys: Array.isArray(row?.keys) ? row.keys : query ? [query] : [],
+  };
+};
+
+const buildDefaultAnalysisConfig = (): AnalysisConfigPayload => {
+  const raw = localStorage.getItem(Object.keys(localStorage).find((key) => key.startsWith('mediaflow_seo_settings_')) || '');
+  let parsed = null;
+  try {
+    parsed = raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    console.warn('Could not parse SEO checklist settings', error);
+  }
+
+  const serp = parsed?.serp || {};
+  const budgets = parsed?.budgets || {};
+  const mode: 'basic' | 'advanced' = serp.enabled ? 'advanced' : 'basic';
+
+  return {
+    mode,
+    serp: {
+      enabled: Boolean(serp.enabled),
+      provider: serp.provider || 'dataforseo',
+      maxKeywordsPerUrl: serp.maxKeywordsPerUrl || 10,
+      maxCompetitorsPerKeyword: serp.maxCompetitorsPerKeyword || 3,
+      dataforseoLogin: serp.dataforseoLogin || '',
+      dataforseoPassword: serp.dataforseoPassword || '',
+      confirmed: Boolean(serp.enabled),
+    },
+    budgets: {
+      maxEstimatedCostPerBatch: budgets.maxEstimatedCostPerBatch || 5,
+      dailyBudget: budgets.dailyBudget || 10,
+    },
+  };
+};
+
 export const buildGscMetricsFromQueries = (gscQueries: any[] = []) => {
   if (!Array.isArray(gscQueries) || gscQueries.length === 0) return undefined;
 
-  const clicks = gscQueries.reduce((sum, row) => sum + (row?.clicks || 0), 0);
-  const impressions = gscQueries.reduce((sum, row) => sum + (row?.impressions || 0), 0);
-  const weightedPosition = gscQueries.reduce(
+  const normalizedQueries = gscQueries.map(normalizeGscQueryRow);
+
+  const clicks = normalizedQueries.reduce((sum, row) => sum + (row?.clicks || 0), 0);
+  const impressions = normalizedQueries.reduce((sum, row) => sum + (row?.impressions || 0), 0);
+  const weightedPosition = normalizedQueries.reduce(
     (sum, row) => sum + (row?.position || 0) * (row?.impressions || 0),
     0,
   );
@@ -18,7 +61,7 @@ export const buildGscMetricsFromQueries = (gscQueries: any[] = []) => {
     impressions,
     ctr: impressions > 0 ? clicks / impressions : 0,
     position: impressions > 0 ? weightedPosition / impressions : undefined,
-    queryCount: gscQueries.length,
+    queryCount: normalizedQueries.length,
     source: 'query' as const,
     updatedAt: Date.now(),
   };
@@ -67,7 +110,9 @@ export const processAnalysisResult = (
   // If result already has it, we should probably respect it, but the original code overwrote it.
   // We'll follow the original logic: ensure the structure exists, then inject/overwrite if gscQueries is not empty.
 
-  if (gscQueries.length > 0 || !result.items?.OPORTUNIDADES?.autoData?.gscQueries) {
+  const normalizedGscQueries = gscQueries.map(normalizeGscQueryRow);
+
+  if (normalizedGscQueries.length > 0 || !result.items?.OPORTUNIDADES?.autoData?.gscQueries) {
     if (!result.items) {
       result.items = {};
     }
@@ -78,17 +123,18 @@ export const processAnalysisResult = (
       result.items.OPORTUNIDADES.autoData = {};
     }
 
-    if (gscQueries.length > 0) {
-      result.items.OPORTUNIDADES.autoData.gscQueries = gscQueries;
+    if (normalizedGscQueries.length > 0) {
+      result.items.OPORTUNIDADES.autoData.gscQueries = normalizedGscQueries;
     }
 
     // Calculate kwFound if GSC data is present (either just injected or already there)
     const currentGscQueries = result.items.OPORTUNIDADES.autoData.gscQueries || [];
     if (currentGscQueries.length > 0) {
       const normalizedKw = page.kwPrincipal.toLowerCase().trim();
-      const kwFound = currentGscQueries.some(
-        (q: any) => q.keys && q.keys[0] && q.keys[0].toLowerCase().trim() === normalizedKw,
-      );
+      const kwFound = currentGscQueries.some((q: any) => {
+        const query = q.query || q.keys?.[0] || '';
+        return query.toLowerCase().trim() === normalizedKw;
+      });
       result.items.OPORTUNIDADES.autoData.kwPrincipalInGSC = kwFound;
     }
   }
@@ -148,6 +194,7 @@ export const runPageAnalysis = async (
   analysisConfig?: AnalysisConfigPayload,
 ): Promise<Partial<SeoPage>> => {
   const normalizedPage = normalizeSeoPageInput(page);
+  const resolvedAnalysisConfig = analysisConfig || buildDefaultAnalysisConfig();
   let gscQueries: any[] = [];
   let gscMetrics: SeoPage['gscMetrics'] | undefined = page.gscMetrics;
 
@@ -171,19 +218,19 @@ export const runPageAnalysis = async (
           getPageQueries(token, site, normalizedPage.url, start, end, 50),
         ]);
 
-        gscQueries = pageQueries;
+        gscQueries = pageQueries.map(normalizeGscQueryRow);
         if (pageMetricsRow) {
           gscMetrics = {
             clicks: pageMetricsRow.clicks || 0,
             impressions: pageMetricsRow.impressions || 0,
             ctr: pageMetricsRow.ctr || 0,
             position: pageMetricsRow.position,
-            queryCount: pageQueries.length,
+            queryCount: gscQueries.length,
             source: 'page',
             updatedAt: Date.now(),
           };
-        } else if (pageQueries.length > 0) {
-          gscMetrics = buildGscMetricsFromQueries(pageQueries);
+        } else if (gscQueries.length > 0) {
+          gscMetrics = buildGscMetricsFromQueries(gscQueries);
         }
       } catch (e) {
         console.warn('Could not fetch GSC queries', e);
@@ -199,7 +246,7 @@ export const runPageAnalysis = async (
     cluster: normalizedPage.cluster,
     pageId: normalizedPage.id,
     gscQueries,
-    analysisConfig,
+    analysisConfig: resolvedAnalysisConfig,
   });
 
   const updates = processAnalysisResult(normalizedPage, result, gscQueries, gscMetrics);

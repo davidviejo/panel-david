@@ -27,6 +27,29 @@ vi.mock('./ChecklistItem', () => ({
   ),
 }));
 
+
+vi.mock('../../hooks/useSeoChecklistSettings', () => ({
+  useSeoChecklistSettings: () => ({
+    settings: {
+      serp: {
+        enabled: false,
+        provider: 'dataforseo',
+        maxKeywordsPerUrl: 10,
+        maxCompetitorsPerKeyword: 3,
+        dataforseoLogin: '',
+        dataforseoPassword: '',
+      },
+      budgets: {
+        maxUrlsPerBatch: 50,
+        dailyBudget: 10,
+        maxEstimatedCostPerBatch: 5,
+      },
+      competitorsMode: 'autoFromSerp',
+      brandTerms: [],
+    },
+  }),
+}));
+
 // Mock analyzeUrl service
 vi.mock('../../services/pythonEngineClient', () => ({
   analyzeUrl: vi.fn(),

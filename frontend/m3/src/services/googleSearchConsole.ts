@@ -4,6 +4,44 @@
 const GSC_API_BASE = 'https://www.googleapis.com/webmasters/v3';
 const USER_INFO_API = 'https://www.googleapis.com/oauth2/v2/userinfo';
 
+
+const buildPageUrlVariants = (pageUrl: string) => {
+  const trimmed = pageUrl.trim();
+  if (!trimmed) return [];
+
+  const variants = new Set([trimmed]);
+  if (trimmed.endsWith('/')) {
+    variants.add(trimmed.slice(0, -1));
+  } else {
+    variants.add(`${trimmed}/`);
+  }
+  return Array.from(variants);
+};
+
+const queryPageAnalytics = async (
+  accessToken: string,
+  siteUrl: string,
+  body: Record<string, unknown>,
+  errorMessage: string,
+) => {
+  const encodedSiteUrl = encodeURIComponent(siteUrl);
+  const response = await fetch(`${GSC_API_BASE}/sites/${encodedSiteUrl}/searchAnalytics/query`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error?.message || errorMessage);
+  }
+
+  return await response.json();
+};
+
 /**
  * Obtiene la información del usuario autenticado de Google.
  *
@@ -222,43 +260,37 @@ export const getPageQueries = async (
   rowLimit: number = 50,
 ) => {
   try {
-    const encodedSiteUrl = encodeURIComponent(siteUrl);
-
-    const body = {
-      startDate,
-      endDate,
-      dimensions: ['query'],
-      dimensionFilterGroups: [
+    for (const variant of buildPageUrlVariants(pageUrl)) {
+      const data = await queryPageAnalytics(
+        accessToken,
+        siteUrl,
         {
-          groupType: 'and',
-          filters: [
+          startDate,
+          endDate,
+          dimensions: ['query'],
+          dimensionFilterGroups: [
             {
-              dimension: 'page',
-              operator: 'equals',
-              expression: pageUrl,
+              groupType: 'and',
+              filters: [
+                {
+                  dimension: 'page',
+                  operator: 'equals',
+                  expression: variant,
+                },
+              ],
             },
           ],
+          rowLimit,
         },
-      ],
-      rowLimit,
-    };
+        'Error fetching page queries',
+      );
 
-    const response = await fetch(`${GSC_API_BASE}/sites/${encodedSiteUrl}/searchAnalytics/query`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error?.message || 'Error fetching page queries');
+      if (data.rows?.length) {
+        return data.rows;
+      }
     }
 
-    const data = await response.json();
-    return data.rows || [];
+    return [];
   } catch (error) {
     console.error('GSC Page Query Error:', error);
     throw error;
@@ -278,43 +310,37 @@ export const getPageMetrics = async (
   endDate: string,
 ) => {
   try {
-    const encodedSiteUrl = encodeURIComponent(siteUrl);
-
-    const body = {
-      startDate,
-      endDate,
-      dimensions: ['page'],
-      dimensionFilterGroups: [
+    for (const variant of buildPageUrlVariants(pageUrl)) {
+      const data = await queryPageAnalytics(
+        accessToken,
+        siteUrl,
         {
-          groupType: 'and',
-          filters: [
+          startDate,
+          endDate,
+          dimensions: ['page'],
+          dimensionFilterGroups: [
             {
-              dimension: 'page',
-              operator: 'equals',
-              expression: pageUrl,
+              groupType: 'and',
+              filters: [
+                {
+                  dimension: 'page',
+                  operator: 'equals',
+                  expression: variant,
+                },
+              ],
             },
           ],
+          rowLimit: 1,
         },
-      ],
-      rowLimit: 1,
-    };
+        'Error fetching page metrics',
+      );
 
-    const response = await fetch(`${GSC_API_BASE}/sites/${encodedSiteUrl}/searchAnalytics/query`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error?.message || 'Error fetching page metrics');
+      if (data.rows?.[0]) {
+        return data.rows[0];
+      }
     }
 
-    const data = await response.json();
-    return data.rows?.[0] || null;
+    return null;
   } catch (error) {
     console.error('GSC Page Metrics Error:', error);
     throw error;
