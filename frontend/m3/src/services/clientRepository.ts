@@ -7,6 +7,33 @@ const CURRENT_CLIENT_ID_KEY = 'mediaflow_current_client_id';
 const GENERAL_NOTES_KEY = 'mediaflow_general_notes';
 const LEGACY_MODULES_KEY = 'mediaflow_modules';
 
+const CLIENT_VERTICAL_ALIASES: Record<string, ClientVertical> = {
+  frontend: 'media',
+};
+
+const VALID_VERTICALS: ClientVertical[] = ['media', 'ecom', 'local', 'national', 'international'];
+
+const normalizeClientVertical = (vertical: unknown): ClientVertical => {
+  if (typeof vertical !== 'string') {
+    return 'media';
+  }
+
+  const normalized = vertical.trim().toLowerCase();
+  if (VALID_VERTICALS.includes(normalized as ClientVertical)) {
+    return normalized as ClientVertical;
+  }
+
+  return CLIENT_VERTICAL_ALIASES[normalized] || 'media';
+};
+
+const normalizeClient = (client: Client): Client => ({
+  ...client,
+  vertical: normalizeClientVertical(client.vertical),
+  notes: client.notes || [],
+  completedTasksLog: client.completedTasksLog || [],
+  customRoadmapOrder: client.customRoadmapOrder || [],
+});
+
 export class ClientRepository {
   static getClients(): Client[] {
     const savedClients = localStorage.getItem(CLIENTS_KEY);
@@ -14,22 +41,14 @@ export class ClientRepository {
     if (savedClients) {
       try {
         const parsedClients = JSON.parse(savedClients);
-        // Ensure all clients have a notes array and completedTasksLog (migration)
-        const migratedClients = parsedClients.map((c: Client) => ({
-          ...c,
-          notes: c.notes || [],
-          completedTasksLog: c.completedTasksLog || [],
-          customRoadmapOrder: c.customRoadmapOrder || [],
-        }));
+        const migratedClients = parsedClients.map(normalizeClient);
 
-        // Run Module Migrations (e.g., adding Extras module)
         return this.migrateModules(migratedClients);
       } catch (e) {
         console.error('Failed to parse clients', e);
       }
     }
 
-    // Migration: Check for legacy single-project modules
     const savedLegacyModules = localStorage.getItem(LEGACY_MODULES_KEY);
     if (savedLegacyModules) {
       try {
@@ -44,14 +63,12 @@ export class ClientRepository {
           completedTasksLog: [],
           customRoadmapOrder: [],
         };
-        // Migrate legacy client too
         return this.migrateModules([legacyClient]);
       } catch (e) {
         console.error('Failed to migrate legacy modules', e);
       }
     }
 
-    // Default Initialization
     return [
       {
         id: crypto.randomUUID(),
@@ -67,7 +84,7 @@ export class ClientRepository {
   }
 
   static saveClients(clients: Client[]): void {
-    localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
+    localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients.map(normalizeClient)));
   }
 
   static getCurrentClientId(): string {
@@ -96,14 +113,12 @@ export class ClientRepository {
 
   private static migrateModules(clients: Client[]): Client[] {
     let changed = false;
-    // Cache strategy modules by vertical to avoid redundant deep cloning
     const verticalModulesCache = new Map<ClientVertical, ModuleData[]>();
 
     const updatedClients = clients.map((client) => {
       let currentModules = client.modules;
       let clientChanged = false;
 
-      // Check if migration is needed before fetching full modules list
       const needsExtras = !currentModules.some((m) => m.id === 8);
       const needsMia = !currentModules.some((m) => m.id === 9);
 
@@ -121,7 +136,6 @@ export class ClientRepository {
               currentModules = [...currentModules];
               clientChanged = true;
             }
-            // Clone the specific module to ensure it's a unique instance for this client
             currentModules.push(JSON.parse(JSON.stringify(extrasModule)));
           }
         }
@@ -133,7 +147,6 @@ export class ClientRepository {
               currentModules = [...currentModules];
               clientChanged = true;
             }
-            // Clone the specific module to ensure it's a unique instance for this client
             currentModules.push(JSON.parse(JSON.stringify(miaModule)));
           }
         }
@@ -148,13 +161,11 @@ export class ClientRepository {
     });
 
     if (changed) {
-      // We don't save here automatically to avoid side effects during 'get',
-      // but since this is called on init, the state will eventually settle.
-      // For robustness, we could save, but let's leave it to the consumer (Context) to save state updates.
-      // Actually, if we return modified data but don't save it, it will be re-migrated every time until saved.
-      // The Context should save it when it initializes state.
+      // no-op: state persistence happens in the consuming context
     }
 
     return updatedClients;
   }
 }
+
+export { normalizeClient, normalizeClientVertical };
