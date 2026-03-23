@@ -7,6 +7,7 @@ import {
 } from '../../types/seoChecklist';
 import { ChecklistItem } from './ChecklistItem';
 import { runPageAnalysis } from '../../utils/seoUtils';
+import { normalizeSeoUrl } from '../../utils/seoUrlNormalizer';
 import {
   Play,
   Loader2,
@@ -70,7 +71,7 @@ export const SeoChecklistDetail: React.FC<Props> = ({
 
   const handleSave = () => {
     onUpdatePage(page.id, {
-      url: editForm.url,
+      url: normalizeSeoUrl(editForm.url),
       kwPrincipal: editForm.kwPrincipal,
       pageType: editForm.pageType,
       cluster: editForm.cluster,
