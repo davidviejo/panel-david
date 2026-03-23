@@ -429,6 +429,7 @@ export const ChecklistItem: React.FC<Props> = ({ item, onChange }) => {
                     <th className="px-3 py-2">Query</th>
                     <th className="px-3 py-2 text-right">Pos</th>
                     <th className="px-3 py-2 text-right">Clics</th>
+                    <th className="px-3 py-2 text-right">Impr.</th>
                     <th className="px-3 py-2 text-right">CTR</th>
                   </tr>
                 </thead>
@@ -443,6 +444,7 @@ export const ChecklistItem: React.FC<Props> = ({ item, onChange }) => {
                       </td>
                       <td className="px-3 py-2 text-right">{row.position?.toFixed(1)}</td>
                       <td className="px-3 py-2 text-right">{row.clicks}</td>
+                      <td className="px-3 py-2 text-right">{row.impressions}</td>
                       <td className="px-3 py-2 text-right">{(row.ctr * 100).toFixed(1)}%</td>
                     </tr>
                   ))}

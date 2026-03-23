@@ -76,6 +76,44 @@ describe('processAnalysisResult', () => {
     expect(updates.checklist?.OPORTUNIDADES.autoData.gscQueries[0].keys[0]).toBe('existing');
   });
 
+  it('should infer the primary keyword from GSC when the current keyword is missing', () => {
+    const pageWithoutKeyword: SeoPage = {
+      ...mockPage,
+      kwPrincipal: '-',
+    };
+    const gscQueries = [
+      { keys: ['secondary kw'], clicks: 5, impressions: 100, ctr: 0.05, position: 4 },
+      { keys: ['best kw'], clicks: 12, impressions: 80, ctr: 0.15, position: 3 },
+    ];
+
+    const updates = processAnalysisResult(
+      pageWithoutKeyword,
+      { pageId: 'page-1', items: {} },
+      gscQueries,
+    );
+
+    expect(updates.kwPrincipal).toBe('best kw');
+  });
+
+  it('should store exact page GSC metrics when they are provided', () => {
+    const gscMetrics = {
+      clicks: 34,
+      impressions: 456,
+      ctr: 34 / 456,
+      position: 7.2,
+      source: 'page' as const,
+    };
+
+    const updates = processAnalysisResult(
+      mockPage,
+      { pageId: 'page-1', items: {} },
+      [],
+      gscMetrics,
+    );
+
+    expect(updates.gscMetrics).toEqual(expect.objectContaining(gscMetrics));
+  });
+
   it('should sync LocalBusiness from DATOS_ESTRUCTURADOS to GEOLOCALIZACION when @type is a string', () => {
     const result = {
       pageId: 'page-1',

@@ -235,12 +235,16 @@ export const SeoChecklistDetail: React.FC<Props> = ({
               >
                 {page.url}
               </h1>
-              <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
+              <div className="flex items-center gap-3 text-sm text-slate-500 mt-1 flex-wrap">
                 <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-xs font-bold">
                   {page.kwPrincipal}
                 </span>
                 <span>{page.pageType}</span>
                 {page.cluster && <span>• {page.cluster}</span>}
+                <span>• Clics GSC: {page.gscMetrics?.clicks?.toLocaleString('es-ES') || 0}</span>
+                <span>
+                  • Impresiones GSC: {page.gscMetrics?.impressions?.toLocaleString('es-ES') || 0}
+                </span>
               </div>
               <button
                 onClick={handleEdit}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import {
   SeoPage,
@@ -70,6 +70,26 @@ export const SeoUrlList: React.FC<Props> = ({
   );
 
   const totalPages = Math.ceil(filteredPages.length / itemsPerPage);
+
+  const aggregatedMetrics = useMemo(() => {
+    return filteredPages.reduce(
+      (acc, page) => {
+        acc.clicks += page.gscMetrics?.clicks || 0;
+        acc.impressions += page.gscMetrics?.impressions || 0;
+        return acc;
+      },
+      { clicks: 0, impressions: 0 },
+    );
+  }, [filteredPages]);
+
+  const hasClusterOnlyFilter = useMemo(() => {
+    const normalizedFilter = filter.trim().toLowerCase();
+    if (!normalizedFilter) return false;
+    return (
+      filteredPages.length > 0 &&
+      filteredPages.every((page) => (page.cluster || '').toLowerCase().includes(normalizedFilter))
+    );
+  }, [filter, filteredPages]);
   const displayedPages = filteredPages.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
@@ -511,6 +531,27 @@ export const SeoUrlList: React.FC<Props> = ({
         </div>
       )}
 
+      {(aggregatedMetrics.clicks > 0 || aggregatedMetrics.impressions > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Clics GSC {hasClusterOnlyFilter ? 'del cluster filtrado' : 'de URLs filtradas'}
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">
+              {aggregatedMetrics.clicks.toLocaleString('es-ES')}
+            </div>
+          </div>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Impresiones GSC {hasClusterOnlyFilter ? 'del cluster filtrado' : 'de URLs filtradas'}
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">
+              {aggregatedMetrics.impressions.toLocaleString('es-ES')}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -527,6 +568,8 @@ export const SeoUrlList: React.FC<Props> = ({
                 <th className="px-6 py-4">URL</th>
                 <th className="px-6 py-4">Keyword</th>
                 <th className="px-6 py-4">Tipo</th>
+                <th className="px-6 py-4 text-right">Clics GSC</th>
+                <th className="px-6 py-4 text-right">Impresiones GSC</th>
                 <th className="px-6 py-4 text-center">Progreso</th>
                 <th className="px-6 py-4 text-right">Último Análisis</th>
                 <th className="px-6 py-4 text-right">Acciones</th>
@@ -580,6 +623,12 @@ export const SeoUrlList: React.FC<Props> = ({
                       {page.pageType}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-right text-slate-600 dark:text-slate-300 font-mono text-xs">
+                    {(page.gscMetrics?.clicks || 0).toLocaleString('es-ES')}
+                  </td>
+                  <td className="px-6 py-4 text-right text-slate-600 dark:text-slate-300 font-mono text-xs">
+                    {(page.gscMetrics?.impressions || 0).toLocaleString('es-ES')}
+                  </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center gap-2 justify-center">
                       <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -622,7 +671,7 @@ export const SeoUrlList: React.FC<Props> = ({
               ))}
               {filteredPages.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={9} className="px-6 py-12 text-center text-slate-400">
                     {filter
                       ? 'No se encontraron URLs'
                       : 'No hay URLs en la lista. Importa algunas para empezar.'}

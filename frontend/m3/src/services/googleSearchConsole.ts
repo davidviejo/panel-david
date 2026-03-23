@@ -269,3 +269,54 @@ export const getPageQueries = async (
 export const clearGSCRequestCache = () => {
   // No-op, cache is managed by React Query now
 };
+
+export const getPageMetrics = async (
+  accessToken: string,
+  siteUrl: string,
+  pageUrl: string,
+  startDate: string,
+  endDate: string,
+) => {
+  try {
+    const encodedSiteUrl = encodeURIComponent(siteUrl);
+
+    const body = {
+      startDate,
+      endDate,
+      dimensions: ['page'],
+      dimensionFilterGroups: [
+        {
+          groupType: 'and',
+          filters: [
+            {
+              dimension: 'page',
+              operator: 'equals',
+              expression: pageUrl,
+            },
+          ],
+        },
+      ],
+      rowLimit: 1,
+    };
+
+    const response = await fetch(`${GSC_API_BASE}/sites/${encodedSiteUrl}/searchAnalytics/query`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'Error fetching page metrics');
+    }
+
+    const data = await response.json();
+    return data.rows?.[0] || null;
+  } catch (error) {
+    console.error('GSC Page Metrics Error:', error);
+    throw error;
+  }
+};
