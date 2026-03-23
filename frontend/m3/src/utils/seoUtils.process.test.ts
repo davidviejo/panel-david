@@ -125,6 +125,46 @@ describe('processAnalysisResult', () => {
     expect(updates.checklist?.OPORTUNIDADES.autoData.primaryKeyword).toBe('');
   });
 
+
+  it('should treat a keyword containing a configured brand term as brand', () => {
+    const pageWithoutKeyword: SeoPage = {
+      ...mockPage,
+      kwPrincipal: '',
+    };
+    const gscQueries = [
+      {
+        keys: ['zara vestidos fiesta'],
+        query: 'zara vestidos fiesta',
+        clicks: 100,
+        impressions: 200,
+        ctr: 0.5,
+        position: 1,
+      },
+      {
+        keys: ['vestidos fiesta'],
+        query: 'vestidos fiesta',
+        clicks: 25,
+        impressions: 150,
+        ctr: 0.16,
+        position: 2,
+      },
+    ];
+
+    localStorage.setItem(
+      'mediaflow_seo_settings_test',
+      JSON.stringify({ brandTerms: ['zara'] }),
+    );
+
+    const updates = processAnalysisResult(
+      pageWithoutKeyword,
+      { pageId: 'page-1', items: {} },
+      gscQueries,
+    );
+
+    expect(updates.kwPrincipal).toBe('vestidos fiesta');
+    expect(updates.checklist?.OPORTUNIDADES.autoData.primaryKeyword).toBe('vestidos fiesta');
+  });
+
   it('should inject GSC queries if provided', () => {
     const gscQueries = [{ keys: ['test'], clicks: 10 }];
     const result = {
