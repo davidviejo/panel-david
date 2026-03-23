@@ -1,1251 +1,873 @@
 {% extends "base.html" %}
 
-{% block title %}Tendencias en Tiempo Real | MediaFlow SEO Suite{% endblock %}
+{% block title %}Trends Dashboard | MediaFlow SEO Suite{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-3 px-lg-4 py-4">
-    <style>
-        .trends-shell {
-            min-height: 100%;
-            background:
-                radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 30%),
-                radial-gradient(circle at top right, rgba(6, 182, 212, 0.12), transparent 24%),
-                linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
-            border-radius: 32px;
-            padding: 1rem;
-        }
-        .trends-app {
-            display: grid;
-            grid-template-columns: 300px minmax(0, 1fr);
-            gap: 1.25rem;
-            min-height: calc(100vh - 140px);
-        }
-        .trends-sidebar,
-        .trends-panel,
-        .trends-card,
-        .trends-stat-card,
-        .trends-brief-card,
-        .trends-chart-card,
-        .trends-result-card,
-        .trends-log-card {
-            border: 1px solid rgba(148, 163, 184, 0.18);
-            background: rgba(255, 255, 255, 0.92);
-            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-            backdrop-filter: blur(18px);
-        }
-        .trends-sidebar {
-            border-radius: 28px;
-            padding: 1.25rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(30,41,59,0.98));
-            color: #cbd5e1;
-        }
-        .trends-brand {
-            display: flex;
-            align-items: center;
-            gap: 0.85rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(148,163,184,0.14);
-        }
-        .trends-brand-mark {
-            width: 46px;
-            height: 46px;
-            border-radius: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #2563eb, #06b6d4);
-            color: white;
-            font-weight: 800;
-            letter-spacing: 0.03em;
-            box-shadow: 0 14px 28px rgba(37,99,235,0.28);
-        }
-        .trends-nav-btn {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 0.85rem;
-            border: 0;
-            border-radius: 18px;
-            background: transparent;
-            color: #cbd5e1;
-            padding: 0.95rem 1rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            text-align: left;
-        }
-        .trends-nav-btn:hover,
-        .trends-nav-btn.active {
-            background: linear-gradient(135deg, rgba(37,99,235,0.94), rgba(14,165,233,0.92));
-            color: #fff;
-            box-shadow: 0 16px 30px rgba(37,99,235,0.24);
-            transform: translateY(-1px);
-        }
-        .trends-sidebar-foot {
-            margin-top: auto;
-            border-radius: 22px;
-            padding: 1rem;
-            background: rgba(15, 23, 42, 0.55);
-            border: 1px solid rgba(148,163,184,0.12);
-        }
-        .trends-main {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .trends-hero,
-        .trends-panel {
-            border-radius: 30px;
-        }
-        .trends-hero {
-            position: relative;
-            overflow: hidden;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 46%, #06b6d4 100%);
-            color: white;
-        }
-        .trends-hero::before,
-        .trends-hero::after {
-            content: "";
-            position: absolute;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.09);
-            filter: blur(6px);
-        }
-        .trends-hero::before { width: 220px; height: 220px; top: -90px; right: -50px; }
-        .trends-hero::after { width: 160px; height: 160px; bottom: -60px; left: 35%; }
-        .trends-hero-chip,
-        .trends-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            border-radius: 999px;
-            padding: 0.45rem 0.85rem;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-        .trends-hero-chip {
-            background: rgba(255,255,255,0.14);
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.12);
-        }
-        .trends-hero-metric {
-            border-radius: 24px;
-            padding: 1rem 1.1rem;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.12);
-            height: 100%;
-        }
-        .trends-panel {
-            padding: 1.25rem;
-        }
-        .trends-section-title {
-            font-size: 0.76rem;
-            text-transform: uppercase;
-            letter-spacing: 0.09em;
-            font-weight: 800;
-            color: #64748b;
-            margin-bottom: 0.25rem;
-        }
-        .trends-stat-card,
-        .trends-chart-card,
-        .trends-card,
-        .trends-brief-card,
-        .trends-result-card,
-        .trends-log-card {
-            border-radius: 24px;
-        }
-        .trends-stat-card {
-            padding: 1.1rem 1.15rem;
-            height: 100%;
-        }
-        .trends-stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.05rem;
-        }
-        .trends-chart-bar-track {
-            height: 10px;
-            border-radius: 999px;
-            background: #e2e8f0;
-            overflow: hidden;
-        }
-        .trends-chart-bar-fill {
-            height: 100%;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #2563eb, #06b6d4);
-        }
-        .trends-tab-panel { display: none; }
-        .trends-tab-panel.active { display: block; }
-        .trends-form .form-control,
-        .trends-form .form-select,
-        .trends-form .input-group-text {
-            border-radius: 16px;
-            border-color: #dbeafe;
-            min-height: 52px;
-        }
-        .trends-form .input-group > .form-control { border-top-left-radius: 0; border-bottom-left-radius: 0; }
-        .trends-form .input-group-text {
-            background: #eff6ff;
-            color: #2563eb;
-            border-right: 0;
-            padding-inline: 1rem;
-        }
-        .trends-form .form-control:focus,
-        .trends-form .form-select:focus,
-        .trends-settings-input:focus {
-            border-color: #60a5fa;
-            box-shadow: 0 0 0 0.2rem rgba(59,130,246,0.14);
-        }
-        .trends-primary-btn,
-        .trends-secondary-btn {
-            min-height: 52px;
-            border: 0;
-            border-radius: 18px;
-            font-weight: 700;
-            transition: all 0.2s ease;
-        }
-        .trends-primary-btn {
-            color: #fff;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            box-shadow: 0 18px 34px rgba(34,197,94,0.24);
-        }
-        .trends-primary-btn:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 22px 40px rgba(34,197,94,0.28);
-        }
-        .trends-secondary-btn {
-            background: linear-gradient(135deg, #eff6ff, #dbeafe);
-            color: #1d4ed8;
-            border: 1px solid rgba(59,130,246,0.18);
-        }
-        .trends-chip {
-            background: rgba(37, 99, 235, 0.08);
-            color: #1d4ed8;
-            border: 1px solid rgba(59,130,246,0.12);
-        }
-        .trends-chip.is-p1 { background: rgba(239,68,68,0.1); color: #b91c1c; border-color: rgba(239,68,68,0.14); }
-        .trends-chip.is-p2 { background: rgba(245,158,11,0.12); color: #b45309; border-color: rgba(245,158,11,0.16); }
-        .trends-chip.is-p3 { background: rgba(59,130,246,0.1); color: #1d4ed8; border-color: rgba(59,130,246,0.15); }
-        .trends-chip.is-muted { background: rgba(148,163,184,0.12); color: #475569; border-color: rgba(148,163,184,0.16); }
-        .trends-table-wrap { max-height: 620px; overflow: auto; }
-        .trends-table thead th {
-            position: sticky;
-            top: 0;
-            z-index: 1;
-            background: #f8fafc;
-            color: #475569;
-            font-size: 0.78rem;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .trends-rank {
-            width: 2.25rem;
-            height: 2.25rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 999px;
-            font-weight: 800;
-            background: rgba(37,99,235,0.09);
-            color: #1d4ed8;
-        }
-        .trends-log {
-            background: #020617;
-            border-radius: 20px;
-            color: #7dd3fc;
-            min-height: 200px;
-            max-height: 260px;
-            overflow-y: auto;
-            padding: 1rem;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        }
-        .trends-log-entry {
-            white-space: pre-wrap;
-            padding-bottom: 0.45rem;
-            margin-bottom: 0.45rem;
-            border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-        }
-        .trends-log-entry:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
-        .trends-progress-shell {
-            border-radius: 999px;
-            background: #e2e8f0;
-            overflow: hidden;
-            height: 12px;
-        }
-        .trends-progress-shell .progress-bar { border-radius: 999px; }
-        .trends-brief-card { padding: 1.2rem; }
-        .trends-brief-card + .trends-brief-card { margin-top: 1rem; }
-        .trends-empty {
-            padding: 3rem 1.5rem;
-            text-align: center;
-            color: #64748b;
-        }
-        .trends-empty-icon {
-            width: 4rem;
-            height: 4rem;
-            border-radius: 24px;
-            background: rgba(59,130,246,0.08);
-            color: #2563eb;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            margin-bottom: 1rem;
-        }
-        .trends-settings-input {
-            width: 100%;
-            border: 1px solid #cbd5e1;
-            border-radius: 16px;
-            padding: 0.95rem 1rem;
-            font-size: 0.95rem;
-            outline: none;
-            transition: box-shadow 0.2s ease, border-color 0.2s ease;
-            background: #fff;
-        }
-        .trends-settings-box {
-            border-radius: 22px;
-            padding: 1.2rem;
-            background: linear-gradient(180deg, rgba(248,250,252,0.95), rgba(241,245,249,0.96));
-            border: 1px solid rgba(148,163,184,0.16);
-            height: 100%;
-        }
-        .trends-source-pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.42rem 0.72rem;
-            border-radius: 999px;
-            background: #fff;
-            border: 1px solid rgba(148,163,184,0.18);
-            color: #334155;
-            font-size: 0.82rem;
-            font-weight: 600;
-            margin: 0 0.5rem 0.5rem 0;
-        }
-        .trends-result-preview-item {
-            display: flex;
-            align-items: start;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: 0.9rem 0;
-            border-bottom: 1px solid rgba(226,232,240,0.88);
-        }
-        .trends-result-preview-item:last-child { border-bottom: 0; }
-        @media (max-width: 1199.98px) {
-            .trends-app { grid-template-columns: 1fr; }
-            .trends-sidebar { order: 2; }
-        }
-        @media (max-width: 767.98px) {
-            .trends-shell { border-radius: 22px; padding: 0.75rem; }
-            .trends-hero, .trends-panel, .trends-sidebar { border-radius: 24px; }
-        }
-    </style>
+  <style>
+    .tm-shell {
+      min-height: calc(100vh - 120px);
+      background: #f8fafc;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+    }
+    .tm-app {
+      display: flex;
+      min-height: calc(100vh - 120px);
+    }
+    .tm-sidebar {
+      width: 272px;
+      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      color: #cbd5e1;
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 18px 0 36px rgba(15, 23, 42, 0.12);
+      z-index: 2;
+    }
+    .tm-brand {
+      padding: .5rem .75rem 1rem;
+      border-bottom: 1px solid rgba(148,163,184,.15);
+    }
+    .tm-brand-title {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .tm-brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #2563eb;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: .8rem;
+    }
+    .tm-nav-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      border: 0;
+      background: transparent;
+      color: #94a3b8;
+      padding: .95rem 1rem;
+      border-radius: 14px;
+      text-align: left;
+      font-weight: 600;
+      transition: .18s ease;
+    }
+    .tm-nav-btn:hover,
+    .tm-nav-btn.active {
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(37,99,235,.28);
+    }
+    .tm-system-box {
+      margin-top: auto;
+      background: rgba(30,41,59,.75);
+      border: 1px solid rgba(148,163,184,.12);
+      border-radius: 16px;
+      padding: .95rem;
+      font-size: .84rem;
+    }
+    .tm-main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: #f8fafc;
+    }
+    .tm-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+    .tm-header-actions { display:flex; gap:.75rem; align-items:center; }
+    .tm-content { padding: 1.5rem; }
+    .tm-view { display: none; }
+    .tm-view.active { display: block; }
+    .tm-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(15,23,42,.05);
+    }
+    .tm-hero {
+      background: linear-gradient(135deg,#0f172a 0%,#1d4ed8 62%,#0ea5e9 100%);
+      color: #fff;
+      padding: 1.5rem;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+    .tm-hero::after {
+      content: "";
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      border-radius: 999px;
+      right: -90px;
+      top: -110px;
+      background: rgba(255,255,255,.08);
+    }
+    .tm-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      border-radius: 999px;
+      padding: .35rem .7rem;
+      font-size: .75rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+    .tm-chip-neutral { background:#f1f5f9; color:#475569; }
+    .tm-chip-live { background:rgba(255,255,255,.14); color:#fff; border-color:rgba(255,255,255,.16); }
+    .tm-chip-p1 { background:#fee2e2; color:#b91c1c; }
+    .tm-chip-p2 { background:#fef3c7; color:#b45309; }
+    .tm-chip-p3 { background:#dbeafe; color:#1d4ed8; }
+    .tm-chip-discard { background:#e2e8f0; color:#475569; }
+    .tm-btn-primary,
+    .tm-btn-secondary {
+      border: 0;
+      border-radius: 12px;
+      padding: .78rem 1rem;
+      font-weight: 600;
+      transition: .18s ease;
+    }
+    .tm-btn-primary { background:#2563eb; color:#fff; }
+    .tm-btn-primary:hover:not(:disabled) { background:#1d4ed8; }
+    .tm-btn-secondary { background:#eef2ff; color:#334155; }
+    .tm-btn-primary:disabled { opacity:.7; cursor:not-allowed; }
+    .tm-stat-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:1rem; }
+    .tm-stat-card { padding:1.1rem; display:flex; gap:1rem; align-items:center; }
+    .tm-stat-icon {
+      width:48px; height:48px; border-radius:14px; display:inline-flex; align-items:center; justify-content:center;
+      font-size:1.1rem;
+    }
+    .tm-section-title { font-size:.78rem; letter-spacing:.08em; text-transform:uppercase; font-weight:700; color:#64748b; }
+    .tm-chart-row { display:grid; grid-template-columns: 1.1fr .9fr; gap:1rem; margin-top:1rem; }
+    .tm-bar-list { display:flex; flex-direction:column; gap:1rem; }
+    .tm-bar-track { height:10px; border-radius:999px; background:#e2e8f0; overflow:hidden; }
+    .tm-bar-fill { height:100%; background:linear-gradient(90deg,#3b82f6,#0ea5e9); }
+    .tm-table thead th { background:#f8fafc; color:#64748b; text-transform:uppercase; font-size:.74rem; letter-spacing:.05em; }
+    .tm-rank {
+      width:2rem; height:2rem; border-radius:999px; background:#eff6ff; color:#2563eb; font-weight:700;
+      display:inline-flex; align-items:center; justify-content:center;
+    }
+    .tm-table-wrap { overflow:auto; }
+    .tm-empty { padding:3rem 1.5rem; text-align:center; color:#64748b; }
+    .tm-empty-icon {
+      width:64px; height:64px; border-radius:999px; background:#eff6ff; color:#2563eb;
+      display:inline-flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:1rem;
+    }
+    .tm-loader {
+      width:40px;height:40px;border:4px solid #dbeafe;border-top-color:#2563eb;border-radius:999px;animation:tmSpin .8s linear infinite;
+    }
+    @keyframes tmSpin { to { transform: rotate(360deg);} }
+    .tm-brief-list { display:flex; flex-direction:column; gap:1rem; }
+    .tm-brief-card { padding:1.25rem; }
+    .tm-discard-list > * + * { border-top:1px solid #f1f5f9; }
+    .tm-discard-item { padding:1rem; }
+    .tm-form-control {
+      width:100%; border:1px solid #cbd5e1; border-radius:12px; padding:.8rem .9rem; background:#fff;
+    }
+    .tm-form-control:focus { outline:none; border-color:#60a5fa; box-shadow:0 0 0 .2rem rgba(59,130,246,.14); }
+    .tm-settings-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:1rem; }
+    .tm-settings-box { padding:1.25rem; }
+    .tm-log {
+      background:#0f172a;color:#7dd3fc;border-radius:16px;padding:1rem;max-height:240px;overflow:auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:.84rem;
+    }
+    .tm-log-entry + .tm-log-entry { margin-top:.5rem; padding-top:.5rem; border-top:1px solid rgba(148,163,184,.12); }
+    .tm-source-pill {
+      display:inline-flex; padding:.35rem .65rem; border-radius:999px; border:1px solid #e2e8f0; background:#fff; font-size:.75rem; font-weight:600; margin:.15rem;
+    }
+    @media (max-width: 1200px) {
+      .tm-stat-grid, .tm-chart-row, .tm-settings-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 991px) {
+      .tm-app { flex-direction: column; }
+      .tm-sidebar { width: 100%; }
+      .tm-stat-grid, .tm-chart-row, .tm-settings-grid { grid-template-columns: 1fr; }
+      .tm-header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
 
-    <div class="trends-shell animate-fade-in">
-        <div class="trends-app">
-            <aside class="trends-sidebar">
-                <div class="trends-brand">
-                    <div class="trends-brand-mark">TR</div>
-                    <div>
-                        <div class="fw-bold text-white">Trends Intelligence</div>
-                        <div class="small text-slate-400">MediaFlow · Editorial Radar</div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="small text-uppercase fw-semibold text-slate-500 mb-3" style="letter-spacing:0.08em;">Workspace</div>
-                    <div class="d-grid gap-2">
-                        <button class="trends-nav-btn active" data-tab="dashboardTab">
-                            <i class="fas fa-chart-pie"></i><span>Dashboard</span>
-                        </button>
-                        <button class="trends-nav-btn" data-tab="briefTab">
-                            <i class="fas fa-newspaper"></i><span>Brief editorial</span>
-                        </button>
-                        <button class="trends-nav-btn" data-tab="settingsTab">
-                            <i class="fas fa-sliders"></i><span>Configuración</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="trends-sidebar-foot">
-                    <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
-                        <span class="small fw-semibold text-slate-300">Estado del sistema</span>
-                        <span class="trends-chip" id="systemStatusChip"><i class="fas fa-circle small"></i> Listo</span>
-                    </div>
-                    <div class="small text-slate-400 mb-2">Última ejecución</div>
-                    <div class="fw-semibold text-white" id="sidebarLastRun">Pendiente</div>
-                    <div class="small text-slate-500 mt-3">Mantén aquí la configuración editorial, ejecuta el radar y revisa un brief priorizado sin salir del dashboard.</div>
-                </div>
-            </aside>
-
-            <main class="trends-main">
-                <section class="trends-hero">
-                    <div class="row g-4 align-items-center position-relative">
-                        <div class="col-xl-7">
-                            <div class="d-flex flex-wrap gap-2 mb-3">
-                                <span class="trends-hero-chip"><i class="fas fa-broadcast-tower"></i> Live · Últimas 24 horas</span>
-                                <span class="trends-hero-chip"><i class="fas fa-layer-group"></i> Todo en /trends/dashboard</span>
-                            </div>
-                            <h1 class="display-6 fw-bold mb-3">Migra tu radar editorial a una vista única, accionable y alineada con el diseño del producto.</h1>
-                            <p class="mb-0 text-white-50 fs-5 pe-xl-4">Conserva configuración, priorización, ejecución y lectura editorial en un único flujo para detectar oportunidades de contenido sin fricción.</p>
-                        </div>
-                        <div class="col-xl-5">
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <div class="trends-hero-metric">
-                                        <div class="text-uppercase small fw-semibold text-white-50 mb-2">Mercado</div>
-                                        <div class="fw-bold fs-2" id="heroGeo">{{ current_project.geo or 'ES' }}</div>
-                                        <div class="small text-white-50 mt-2">País activo para escanear señales.</div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="trends-hero-metric">
-                                        <div class="text-uppercase small fw-semibold text-white-50 mb-2">Resultados</div>
-                                        <div class="fw-bold fs-2" id="heroCount">0</div>
-                                        <div class="small text-white-50 mt-2">Temas detectados tras la ejecución.</div>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="trends-hero-metric">
-                                        <div class="d-flex justify-content-between align-items-start gap-3">
-                                            <div>
-                                                <div class="text-uppercase small fw-semibold text-white-50 mb-2">Última ejecución</div>
-                                                <div class="fw-bold fs-5" id="heroLastRun">Pendiente</div>
-                                                <div class="small text-white-50 mt-2">Usa el radar, genera un brief y vuelve a correrlo cuando cambie el contexto.</div>
-                                            </div>
-                                            <div class="rounded-circle bg-white bg-opacity-10 d-flex align-items-center justify-content-center" style="width:56px;height:56px;">
-                                                <i class="fas fa-chart-line fs-4 text-info"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="trends-panel">
-                    <div id="dashboardTab" class="trends-tab-panel active">
-                        <div class="row g-4 align-items-start">
-                            <div class="col-12 col-xxl-4">
-                                <div class="trends-card p-4 mb-4">
-                                    <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-                                        <div>
-                                            <div class="trends-section-title">Configuración</div>
-                                            <h2 class="h5 fw-bold text-dark mb-0">Define el radar</h2>
-                                        </div>
-                                        <span class="trends-chip">Paso 1</span>
-                                    </div>
-                                    <form id="trendsForm" class="trends-form">
-                                        <div class="mb-3">
-                                            <label for="geoInput" class="form-label fw-semibold">País objetivo</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class="fas fa-globe"></i></span>
-                                                <input class="form-control" list="geoOptions" name="geo" id="geoInput" value="{{ current_project.geo or 'ES' }}" placeholder="ES, US, MX..." maxlength="2" autocomplete="off">
-                                            </div>
-                                            <datalist id="geoOptions">
-                                                <option value="ES">España</option>
-                                                <option value="US">Estados Unidos</option>
-                                                <option value="MX">México</option>
-                                                <option value="AR">Argentina</option>
-                                                <option value="CO">Colombia</option>
-                                                <option value="CL">Chile</option>
-                                            </datalist>
-                                            <div class="form-text">Usa el código ISO de 2 letras para enfocar el mercado correcto.</div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="catInput" class="form-label fw-semibold">Categoría</label>
-                                            <select class="form-select" name="category" id="catInput">
-                                                <option value="h">⚡ Todo (General)</option>
-                                                <option value="b">💰 Economía / Negocios</option>
-                                                <option value="m">🏥 Salud</option>
-                                                <option value="t">🤖 Ciencia / Tecnología</option>
-                                                <option value="s">⚽ Deportes</option>
-                                                <option value="e">🎬 Entretenimiento</option>
-                                            </select>
-                                            <div class="form-text">Filtra el ruido y quédate sólo con las conversaciones relevantes.</div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="focusTermsInput" class="form-label fw-semibold">Temas o sectores prioritarios</label>
-                                            <textarea class="form-control" name="focus_terms" id="focusTermsInput" rows="4" placeholder="Ej: medios, streaming, IA, publicidad digital, TV, podcasts"></textarea>
-                                            <div class="form-text">Escribe verticales, entidades o temas separados por coma o salto de línea para reordenar oportunidades.</div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="rankingModeInput" class="form-label fw-semibold">Modo de priorización</label>
-                                            <select class="form-select" name="ranking_mode" id="rankingModeInput">
-                                                <option value="balanced">Balanceado · mezcla relevancia y descubrimiento</option>
-                                                <option value="strict">Estricto · prioriza sólo coincidencias claras</option>
-                                                <option value="discovery">Exploración · deja pasar señales emergentes</option>
-                                            </select>
-                                            <div class="form-text">Útil para verticales muy definidos o para hunting editorial.</div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="dataforseoLoginInput" class="form-label fw-semibold">DataForSEO login <span class="text-muted fw-normal">(opcional)</span></label>
-                                            <input type="text" class="form-control" name="dataforseo_login" id="dataforseoLoginInput" placeholder="Se usará el login global si lo dejas vacío">
-                                        </div>
-                                        <div class="mb-4">
-                                            <label for="dataforseoPasswordInput" class="form-label fw-semibold">DataForSEO password <span class="text-muted fw-normal">(opcional)</span></label>
-                                            <input type="password" class="form-control" name="dataforseo_password" id="dataforseoPasswordInput" placeholder="Se usará la password global si la dejas vacía">
-                                        </div>
-                                        <div class="d-grid gap-2">
-                                            <button type="button" id="analyzeBtn" class="btn trends-primary-btn text-white" onclick="startTrends()">
-                                                <i class="fas fa-bolt me-2"></i>Analizar tendencias ahora
-                                            </button>
-                                            <button type="button" class="btn trends-secondary-btn" onclick="switchTab('settingsTab')">
-                                                <i class="fas fa-gear me-2"></i>Ajustar configuración avanzada
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-
-                                <div class="trends-log-card p-4 mb-4 d-none" id="progressSection">
-                                    <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
-                                        <div>
-                                            <div class="trends-section-title">Progreso</div>
-                                            <h3 class="h6 fw-bold mb-1">Procesando señales</h3>
-                                            <small id="statusText" class="text-muted">Preparando solicitud...</small>
-                                        </div>
-                                        <span class="trends-chip" id="progressBadge">0%</span>
-                                    </div>
-                                    <div class="progress trends-progress-shell" aria-label="Estado de ejecución">
-                                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width:0%"></div>
-                                    </div>
-                                </div>
-
-                                <div class="trends-log-card p-4 d-none" id="logSection">
-                                    <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
-                                        <div>
-                                            <div class="trends-section-title">Actividad</div>
-                                            <h3 class="h6 fw-bold mb-0">Registro de ejecución</h3>
-                                        </div>
-                                        <span class="trends-chip">En vivo</span>
-                                    </div>
-                                    <div class="trends-log" id="logContent">&gt; Esperando nueva ejecución...</div>
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-xxl-8">
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-6 col-xl-3">
-                                        <div class="trends-stat-card">
-                                            <div class="d-flex align-items-start justify-content-between gap-3">
-                                                <div>
-                                                    <div class="trends-section-title">Fuentes escaneadas</div>
-                                                    <div class="fw-bold fs-3 text-dark" id="summarySources">0</div>
-                                                    <div class="text-muted small mt-2">Señales brutas recuperadas desde el proveedor.</div>
-                                                </div>
-                                                <div class="trends-stat-icon bg-primary-subtle text-primary"><i class="fas fa-layer-group"></i></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 col-xl-3">
-                                        <div class="trends-stat-card">
-                                            <div class="d-flex align-items-start justify-content-between gap-3">
-                                                <div>
-                                                    <div class="trends-section-title">Items detectados</div>
-                                                    <div class="fw-bold fs-3 text-dark" id="summaryTotal">0</div>
-                                                    <div class="text-muted small mt-2">Temas finales listos para revisar.</div>
-                                                </div>
-                                                <div class="trends-stat-icon bg-warning-subtle text-warning"><i class="fas fa-signal"></i></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 col-xl-3">
-                                        <div class="trends-stat-card">
-                                            <div class="d-flex align-items-start justify-content-between gap-3">
-                                                <div>
-                                                    <div class="trends-section-title">Alta prioridad</div>
-                                                    <div class="fw-bold fs-3 text-dark" id="summaryPriority">0</div>
-                                                    <div class="text-muted small mt-2">Temas con mayor fit editorial.</div>
-                                                </div>
-                                                <div class="trends-stat-icon bg-danger-subtle text-danger"><i class="fas fa-fire"></i></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 col-xl-3">
-                                        <div class="trends-stat-card">
-                                            <div class="d-flex align-items-start justify-content-between gap-3">
-                                                <div>
-                                                    <div class="trends-section-title">Enfoque</div>
-                                                    <div class="fw-bold fs-5 text-dark" id="summaryFocus">Sin filtro</div>
-                                                    <div class="text-muted small mt-2">Términos usados para priorizar.</div>
-                                                </div>
-                                                <div class="trends-stat-icon bg-info-subtle text-info"><i class="fas fa-bullseye"></i></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row g-4 mb-4">
-                                    <div class="col-lg-6">
-                                        <div class="trends-chart-card p-4 h-100">
-                                            <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
-                                                <div>
-                                                    <div class="trends-section-title">Vista dashboard</div>
-                                                    <h3 class="h5 fw-bold mb-0">Tendencias más fuertes</h3>
-                                                </div>
-                                                <span class="trends-chip" id="summaryCategory">General</span>
-                                            </div>
-                                            <div id="chartBars">
-                                                <div class="text-muted small">Ejecuta el radar para ver el reparto de prioridad.</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-6">
-                                        <div class="trends-card p-4 h-100">
-                                            <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
-                                                <div>
-                                                    <div class="trends-section-title">Workflow</div>
-                                                    <h3 class="h5 fw-bold mb-0">Qué puedes hacer aquí</h3>
-                                                </div>
-                                                <span class="trends-chip">Migrado</span>
-                                            </div>
-                                            <ul class="list-unstyled mb-0 d-grid gap-3 text-muted">
-                                                <li class="d-flex gap-3"><span class="trends-stat-icon bg-primary-subtle text-primary" style="width:40px;height:40px;border-radius:14px;"><i class="fas fa-radar"></i></span><span>Configura mercado, categoría, enfoque y credenciales en la misma vista.</span></li>
-                                                <li class="d-flex gap-3"><span class="trends-stat-icon bg-success-subtle text-success" style="width:40px;height:40px;border-radius:14px;"><i class="fas fa-list-check"></i></span><span>Revisa resultados, contexto, puntuación y enlaces de búsqueda sin salir del panel.</span></li>
-                                                <li class="d-flex gap-3"><span class="trends-stat-icon bg-warning-subtle text-warning" style="width:40px;height:40px;border-radius:14px;"><i class="fas fa-pen-nib"></i></span><span>Genera un brief editorial adaptado al estilo visual del producto con reglas locales de priorización.</span></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div id="errorAlert" class="alert alert-danger d-none border-0 shadow-sm rounded-4 mb-4" role="alert">
-                                    <div class="d-flex align-items-start gap-3">
-                                        <div class="fs-4"><i class="fas fa-triangle-exclamation"></i></div>
-                                        <div class="flex-grow-1">
-                                            <div class="fw-bold mb-1">No pudimos completar el análisis.</div>
-                                            <span id="errorMsg">Ha ocurrido un error.</span>
-                                        </div>
-                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="resetUI()">Reintentar</button>
-                                    </div>
-                                </div>
-
-                                <div id="resultsSection" class="d-none">
-                                    <div class="trends-result-card overflow-hidden">
-                                        <div class="p-4 border-bottom bg-light bg-opacity-50">
-                                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                                                <div>
-                                                    <div class="trends-section-title">Resultados</div>
-                                                    <h3 class="h4 fw-bold mb-1">Radar de tendencias detectadas</h3>
-                                                    <p class="text-muted mb-0">Tema, contexto, priorización y acceso directo a búsqueda.</p>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                    <span class="trends-chip" id="resultsBadge">0 resultados</span>
-                                                    <span class="trends-chip" id="resultsGeoBadge">{{ current_project.geo or 'ES' }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="trends-table-wrap">
-                                            <table class="table table-hover align-middle mb-0 trends-table" id="resultsTable">
-                                                <thead>
-                                                    <tr>
-                                                        <th width="8%">#</th>
-                                                        <th width="24%">Tema</th>
-                                                        <th width="24%">Contexto</th>
-                                                        <th width="18%">Prioridad</th>
-                                                        <th width="14%">Score</th>
-                                                        <th width="12%">Acción</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="resultsBody"></tbody>
-                                            </table>
-                                        </div>
-                                        <div id="emptyState" class="trends-empty d-none">
-                                            <div class="trends-empty-icon"><i class="fas fa-magnifying-glass-chart"></i></div>
-                                            <h4 class="fw-bold text-dark">No encontramos tendencias para esta combinación.</h4>
-                                            <p class="mb-0">Prueba otro país o una categoría distinta para ampliar la cobertura del radar.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="briefTab" class="trends-tab-panel">
-                        <div class="row g-4">
-                            <div class="col-lg-8">
-                                <div class="trends-card p-4 mb-4">
-                                    <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
-                                        <div>
-                                            <div class="trends-section-title">Brief generator</div>
-                                            <h2 class="h4 fw-bold mb-1">Prioridades editoriales</h2>
-                                            <p class="text-muted mb-0">Versión adaptada al diseño visual actual, con lectura rápida y recomendaciones accionables.</p>
-                                        </div>
-                                        <div class="d-flex gap-2 flex-wrap">
-                                            <button type="button" class="btn trends-secondary-btn px-4" onclick="switchTab('dashboardTab')"><i class="fas fa-radar me-2"></i>Volver al radar</button>
-                                            <button type="button" class="btn trends-primary-btn px-4 text-white" onclick="sendToEditorial()"><i class="fas fa-paper-plane me-2"></i>Enviar a redacción</button>
-                                        </div>
-                                    </div>
-                                    <div id="briefContent">
-                                        <div class="trends-empty">
-                                            <div class="trends-empty-icon"><i class="fas fa-newspaper"></i></div>
-                                            <h4 class="fw-bold text-dark">Aún no hay brief generado.</h4>
-                                            <p class="mb-4">Ejecuta el radar desde Dashboard para construir una selección priorizada.</p>
-                                            <button type="button" class="btn trends-primary-btn px-4 text-white" onclick="switchTab('dashboardTab')">Ir a Dashboard</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4">
-                                <div class="trends-card p-4 mb-4">
-                                    <div class="trends-section-title">Resumen</div>
-                                    <h3 class="h5 fw-bold mb-3">Estado del brief</h3>
-                                    <div class="d-grid gap-3">
-                                        <div>
-                                            <div class="small text-muted">Clusters totales</div>
-                                            <div class="fw-bold fs-4 text-dark" id="briefTotal">0</div>
-                                        </div>
-                                        <div>
-                                            <div class="small text-muted">Temas prioritarios</div>
-                                            <div class="fw-bold fs-4 text-dark" id="briefPriority">0</div>
-                                        </div>
-                                        <div>
-                                            <div class="small text-muted">Fuentes editoriales objetivo</div>
-                                            <div id="briefSources" class="pt-2 text-muted small">Sin configurar</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="trends-card p-4">
-                                    <div class="trends-section-title">Baja prioridad</div>
-                                    <h3 class="h5 fw-bold mb-3">Parking editorial</h3>
-                                    <div id="discardedContent" class="text-muted small">Todavía no hay elementos descartados o exploratorios.</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="settingsTab" class="trends-tab-panel">
-                        <div class="row g-4">
-                            <div class="col-xl-7">
-                                <div class="trends-card p-4 mb-4">
-                                    <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
-                                        <div>
-                                            <div class="trends-section-title">Configuración avanzada</div>
-                                            <h2 class="h4 fw-bold mb-1">Persistencia local del dashboard</h2>
-                                            <p class="text-muted mb-0">Replica la experiencia de la carpeta original manteniendo parámetros, fuentes objetivo y briefing en esta vista.</p>
-                                        </div>
-                                        <span class="trends-chip">Local storage</span>
-                                    </div>
-                                    <div class="row g-4">
-                                        <div class="col-md-6">
-                                            <div class="trends-settings-box">
-                                                <label class="form-label fw-semibold">País por defecto</label>
-                                                <input id="settingsGeo" class="trends-settings-input" maxlength="2" placeholder="ES, US, MX...">
-                                                <label class="form-label fw-semibold mt-3">Categoría por defecto</label>
-                                                <select id="settingsCategory" class="trends-settings-input">
-                                                    <option value="h">General</option>
-                                                    <option value="b">Economía / Negocios</option>
-                                                    <option value="m">Salud</option>
-                                                    <option value="t">Ciencia / Tecnología</option>
-                                                    <option value="s">Deportes</option>
-                                                    <option value="e">Entretenimiento</option>
-                                                </select>
-                                                <label class="form-label fw-semibold mt-3">Modo por defecto</label>
-                                                <select id="settingsRankingMode" class="trends-settings-input">
-                                                    <option value="balanced">Balanceado</option>
-                                                    <option value="strict">Estricto</option>
-                                                    <option value="discovery">Exploración</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="trends-settings-box">
-                                                <label class="form-label fw-semibold">Focus terms por defecto</label>
-                                                <textarea id="settingsFocusTerms" class="trends-settings-input" rows="8" placeholder="medios, streaming, publicidad, digital, IA"></textarea>
-                                                <label class="form-label fw-semibold mt-3">Fuentes objetivo</label>
-                                                <textarea id="settingsTargetSources" class="trends-settings-input" rows="4" placeholder="Una fuente por línea"></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-xl-5">
-                                <div class="trends-card p-4 mb-4">
-                                    <div class="trends-section-title">Credenciales</div>
-                                    <h3 class="h5 fw-bold mb-3">Sobrescrituras de DataForSEO</h3>
-                                    <label class="form-label fw-semibold">Login guardado</label>
-                                    <input id="settingsLogin" class="trends-settings-input" placeholder="Opcional">
-                                    <label class="form-label fw-semibold mt-3">Password guardada</label>
-                                    <input id="settingsPassword" type="password" class="trends-settings-input" placeholder="Opcional">
-                                    <div class="text-muted small mt-3">Estas credenciales se vuelcan automáticamente en el formulario del dashboard para acelerar nuevas ejecuciones.</div>
-                                </div>
-                                <div class="trends-card p-4">
-                                    <div class="trends-section-title">Acciones</div>
-                                    <h3 class="h5 fw-bold mb-3">Guardar y reutilizar</h3>
-                                    <div class="d-grid gap-2">
-                                        <button type="button" class="btn trends-primary-btn text-white" onclick="saveDashboardSettings()"><i class="fas fa-floppy-disk me-2"></i>Guardar configuración</button>
-                                        <button type="button" class="btn trends-secondary-btn" onclick="applySettingsToForm(true)"><i class="fas fa-rotate me-2"></i>Aplicar al formulario</button>
-                                        <button type="button" class="btn btn-light border rounded-4 py-3 fw-semibold" onclick="resetStoredSettings()"><i class="fas fa-trash-can me-2"></i>Restablecer defaults</button>
-                                    </div>
-                                    <div id="settingsFeedback" class="small text-success mt-3 d-none">Configuración guardada correctamente.</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </main>
+  <div class="tm-shell">
+    <div class="tm-app">
+      <aside class="tm-sidebar">
+        <div class="tm-brand">
+          <div class="tm-brand-title">
+            <span class="tm-brand-mark">E3</span>
+            <span>Eco3 Automator</span>
+          </div>
+          <div class="small text-secondary mt-2">Editorial Automation v1.0</div>
         </div>
+
+        <div class="d-grid gap-2">
+          <button class="tm-nav-btn active" data-view="dashboardView"><i class="fas fa-chart-pie"></i><span>Dashboard</span></button>
+          <button class="tm-nav-btn" data-view="briefView"><i class="fas fa-newspaper"></i><span>Generar Brief</span></button>
+          <button class="tm-nav-btn" data-view="settingsView"><i class="fas fa-sliders"></i><span>Configuración</span></button>
+        </div>
+
+        <div class="tm-system-box">
+          <div class="fw-semibold text-white mb-2">Estado del Sistema</div>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="tm-chip tm-chip-neutral" id="systemStatusChip"><i class="fas fa-circle"></i> Listo</span>
+          </div>
+          <div class="text-secondary small">Última ejecución</div>
+          <div class="text-white fw-semibold mt-1" id="sidebarLastRun">Pendiente</div>
+        </div>
+      </aside>
+
+      <main class="tm-main">
+        <header class="tm-header">
+          <div>
+            <h2 class="h4 fw-bold mb-1" id="headerTitle">Panel de Control</h2>
+            <p class="text-muted mb-0" id="headerSubtitle">Comunidad Valenciana • Noticias & Eventos</p>
+          </div>
+          <div class="tm-header-actions">
+            <button class="tm-btn-primary" id="headerRunBtn" onclick="startPipeline()">
+              <i class="fas fa-rotate me-2"></i><span id="headerRunText">Analizar SERPs</span>
+            </button>
+            <button class="tm-btn-secondary" onclick="switchView('settingsView')">
+              <i class="fas fa-gear"></i>
+            </button>
+          </div>
+        </header>
+
+        <div class="tm-content">
+          <section id="dashboardView" class="tm-view active">
+            <div class="tm-hero tm-card border-0 mb-4">
+              <div class="row g-4 align-items-center position-relative">
+                <div class="col-lg-7">
+                  <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="tm-chip tm-chip-live"><i class="fas fa-broadcast-tower"></i> En tiempo real</span>
+                    <span class="tm-chip tm-chip-live"><i class="fas fa-layer-group"></i> Tendencias + brief + settings</span>
+                  </div>
+                  <h1 class="display-6 fw-bold mb-3">Radar editorial unificado para detectar tendencias y convertirlas en decisiones de contenidos.</h1>
+                  <p class="mb-0 text-white-50 fs-5">Migra el flujo de Tendencias-medios a una sola vista: dashboard, pipeline, brief editorial y configuración persistente.</p>
+                </div>
+                <div class="col-lg-5">
+                  <div class="row g-3">
+                    <div class="col-sm-6">
+                      <div class="p-3 rounded-4 border border-white border-opacity-10 bg-white bg-opacity-10 h-100">
+                        <div class="small text-uppercase text-white-50 fw-semibold mb-2">Mercado</div>
+                        <div class="fw-bold fs-2" id="heroGeo">{{ current_project.geo or 'ES' }}</div>
+                        <div class="small text-white-50 mt-2">País activo para el escaneo.</div>
+                      </div>
+                    </div>
+                    <div class="col-sm-6">
+                      <div class="p-3 rounded-4 border border-white border-opacity-10 bg-white bg-opacity-10 h-100">
+                        <div class="small text-uppercase text-white-50 fw-semibold mb-2">Resultados</div>
+                        <div class="fw-bold fs-2" id="heroCount">0</div>
+                        <div class="small text-white-50 mt-2">Clusters disponibles.</div>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="p-3 rounded-4 border border-white border-opacity-10 bg-white bg-opacity-10 h-100">
+                        <div class="small text-uppercase text-white-50 fw-semibold mb-2">Última ejecución</div>
+                        <div class="fw-bold fs-5" id="heroLastRun">Pendiente</div>
+                        <div class="small text-white-50 mt-2">Revisa el brief y vuelve a actualizar cuando cambie el contexto.</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tm-stat-grid mb-4">
+              <div class="tm-card tm-stat-card"><div class="tm-stat-icon bg-primary-subtle text-primary"><i class="fas fa-layer-group"></i></div><div><div class="text-muted small">Fuentes Escaneadas</div><div class="fs-3 fw-bold" id="sourcesScanned">0</div></div></div>
+              <div class="tm-card tm-stat-card"><div class="tm-stat-icon bg-warning-subtle text-warning"><i class="fas fa-signal"></i></div><div><div class="text-muted small">Items Detectados</div><div class="fs-3 fw-bold" id="itemsFound">0</div></div></div>
+              <div class="tm-card tm-stat-card"><div class="tm-stat-icon bg-danger-subtle text-danger"><i class="fas fa-fire"></i></div><div><div class="text-muted small">Alta Prioridad (P1)</div><div class="fs-3 fw-bold" id="highPriority">0</div></div></div>
+              <div class="tm-card tm-stat-card"><div class="tm-stat-icon bg-success-subtle text-success"><i class="fas fa-check-circle"></i></div><div><div class="text-muted small">Filtrados / Baja prioridad</div><div class="fs-3 fw-bold" id="duplicatesRemoved">0</div></div></div>
+            </div>
+
+            <div class="tm-chart-row mb-4">
+              <div class="tm-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+                  <div>
+                    <div class="tm-section-title">Tendencias de búsqueda</div>
+                    <h3 class="h5 fw-bold mb-0">Google Trends en tiempo real</h3>
+                  </div>
+                  <span class="tm-chip tm-chip-p1">En tiempo real</span>
+                </div>
+                <div id="trendsBars" class="tm-bar-list">
+                  <div class="text-muted small">No hay datos todavía. Ejecuta el pipeline.</div>
+                </div>
+              </div>
+
+              <div class="tm-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
+                  <div>
+                    <div class="tm-section-title">Pipeline</div>
+                    <h3 class="h5 fw-bold mb-0">Ejecución actual</h3>
+                  </div>
+                  <span class="tm-chip tm-chip-neutral" id="pipelineModeChip">Idle</span>
+                </div>
+                <div id="pipelineProgressWrap" class="d-none mb-3">
+                  <div class="progress rounded-pill" style="height:12px;">
+                    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:0%"></div>
+                  </div>
+                  <div class="small text-muted mt-2" id="statusText">Preparando...</div>
+                </div>
+                <div id="dashboardEmpty" class="tm-empty">
+                  <div class="tm-empty-icon"><i class="fas fa-play"></i></div>
+                  <p class="mb-3">Pipeline listo. Inicia el análisis para buscar tendencias, puntuarlas y generar un brief.</p>
+                  <button class="tm-btn-primary" onclick="startPipeline()"><i class="fas fa-play me-2"></i>Iniciar Pipeline</button>
+                </div>
+                <div id="dashboardLogWrap" class="d-none">
+                  <div class="tm-log" id="logContent"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tm-card overflow-hidden">
+              <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-light-subtle gap-3">
+                <h3 class="h5 fw-bold mb-0">Últimas Noticias Detectadas</h3>
+                <span class="small text-muted" id="resultsCountText">0 clusters</span>
+              </div>
+              <div id="dashboardTableEmpty" class="tm-empty">
+                <div class="tm-empty-icon"><i class="fas fa-chart-line"></i></div>
+                <p class="mb-0">No hay datos analizados todavía.</p>
+              </div>
+              <div id="dashboardTableWrap" class="tm-table-wrap d-none">
+                <table class="table align-middle mb-0 tm-table">
+                  <thead>
+                    <tr>
+                      <th class="px-4 py-3">Prio</th>
+                      <th class="px-4 py-3">Score</th>
+                      <th class="px-4 py-3">Titular sugerido</th>
+                      <th class="px-4 py-3">Cluster</th>
+                      <th class="px-4 py-3">Fuente Top</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboardTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="briefView" class="tm-view">
+            <div id="briefLoading" class="tm-empty d-none">
+              <div class="d-flex justify-content-center mb-3"><div class="tm-loader"></div></div>
+              <h3 class="h4 fw-bold">Analizando con IA editorial...</h3>
+              <p class="text-muted" id="briefLoadingText">Procesando datos...</p>
+            </div>
+
+            <div id="briefEmpty" class="tm-empty">
+              <div class="tm-empty-icon"><i class="fas fa-rotate"></i></div>
+              <h2 class="h3 fw-bold mb-2">Generador de Briefs</h2>
+              <p class="text-muted mb-4">Pipeline listo. Inicia el análisis para buscar noticias en tiempo real, agruparlas y puntuarlas.</p>
+              <button class="tm-btn-primary" onclick="startPipeline()"><i class="fas fa-play me-2"></i>Iniciar Pipeline</button>
+            </div>
+
+            <div id="briefContentWrap" class="d-none">
+              <div class="tm-card p-4 mb-4 d-flex justify-content-between align-items-center gap-3">
+                <div>
+                  <h2 class="h5 fw-bold mb-1"><span class="text-success me-2">●</span>Brief Generado</h2>
+                  <p class="text-muted small mb-0"><span id="briefMetaText">0 clusters</span></p>
+                </div>
+                <button class="tm-btn-primary" onclick="sendToEditorial()"><i class="fas fa-paper-plane me-2"></i>Enviar a Redacción</button>
+              </div>
+
+              <div class="row g-4">
+                <div class="col-lg-8">
+                  <div class="tm-brief-list" id="briefList"></div>
+                </div>
+                <div class="col-lg-4">
+                  <div class="tm-card p-4 mb-4">
+                    <div class="tm-section-title">Resumen</div>
+                    <h3 class="h5 fw-bold mb-3">Estado del brief</h3>
+                    <div class="d-grid gap-3">
+                      <div><div class="small text-muted">Clusters totales</div><div class="fw-bold fs-3" id="briefTotal">0</div></div>
+                      <div><div class="small text-muted">Temas prioritarios</div><div class="fw-bold fs-3" id="briefPriority">0</div></div>
+                      <div><div class="small text-muted mb-2">Fuentes objetivo</div><div id="briefSources">Sin configurar</div></div>
+                    </div>
+                  </div>
+                  <div class="tm-card p-4">
+                    <div class="tm-section-title">Descartados</div>
+                    <h3 class="h5 fw-bold mb-3">Parking editorial</h3>
+                    <div id="discardList" class="tm-discard-list text-muted small">Todavía no hay items descartados.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="settingsView" class="tm-view">
+            <div class="tm-settings-grid">
+              <div class="tm-card tm-settings-box">
+                <h3 class="h5 fw-bold mb-4"><i class="fas fa-key text-primary me-2"></i>Credenciales & estrategia</h3>
+                <label class="form-label fw-semibold">DataForSEO Login</label>
+                <input id="settingsLogin" class="tm-form-control" placeholder="Opcional">
+                <label class="form-label fw-semibold mt-3">DataForSEO Password</label>
+                <input id="settingsPassword" type="password" class="tm-form-control" placeholder="Opcional">
+                <label class="form-label fw-semibold mt-3">País por defecto</label>
+                <input id="settingsGeo" class="tm-form-control" maxlength="2" placeholder="ES, US, MX...">
+                <label class="form-label fw-semibold mt-3">Categoría por defecto</label>
+                <select id="settingsCategory" class="tm-form-control">
+                  <option value="h">General</option>
+                  <option value="b">Economía / Negocios</option>
+                  <option value="m">Salud</option>
+                  <option value="t">Ciencia / Tecnología</option>
+                  <option value="s">Deportes</option>
+                  <option value="e">Entretenimiento</option>
+                </select>
+              </div>
+
+              <div class="tm-card tm-settings-box">
+                <h3 class="h5 fw-bold mb-4"><i class="fas fa-search text-success me-2"></i>Configuración editorial</h3>
+                <label class="form-label fw-semibold">Modo de priorización</label>
+                <select id="settingsRankingMode" class="tm-form-control">
+                  <option value="balanced">Balanceado</option>
+                  <option value="strict">Estricto</option>
+                  <option value="discovery">Exploración</option>
+                </select>
+                <label class="form-label fw-semibold mt-3">Queries automatizadas</label>
+                <textarea id="settingsQueries" rows="6" class="tm-form-control" placeholder="Una query por línea"></textarea>
+                <label class="form-label fw-semibold mt-3">Temas prioritarios</label>
+                <textarea id="settingsFocusTerms" rows="4" class="tm-form-control" placeholder="medios, streaming, IA, publicidad digital"></textarea>
+                <label class="form-label fw-semibold mt-3">Fuentes objetivo</label>
+                <textarea id="settingsTargetSources" rows="5" class="tm-form-control" placeholder="Una fuente por línea"></textarea>
+              </div>
+            </div>
+
+            <div class="tm-card p-4 mt-4">
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <button class="tm-btn-primary" onclick="saveAppSettings()"><i class="fas fa-floppy-disk me-2"></i>Guardar Configuración</button>
+                <button class="tm-btn-secondary" onclick="applySettingsToForm(true)"><i class="fas fa-rotate me-2"></i>Aplicar al formulario</button>
+                <button class="btn btn-light border rounded-3 px-4 py-2 fw-semibold" onclick="resetStoredSettings()"><i class="fas fa-trash-can me-2"></i>Restablecer defaults</button>
+                <span id="settingsFeedback" class="small text-success d-none">Guardado.</span>
+              </div>
+            </div>
+
+            <div class="tm-card p-4 mt-4">
+              <h3 class="h5 fw-bold mb-3">Formulario de ejecución</h3>
+              <div class="row g-3">
+                <div class="col-md-6"><label class="form-label fw-semibold">Geo</label><input id="geoInput" class="tm-form-control" maxlength="2"></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Categoría</label><select id="catInput" class="tm-form-control"><option value="h">General</option><option value="b">Economía / Negocios</option><option value="m">Salud</option><option value="t">Ciencia / Tecnología</option><option value="s">Deportes</option><option value="e">Entretenimiento</option></select></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Modo de priorización</label><select id="rankingModeInput" class="tm-form-control"><option value="balanced">Balanceado</option><option value="strict">Estricto</option><option value="discovery">Exploración</option></select></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Focus terms</label><input id="focusTermsInput" class="tm-form-control"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
     </div>
+  </div>
 </div>
 
 <script>
-    let intervalId;
-    let currentJobId = null;
-    let latestResults = [];
-    const TRENDS_SETTINGS_KEY = 'mediaflow_trends_dashboard_settings_v1';
-    const DEFAULT_SETTINGS = {
-        geo: '{{ current_project.geo or "ES" }}',
-        category: 'h',
-        focus_terms: '',
-        ranking_mode: 'balanced',
-        dataforseo_login: '',
-        dataforseo_password: '',
-        target_sources: ['Economía 3', 'Expansión', 'Cinco Días', 'El Confidencial', 'MarketingDirecto']
+  let intervalId = null;
+  let currentJobId = null;
+  let latestResults = [];
+  let pipelineStatus = 'idle';
+  const STORAGE_KEY = 'trends_medios_migrated_settings_v2';
+  const DEFAULT_SETTINGS = {
+    geo: '{{ current_project.geo or "ES" }}',
+    category: 'h',
+    ranking_mode: 'balanced',
+    focus_terms: '',
+    dataforseo_login: '',
+    dataforseo_password: '',
+    search_queries: [
+      'medios españa tendencias',
+      'streaming audiencias españa',
+      'publicidad digital españa',
+      'television audiencia tendencias',
+      'podcasts españa negocio'
+    ],
+    target_sources: ['Economía 3', 'Expansión', 'Cinco Días', 'El Confidencial', 'MarketingDirecto']
+  };
+  const VIEW_TITLES = {
+    dashboardView: ['Panel de Control', 'Comunidad Valenciana • Noticias & Eventos'],
+    briefView: ['Generador de Contenido', 'Brief editorial priorizado y accionable'],
+    settingsView: ['Configuración', 'Credenciales, queries y reglas editoriales']
+  };
+
+  function getStoredSettings() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+      const parsed = JSON.parse(raw);
+      return { ...JSON.parse(JSON.stringify(DEFAULT_SETTINGS)), ...parsed };
+    } catch (e) {
+      return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+    }
+  }
+
+  function saveStoredSettings(settings) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  }
+
+  function switchView(viewId) {
+    document.querySelectorAll('.tm-view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tm-nav-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+    document.querySelector(`.tm-nav-btn[data-view="${viewId}"]`)?.classList.add('active');
+    const [title, subtitle] = VIEW_TITLES[viewId] || VIEW_TITLES.dashboardView;
+    document.getElementById('headerTitle').textContent = title;
+    document.getElementById('headerSubtitle').textContent = subtitle;
+  }
+
+  function priorityMeta(item) {
+    const score = Number(item.relevance_score || 0);
+    if (score >= 60) return { label: 'P1', chip: 'tm-chip-p1', fit: item.fit_label || 'Alta prioridad' };
+    if (score >= 25) return { label: 'P2', chip: 'tm-chip-p2', fit: item.fit_label || 'Media prioridad' };
+    if (score > 0) return { label: 'P3', chip: 'tm-chip-p3', fit: item.fit_label || 'Exploratoria' };
+    return { label: 'DISCARD', chip: 'tm-chip-discard', fit: item.fit_label || 'Descartar' };
+  }
+
+  function renderSources(targetSources) {
+    const wrapper = document.getElementById('briefSources');
+    if (!targetSources || !targetSources.length) {
+      wrapper.textContent = 'Sin configurar';
+      return;
+    }
+    wrapper.innerHTML = targetSources.map(s => `<span class="tm-source-pill">${s}</span>`).join('');
+  }
+
+  function hydrateSettings(settings = getStoredSettings()) {
+    document.getElementById('settingsLogin').value = settings.dataforseo_login || '';
+    document.getElementById('settingsPassword').value = settings.dataforseo_password || '';
+    document.getElementById('settingsGeo').value = (settings.geo || DEFAULT_SETTINGS.geo).toUpperCase();
+    document.getElementById('settingsCategory').value = settings.category || 'h';
+    document.getElementById('settingsRankingMode').value = settings.ranking_mode || 'balanced';
+    document.getElementById('settingsQueries').value = (settings.search_queries || []).join('\n');
+    document.getElementById('settingsFocusTerms').value = settings.focus_terms || '';
+    document.getElementById('settingsTargetSources').value = (settings.target_sources || []).join('\n');
+    renderSources(settings.target_sources || []);
+  }
+
+  function applySettingsToForm(showFeedback = false) {
+    const settings = getStoredSettings();
+    document.getElementById('geoInput').value = (settings.geo || DEFAULT_SETTINGS.geo).toUpperCase();
+    document.getElementById('catInput').value = settings.category || 'h';
+    document.getElementById('rankingModeInput').value = settings.ranking_mode || 'balanced';
+    document.getElementById('focusTermsInput').value = settings.focus_terms || '';
+    hydrateSettings(settings);
+    updateHeroSummary();
+    if (showFeedback) flashSettings('Configuración aplicada al formulario.');
+  }
+
+  function saveAppSettings() {
+    const settings = {
+      geo: (document.getElementById('settingsGeo').value || DEFAULT_SETTINGS.geo).trim().toUpperCase(),
+      category: document.getElementById('settingsCategory').value,
+      ranking_mode: document.getElementById('settingsRankingMode').value,
+      focus_terms: document.getElementById('settingsFocusTerms').value.trim(),
+      dataforseo_login: document.getElementById('settingsLogin').value.trim(),
+      dataforseo_password: document.getElementById('settingsPassword').value.trim(),
+      search_queries: document.getElementById('settingsQueries').value.split('\n').map(v => v.trim()).filter(Boolean),
+      target_sources: document.getElementById('settingsTargetSources').value.split('\n').map(v => v.trim()).filter(Boolean)
     };
-
-    const CATEGORY_LABELS = {
-        h: 'General',
-        b: 'Economía / Negocios',
-        m: 'Salud',
-        t: 'Ciencia / Tecnología',
-        s: 'Deportes',
-        e: 'Entretenimiento'
-    };
-
-    function getStoredSettings() {
-        try {
-            const stored = localStorage.getItem(TRENDS_SETTINGS_KEY);
-            if (!stored) return { ...DEFAULT_SETTINGS };
-            const parsed = JSON.parse(stored);
-            return { ...DEFAULT_SETTINGS, ...parsed };
-        } catch (error) {
-            return { ...DEFAULT_SETTINGS };
-        }
-    }
-
-    function saveStoredSettings(settings) {
-        localStorage.setItem(TRENDS_SETTINGS_KEY, JSON.stringify(settings));
-    }
-
-    function switchTab(tabId) {
-        document.querySelectorAll('.trends-tab-panel').forEach((panel) => panel.classList.remove('active'));
-        document.querySelectorAll('.trends-nav-btn').forEach((button) => button.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        document.querySelector(`.trends-nav-btn[data-tab="${tabId}"]`)?.classList.add('active');
-    }
-
-    function priorityMeta(item) {
-        const score = Number(item.relevance_score || 0);
-        if (score >= 60) return { label: 'P1', badge: 'is-p1', text: item.fit_label || 'Alta prioridad' };
-        if (score >= 25) return { label: 'P2', badge: 'is-p2', text: item.fit_label || 'Media prioridad' };
-        if (score > 0) return { label: 'P3', badge: 'is-p3', text: item.fit_label || 'Exploratoria' };
-        return { label: 'DISCARD', badge: 'is-muted', text: item.fit_label || 'Baja prioridad' };
-    }
-
-    function updateSummary() {
-        const geoValue = document.getElementById('geoInput').value.trim().toUpperCase() || DEFAULT_SETTINGS.geo;
-        const categoryValue = document.getElementById('catInput').value;
-        const categoryLabel = CATEGORY_LABELS[categoryValue] || 'General';
-        const focusValue = document.getElementById('focusTermsInput').value.trim();
-        const focusLabel = focusValue ? focusValue.split(/[\n,;|]+/).map((term) => term.trim()).filter(Boolean).slice(0, 3).join(' · ') : 'Sin filtro';
-
-        document.getElementById('heroGeo').textContent = geoValue;
-        document.getElementById('resultsGeoBadge').textContent = geoValue;
-        document.getElementById('summaryCategory').textContent = categoryLabel;
-        document.getElementById('summaryFocus').textContent = focusLabel;
-    }
-
-    function applySettingsToForm(showFeedback = false) {
-        const settings = getStoredSettings();
-        document.getElementById('geoInput').value = (settings.geo || DEFAULT_SETTINGS.geo).toUpperCase();
-        document.getElementById('catInput').value = settings.category || DEFAULT_SETTINGS.category;
-        document.getElementById('focusTermsInput').value = settings.focus_terms || '';
-        document.getElementById('rankingModeInput').value = settings.ranking_mode || DEFAULT_SETTINGS.ranking_mode;
-        document.getElementById('dataforseoLoginInput').value = settings.dataforseo_login || '';
-        document.getElementById('dataforseoPasswordInput').value = settings.dataforseo_password || '';
-        hydrateSettingsPanel(settings);
-        updateSummary();
-        if (showFeedback) showSettingsFeedback('Configuración aplicada al formulario.');
-    }
-
-    function hydrateSettingsPanel(settings = getStoredSettings()) {
-        document.getElementById('settingsGeo').value = settings.geo || '';
-        document.getElementById('settingsCategory').value = settings.category || 'h';
-        document.getElementById('settingsRankingMode').value = settings.ranking_mode || 'balanced';
-        document.getElementById('settingsFocusTerms').value = settings.focus_terms || '';
-        document.getElementById('settingsTargetSources').value = (settings.target_sources || []).join('\n');
-        document.getElementById('settingsLogin').value = settings.dataforseo_login || '';
-        document.getElementById('settingsPassword').value = settings.dataforseo_password || '';
-        renderBriefSources(settings.target_sources || []);
-    }
-
-    function saveDashboardSettings() {
-        const settings = {
-            geo: document.getElementById('settingsGeo').value.trim().toUpperCase() || DEFAULT_SETTINGS.geo,
-            category: document.getElementById('settingsCategory').value,
-            focus_terms: document.getElementById('settingsFocusTerms').value.trim(),
-            ranking_mode: document.getElementById('settingsRankingMode').value,
-            dataforseo_login: document.getElementById('settingsLogin').value.trim(),
-            dataforseo_password: document.getElementById('settingsPassword').value.trim(),
-            target_sources: document.getElementById('settingsTargetSources').value.split('\n').map((item) => item.trim()).filter(Boolean)
-        };
-        saveStoredSettings(settings);
-        applySettingsToForm();
-        showSettingsFeedback('Configuración guardada correctamente.');
-    }
-
-    function resetStoredSettings() {
-        saveStoredSettings(DEFAULT_SETTINGS);
-        applySettingsToForm();
-        showSettingsFeedback('Configuración restablecida a valores por defecto.');
-    }
-
-    function showSettingsFeedback(message) {
-        const feedback = document.getElementById('settingsFeedback');
-        feedback.textContent = message;
-        feedback.classList.remove('d-none');
-        clearTimeout(showSettingsFeedback.timer);
-        showSettingsFeedback.timer = setTimeout(() => feedback.classList.add('d-none'), 2400);
-    }
-
-    function setSystemStatus(label, mode = 'idle') {
-        const chip = document.getElementById('systemStatusChip');
-        chip.className = 'trends-chip';
-        if (mode === 'running') chip.classList.add('is-p3');
-        if (mode === 'success') chip.classList.add('is-p2');
-        if (mode === 'error') chip.classList.add('is-p1');
-        chip.innerHTML = `<i class="fas fa-circle small"></i> ${label}`;
-    }
-
-    function setProgress(progress, label) {
-        const safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
-        document.getElementById('progressBar').style.width = `${safeProgress}%`;
-        document.getElementById('progressBar').setAttribute('aria-valuenow', String(safeProgress));
-        document.getElementById('progressBadge').textContent = `${safeProgress}%`;
-        document.getElementById('statusText').textContent = label || 'Procesando...';
-    }
-
-    function resetUI() {
-        ['geoInput', 'catInput', 'focusTermsInput', 'rankingModeInput', 'dataforseoLoginInput', 'dataforseoPasswordInput'].forEach((id) => {
-            document.getElementById(id).disabled = false;
-        });
-        const btn = document.getElementById('analyzeBtn');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-bolt me-2"></i>Analizar tendencias ahora';
-        document.getElementById('progressSection').classList.add('d-none');
-        setSystemStatus(latestResults.length ? 'Actualizado' : 'Listo', latestResults.length ? 'success' : 'idle');
-    }
-
-    function showLoading() {
-        ['geoInput', 'catInput', 'focusTermsInput', 'rankingModeInput', 'dataforseoLoginInput', 'dataforseoPasswordInput'].forEach((id) => {
-            document.getElementById(id).disabled = true;
-        });
-        const btn = document.getElementById('analyzeBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analizando...';
-        document.getElementById('resultsSection').classList.add('d-none');
-        document.getElementById('errorAlert').classList.add('d-none');
-        document.getElementById('emptyState').classList.add('d-none');
-        document.getElementById('resultsTable').classList.remove('d-none');
-        document.getElementById('progressSection').classList.remove('d-none');
-        document.getElementById('logSection').classList.remove('d-none');
-        document.getElementById('logContent').innerHTML = '<div class="trends-log-entry">&gt; Iniciando análisis...</div>';
-        setProgress(10, 'Preparando solicitud...');
-        updateSummary();
-        setSystemStatus('Analizando', 'running');
-    }
-
-    function showError(msg) {
-        document.getElementById('errorMsg').textContent = msg || 'Ha ocurrido un error desconocido.';
-        document.getElementById('errorAlert').classList.remove('d-none');
-        document.getElementById('progressSection').classList.add('d-none');
-        setSystemStatus('Error', 'error');
-        resetUI();
-    }
-
-    function renderLogs(logs) {
-        const logContainer = document.getElementById('logContent');
-        const entries = (logs || []).map((line) => `<div class="trends-log-entry">&gt; ${line}</div>`).join('');
-        logContainer.innerHTML = entries || '<div class="trends-log-entry">&gt; Esperando nueva ejecución...</div>';
-        logContainer.scrollTop = logContainer.scrollHeight;
-    }
-
-    function setLastRun() {
-        const formatter = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-        const value = formatter.format(new Date());
-        document.getElementById('heroLastRun').textContent = value;
-        document.getElementById('sidebarLastRun').textContent = value;
-    }
-
-    function renderChart(items) {
-        const chartBars = document.getElementById('chartBars');
-        if (!items || !items.length) {
-            chartBars.innerHTML = '<div class="text-muted small">Ejecuta el radar para ver el reparto de prioridad.</div>';
-            return;
-        }
-        const topItems = items.slice(0, 5);
-        const maxScore = Math.max(...topItems.map((item) => Number(item.relevance_score || item.rank || 1)), 1);
-        chartBars.innerHTML = topItems.map((item) => {
-            const width = Math.max(12, Math.round((Number(item.relevance_score || item.rank || 1) / maxScore) * 100));
-            const meta = priorityMeta(item);
-            return `
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between gap-3 small mb-2">
-                        <span class="fw-semibold text-dark text-truncate">${item.topic || 'Tema sin título'}</span>
-                        <span class="trends-chip ${meta.badge}">${meta.label}</span>
-                    </div>
-                    <div class="trends-chart-bar-track"><div class="trends-chart-bar-fill" style="width:${width}%"></div></div>
-                </div>`;
-        }).join('');
-    }
-
-    function renderBriefSources(sources) {
-        const wrapper = document.getElementById('briefSources');
-        if (!sources || !sources.length) {
-            wrapper.textContent = 'Sin configurar';
-            return;
-        }
-        wrapper.innerHTML = sources.map((source) => `<span class="trends-source-pill">${source}</span>`).join('');
-    }
-
-    function renderBrief(items) {
-        const briefContent = document.getElementById('briefContent');
-        const discardedContent = document.getElementById('discardedContent');
-        const settings = getStoredSettings();
-        const prioritized = items.filter((item) => ['P1', 'P2'].includes(priorityMeta(item).label));
-        const discarded = items.filter((item) => !['P1', 'P2'].includes(priorityMeta(item).label));
-        document.getElementById('briefTotal').textContent = String(items.length);
-        document.getElementById('briefPriority').textContent = String(prioritized.length);
-        renderBriefSources(settings.target_sources || []);
-
-        if (!items.length) {
-            briefContent.innerHTML = `
-                <div class="trends-empty">
-                    <div class="trends-empty-icon"><i class="fas fa-newspaper"></i></div>
-                    <h4 class="fw-bold text-dark">Aún no hay brief generado.</h4>
-                    <p class="mb-4">Ejecuta el radar desde Dashboard para construir una selección priorizada.</p>
-                    <button type="button" class="btn trends-primary-btn px-4 text-white" onclick="switchTab('dashboardTab')">Ir a Dashboard</button>
-                </div>`;
-            discardedContent.textContent = 'Todavía no hay elementos descartados o exploratorios.';
-            return;
-        }
-
-        briefContent.innerHTML = prioritized.length ? prioritized.map((item, index) => {
-            const meta = priorityMeta(item);
-            return `
-                <article class="trends-brief-card">
-                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-                        <div class="d-flex flex-wrap gap-2">
-                            <span class="trends-chip ${meta.badge}">${meta.label}</span>
-                            <span class="trends-chip">${item.fit_label || meta.text}</span>
-                        </div>
-                        <span class="small text-muted">Tema #${index + 1}</span>
-                    </div>
-                    <h3 class="h4 fw-bold text-dark mb-2">${item.topic || 'Tema sin título'}</h3>
-                    <p class="text-muted mb-3">${item.context || 'Sin contexto adicional disponible.'}</p>
-                    <div class="p-3 rounded-4 bg-light border mb-3">
-                        <div class="small fw-semibold text-uppercase text-muted mb-1">Lectura editorial sugerida</div>
-                        <div class="small text-dark">${item.opportunity_note || 'Útil para vigilar cambios generales del mercado.'}</div>
-                    </div>
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 small text-muted">
-                        <div class="d-flex flex-wrap gap-3">
-                            <span><strong>Match:</strong> ${(Array.isArray(item.matched_terms) && item.matched_terms.length) ? item.matched_terms.join(', ') : 'Sin match directo'}</span>
-                            <span><strong>Score:</strong> ${item.relevance_score || 0}</span>
-                        </div>
-                        <a href="${item.google_link || '#'}" target="_blank" rel="noopener noreferrer" class="text-decoration-none fw-semibold">Abrir búsqueda <i class="fas fa-arrow-up-right-from-square ms-1"></i></a>
-                    </div>
-                </article>`;
-        }).join('') : `
-            <div class="trends-empty">
-                <div class="trends-empty-icon"><i class="fas fa-filter-circle-xmark"></i></div>
-                <h4 class="fw-bold text-dark">No hay temas P1/P2 por ahora.</h4>
-                <p class="mb-0">Prueba un enfoque distinto o usa modo exploración para captar más señales.</p>
-            </div>`;
-
-        discardedContent.innerHTML = discarded.length ? discarded.slice(0, 8).map((item) => {
-            const meta = priorityMeta(item);
-            return `
-                <div class="trends-result-preview-item">
-                    <div>
-                        <div class="fw-semibold text-dark mb-1">${item.topic || 'Tema sin título'}</div>
-                        <div class="small text-muted">${item.context || 'Sin contexto adicional disponible.'}</div>
-                    </div>
-                    <span class="trends-chip ${meta.badge}">${meta.label}</span>
-                </div>`;
-        }).join('') : 'No hay elementos de baja prioridad.';
-    }
-
-    function renderTable(items) {
-        latestResults = items || [];
-        const tbody = document.getElementById('resultsBody');
-        tbody.innerHTML = '';
-
-        items.forEach((item, index) => {
-            const rank = item.rank || index + 1;
-            const topic = item.topic || 'Tema sin título';
-            const context = item.context || 'Sin contexto adicional disponible.';
-            const traffic = item.traffic || 'N/A';
-            const link = item.google_link || '#';
-            const meta = priorityMeta(item);
-            const note = item.opportunity_note || 'Sin señal adicional';
-            const terms = Array.isArray(item.matched_terms) && item.matched_terms.length ? item.matched_terms.join(', ') : 'Sin match directo';
-            const score = Number(item.relevance_score || 0);
-            tbody.innerHTML += `
-                <tr>
-                    <td><span class="trends-rank">${rank}</span></td>
-                    <td>
-                        <div class="fw-bold text-dark">${topic}</div>
-                        <small class="text-muted">${traffic}</small>
-                    </td>
-                    <td class="text-muted">
-                        <div>${context}</div>
-                        <small><strong>Match:</strong> ${terms}</small>
-                    </td>
-                    <td>
-                        <div class="d-flex flex-column align-items-start gap-2">
-                            <span class="trends-chip ${meta.badge}">${meta.label} · ${meta.text}</span>
-                            <small class="text-muted">${note}</small>
-                        </div>
-                    </td>
-                    <td><span class="fw-bold text-primary">${score}</span></td>
-                    <td>
-                        <a href="${link}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                            <i class="fas fa-up-right-from-square me-1"></i>Ver búsqueda
-                        </a>
-                    </td>
-                </tr>`;
-        });
-
-        const priorityCount = items.filter((item) => ['P1', 'P2'].includes(priorityMeta(item).label)).length;
-        document.getElementById('resultsSection').classList.remove('d-none');
-        document.getElementById('emptyState').classList.add('d-none');
-        document.getElementById('resultsTable').classList.remove('d-none');
-        document.getElementById('summaryTotal').textContent = String(items.length);
-        document.getElementById('summarySources').textContent = String(items.length);
-        document.getElementById('summaryPriority').textContent = String(priorityCount);
-        document.getElementById('heroCount').textContent = String(items.length);
-        document.getElementById('resultsBadge').textContent = `${items.length} resultado${items.length === 1 ? '' : 's'}`;
-        renderChart(items);
-        renderBrief(items);
-    }
-
-    async function startTrends() {
-        const geoInput = document.getElementById('geoInput');
-        const geoVal = geoInput.value.trim().toUpperCase();
-        geoInput.value = geoVal;
-        if (geoVal.length !== 2) {
-            alert('El código de país debe tener exactamente 2 letras (ej: ES, US).');
-            return;
-        }
-
-        const settings = getStoredSettings();
-        saveStoredSettings({
-            ...settings,
-            geo: geoVal,
-            category: document.getElementById('catInput').value,
-            focus_terms: document.getElementById('focusTermsInput').value.trim(),
-            ranking_mode: document.getElementById('rankingModeInput').value,
-            dataforseo_login: document.getElementById('dataforseoLoginInput').value.trim(),
-            dataforseo_password: document.getElementById('dataforseoPasswordInput').value.trim()
-        });
-
-        updateSummary();
-        const formData = new FormData(document.getElementById('trendsForm'));
-        showLoading();
-
-        try {
-            const req = await fetch('/trends/start', { method: 'POST', body: formData });
-            const resp = await req.json();
-            if (resp.status === 'started') {
-                currentJobId = resp.job_id;
-                if (intervalId) clearInterval(intervalId);
-                intervalId = setInterval(checkStatus, 1000);
-            } else {
-                showError('No se pudo iniciar el análisis.');
-            }
-        } catch (e) {
-            showError('Error de conexión: ' + e);
-        }
-    }
-
-    async function checkStatus() {
-        if (!currentJobId) return;
-        try {
-            const res = await fetch(`/trends/status?job_id=${currentJobId}`);
-            if (!res.ok) {
-                clearInterval(intervalId);
-                showError('Error de red al consultar estado.');
-                return;
-            }
-            const data = await res.json();
-            if (data.error && !data.log) {
-                clearInterval(intervalId);
-                showError(data.error);
-                return;
-            }
-            if (data.log && data.log.length > 0) {
-                renderLogs(data.log);
-                const latestLog = data.log[data.log.length - 1];
-                setProgress(data.progress, latestLog);
-            } else {
-                setProgress(data.progress, 'Procesando señales...');
-            }
-            if (!data.active) {
-                clearInterval(intervalId);
-                resetUI();
-                setLastRun();
-                if (data.error) {
-                    showError(data.error);
-                } else if (data.data && data.data.length > 0) {
-                    renderTable(data.data);
-                    setSystemStatus('Actualizado', 'success');
-                    switchTab('dashboardTab');
-                } else {
-                    latestResults = [];
-                    renderChart([]);
-                    renderBrief([]);
-                    document.getElementById('resultsSection').classList.remove('d-none');
-                    document.getElementById('emptyState').classList.remove('d-none');
-                    document.getElementById('resultsTable').classList.add('d-none');
-                    document.getElementById('summaryTotal').textContent = '0';
-                    document.getElementById('summarySources').textContent = '0';
-                    document.getElementById('summaryPriority').textContent = '0';
-                    document.getElementById('heroCount').textContent = '0';
-                    document.getElementById('resultsBadge').textContent = '0 resultados';
-                }
-            }
-        } catch (e) {
-            clearInterval(intervalId);
-            showError('Error al procesar estado: ' + e);
-        }
-    }
-
-    function sendToEditorial() {
-        const count = latestResults.filter((item) => ['P1', 'P2'].includes(priorityMeta(item).label)).length;
-        const sources = getStoredSettings().target_sources || [];
-        alert(`Brief listo: ${count} temas prioritarios. Destinos editoriales configurados: ${sources.join(', ') || 'sin fuentes objetivo'}.`);
-    }
-
-    document.querySelectorAll('.trends-nav-btn').forEach((button) => {
-        button.addEventListener('click', () => switchTab(button.dataset.tab));
-    });
-    document.getElementById('geoInput').addEventListener('input', updateSummary);
-    document.getElementById('catInput').addEventListener('change', updateSummary);
-    document.getElementById('focusTermsInput').addEventListener('input', updateSummary);
-    document.getElementById('rankingModeInput').addEventListener('change', updateSummary);
-
-    saveStoredSettings(getStoredSettings());
+    saveStoredSettings(settings);
     applySettingsToForm();
-    updateSummary();
-    renderChart([]);
-    renderBrief([]);
-    setSystemStatus('Listo', 'idle');
+    flashSettings('Configuración guardada correctamente.');
+  }
+
+  function resetStoredSettings() {
+    saveStoredSettings(DEFAULT_SETTINGS);
+    applySettingsToForm();
+    flashSettings('Se restauraron los valores por defecto.');
+  }
+
+  function flashSettings(message) {
+    const feedback = document.getElementById('settingsFeedback');
+    feedback.textContent = message;
+    feedback.classList.remove('d-none');
+    clearTimeout(flashSettings.timer);
+    flashSettings.timer = setTimeout(() => feedback.classList.add('d-none'), 2200);
+  }
+
+  function setPipelineState(state, message = '') {
+    pipelineStatus = state;
+    const chip = document.getElementById('pipelineModeChip');
+    const systemChip = document.getElementById('systemStatusChip');
+    const runBtn = document.getElementById('headerRunBtn');
+    const runText = document.getElementById('headerRunText');
+    chip.className = 'tm-chip';
+    systemChip.className = 'tm-chip';
+    if (state === 'fetching' || state === 'analyzing') {
+      chip.classList.add('tm-chip-p3');
+      systemChip.classList.add('tm-chip-p3');
+      chip.textContent = state === 'fetching' ? 'Escaneando' : 'Analizando';
+      systemChip.innerHTML = '<i class="fas fa-circle"></i> En proceso';
+      runBtn.disabled = true;
+      runText.textContent = 'Analizando...';
+    } else if (state === 'done') {
+      chip.classList.add('tm-chip-p2');
+      systemChip.classList.add('tm-chip-p2');
+      chip.textContent = 'Completado';
+      systemChip.innerHTML = '<i class="fas fa-circle"></i> Actualizado';
+      runBtn.disabled = false;
+      runText.textContent = latestResults.length ? 'Actualizar SERPs' : 'Analizar SERPs';
+    } else if (state === 'error') {
+      chip.classList.add('tm-chip-p1');
+      systemChip.classList.add('tm-chip-p1');
+      chip.textContent = 'Error';
+      systemChip.innerHTML = '<i class="fas fa-circle"></i> Error';
+      runBtn.disabled = false;
+      runText.textContent = 'Reintentar';
+    } else {
+      chip.classList.add('tm-chip-neutral');
+      systemChip.classList.add('tm-chip-neutral');
+      chip.textContent = 'Idle';
+      systemChip.innerHTML = '<i class="fas fa-circle"></i> Listo';
+      runBtn.disabled = false;
+      runText.textContent = latestResults.length ? 'Actualizar SERPs' : 'Analizar SERPs';
+    }
+    if (message) document.getElementById('statusText').textContent = message;
+  }
+
+  function setLastRun() {
+    const value = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short' }).format(new Date());
+    document.getElementById('heroLastRun').textContent = value;
+    document.getElementById('sidebarLastRun').textContent = value;
+  }
+
+  function updateHeroSummary() {
+    const geo = (document.getElementById('geoInput').value || DEFAULT_SETTINGS.geo).trim().toUpperCase();
+    document.getElementById('heroGeo').textContent = geo;
+  }
+
+  function renderTrendBars(items) {
+    const wrapper = document.getElementById('trendsBars');
+    if (!items.length) {
+      wrapper.innerHTML = '<div class="text-muted small">No hay datos todavía. Ejecuta el pipeline.</div>';
+      return;
+    }
+    const top = items.slice(0, 5);
+    const max = Math.max(...top.map(item => Number(item.relevance_score || 1)), 1);
+    wrapper.innerHTML = top.map(item => {
+      const meta = priorityMeta(item);
+      const width = Math.max(12, Math.round((Number(item.relevance_score || 0) / max) * 100));
+      return `
+        <div>
+          <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
+            <div class="fw-semibold text-truncate">${item.topic || 'Tema sin título'}</div>
+            <span class="tm-chip ${meta.chip}">${meta.label}</span>
+          </div>
+          <div class="tm-bar-track"><div class="tm-bar-fill" style="width:${width}%"></div></div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderDashboardTable(items) {
+    const empty = document.getElementById('dashboardTableEmpty');
+    const wrap = document.getElementById('dashboardTableWrap');
+    const body = document.getElementById('dashboardTableBody');
+    if (!items.length) {
+      empty.classList.remove('d-none');
+      wrap.classList.add('d-none');
+      body.innerHTML = '';
+      return;
+    }
+    empty.classList.add('d-none');
+    wrap.classList.remove('d-none');
+    body.innerHTML = items.slice(0, 8).map(item => {
+      const meta = priorityMeta(item);
+      return `
+        <tr>
+          <td class="px-4 py-3"><span class="tm-chip ${meta.chip}">${meta.label}</span></td>
+          <td class="px-4 py-3 text-primary fw-bold">${item.relevance_score || 0}</td>
+          <td class="px-4 py-3 fw-semibold">${item.topic || 'Tema sin título'}</td>
+          <td class="px-4 py-3 text-muted">${item.fit_label || meta.fit}</td>
+          <td class="px-4 py-3 text-muted">${item.traffic || 'N/A'}</td>
+        </tr>`;
+    }).join('');
+  }
+
+  function renderBrief(items) {
+    const loading = document.getElementById('briefLoading');
+    const empty = document.getElementById('briefEmpty');
+    const content = document.getElementById('briefContentWrap');
+    const list = document.getElementById('briefList');
+    const discard = document.getElementById('discardList');
+    const prioritized = items.filter(item => ['P1','P2'].includes(priorityMeta(item).label));
+    const discarded = items.filter(item => !['P1','P2'].includes(priorityMeta(item).label));
+    loading.classList.add('d-none');
+
+    if (!items.length) {
+      empty.classList.remove('d-none');
+      content.classList.add('d-none');
+      list.innerHTML = '';
+      discard.textContent = 'Todavía no hay items descartados.';
+      document.getElementById('briefTotal').textContent = '0';
+      document.getElementById('briefPriority').textContent = '0';
+      document.getElementById('briefMetaText').textContent = '0 clusters';
+      return;
+    }
+
+    empty.classList.add('d-none');
+    content.classList.remove('d-none');
+    document.getElementById('briefTotal').textContent = String(items.length);
+    document.getElementById('briefPriority').textContent = String(prioritized.length);
+    document.getElementById('briefMetaText').textContent = `${items.length} clusters • ${prioritized.length} prioritarios • ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+
+    list.innerHTML = prioritized.length ? prioritized.map((item, idx) => {
+      const meta = priorityMeta(item);
+      const terms = Array.isArray(item.matched_terms) && item.matched_terms.length ? item.matched_terms.join(', ') : 'Sin match directo';
+      return `
+        <article class="tm-card tm-brief-card">
+          <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div class="d-flex gap-2 flex-wrap">
+              <span class="tm-chip ${meta.chip}">${meta.label}</span>
+              <span class="tm-chip tm-chip-neutral">${item.fit_label || meta.fit}</span>
+            </div>
+            <span class="small text-muted">Tema #${idx + 1}</span>
+          </div>
+          <h3 class="h4 fw-bold mb-2">${item.topic || 'Tema sin título'}</h3>
+          <p class="text-muted mb-3">${item.context || 'Sin contexto adicional disponible.'}</p>
+          <div class="p-3 rounded-4 bg-light border mb-3">
+            <div class="small fw-semibold text-uppercase text-muted mb-1">Interés editorial</div>
+            <div class="small text-dark">${item.opportunity_note || 'Útil para vigilar cambios generales del mercado.'}</div>
+          </div>
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 small text-muted">
+            <div class="d-flex gap-3 flex-wrap">
+              <span><strong>Match:</strong> ${terms}</span>
+              <span><strong>Score:</strong> ${item.relevance_score || 0}</span>
+            </div>
+            <a href="${item.google_link || '#'}" target="_blank" rel="noreferrer" class="text-decoration-none fw-semibold">Leer original <i class="fas fa-arrow-up-right-from-square ms-1"></i></a>
+          </div>
+        </article>`;
+    }).join('') : `<div class="tm-card tm-empty"><div class="tm-empty-icon"><i class="fas fa-filter-circle-xmark"></i></div><p class="mb-0">No se encontraron temas de alta prioridad.</p></div>`;
+
+    discard.innerHTML = discarded.length ? discarded.map(item => {
+      const meta = priorityMeta(item);
+      return `<div class="tm-discard-item"><div class="d-flex justify-content-between gap-2 mb-1"><div class="fw-semibold text-dark">${item.topic || 'Tema sin título'}</div><span class="tm-chip ${meta.chip}">${meta.label}</span></div><div class="text-muted">${item.context || 'Sin contexto adicional disponible.'}</div></div>`;
+    }).join('') : 'No hay elementos descartados.';
+  }
+
+  function renderLogs(logs) {
+    document.getElementById('logContent').innerHTML = (logs || []).map(line => `<div class="tm-log-entry">> ${line}</div>`).join('');
+  }
+
+  function updateStats(items) {
+    const p1 = items.filter(item => priorityMeta(item).label === 'P1').length;
+    const low = items.filter(item => ['P3', 'DISCARD'].includes(priorityMeta(item).label)).length;
+    document.getElementById('sourcesScanned').textContent = String(items.length);
+    document.getElementById('itemsFound').textContent = String(items.length);
+    document.getElementById('highPriority').textContent = String(p1);
+    document.getElementById('duplicatesRemoved').textContent = String(low);
+    document.getElementById('heroCount').textContent = String(items.length);
+    document.getElementById('resultsCountText').textContent = `${items.length} clusters`;
+  }
+
+  async function startPipeline() {
+    const geo = (document.getElementById('geoInput').value || '').trim().toUpperCase();
+    if (geo.length !== 2) {
+      alert('El código de país debe tener 2 letras.');
+      return;
+    }
+    const settings = getStoredSettings();
+    saveStoredSettings({
+      ...settings,
+      geo,
+      category: document.getElementById('catInput').value,
+      ranking_mode: document.getElementById('rankingModeInput').value,
+      focus_terms: document.getElementById('focusTermsInput').value.trim()
+    });
+
+    document.getElementById('pipelineProgressWrap').classList.remove('d-none');
+    document.getElementById('dashboardLogWrap').classList.remove('d-none');
+    document.getElementById('dashboardEmpty').classList.add('d-none');
+    document.getElementById('briefLoading').classList.remove('d-none');
+    document.getElementById('briefEmpty').classList.add('d-none');
+    document.getElementById('briefContentWrap').classList.add('d-none');
+    document.getElementById('briefLoadingText').textContent = 'Escaneando tendencias...';
+    setPipelineState('fetching', 'Escaneando Google Trends...');
+    switchView('briefView');
+    updateHeroSummary();
+
+    const formData = new FormData();
+    formData.append('geo', geo);
+    formData.append('category', document.getElementById('catInput').value);
+    formData.append('ranking_mode', document.getElementById('rankingModeInput').value);
+    formData.append('focus_terms', document.getElementById('focusTermsInput').value.trim());
+    formData.append('dataforseo_login', settings.dataforseo_login || '');
+    formData.append('dataforseo_password', settings.dataforseo_password || '');
+
+    try {
+      const res = await fetch('/trends/start', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.status !== 'started') throw new Error('No se pudo iniciar el análisis.');
+      currentJobId = data.job_id;
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(checkStatus, 1000);
+    } catch (error) {
+      setPipelineState('error');
+      document.getElementById('briefLoading').classList.add('d-none');
+      alert('Error iniciando el pipeline: ' + error);
+    }
+  }
+
+  async function checkStatus() {
+    if (!currentJobId) return;
+    try {
+      const res = await fetch(`/trends/status?job_id=${currentJobId}`);
+      const data = await res.json();
+      if (data.error && !data.log) throw new Error(data.error);
+      document.getElementById('progressBar').style.width = `${data.progress || 0}%`;
+      renderLogs(data.log || []);
+      document.getElementById('statusText').textContent = (data.log || []).slice(-1)[0] || 'Procesando...';
+      if ((data.progress || 0) >= 50) {
+        setPipelineState('analyzing', document.getElementById('statusText').textContent);
+        document.getElementById('briefLoadingText').textContent = document.getElementById('statusText').textContent;
+      }
+      if (!data.active) {
+        clearInterval(intervalId);
+        latestResults = data.data || [];
+        if (data.error) throw new Error(data.error);
+        updateStats(latestResults);
+        renderTrendBars(latestResults);
+        renderDashboardTable(latestResults);
+        renderBrief(latestResults);
+        setLastRun();
+        setPipelineState('done');
+        switchView('dashboardView');
+      }
+    } catch (error) {
+      clearInterval(intervalId);
+      setPipelineState('error');
+      document.getElementById('briefLoading').classList.add('d-none');
+      renderBrief(latestResults);
+      alert('Error consultando el pipeline: ' + error);
+    }
+  }
+
+  function sendToEditorial() {
+    const settings = getStoredSettings();
+    const count = latestResults.filter(item => ['P1', 'P2'].includes(priorityMeta(item).label)).length;
+    alert(`Brief enviado a redacción. ${count} temas prioritarios. Fuentes objetivo: ${(settings.target_sources || []).join(', ') || 'Sin fuentes objetivo'}.`);
+  }
+
+  document.querySelectorAll('.tm-nav-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
+  document.getElementById('geoInput').addEventListener('input', updateHeroSummary);
+
+  saveStoredSettings(getStoredSettings());
+  applySettingsToForm();
+  renderTrendBars([]);
+  renderBrief([]);
+  updateStats([]);
+  setPipelineState('idle');
 </script>
 {% endblock %}
