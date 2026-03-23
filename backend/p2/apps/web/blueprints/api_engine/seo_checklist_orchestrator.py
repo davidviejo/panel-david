@@ -72,6 +72,13 @@ def run_orchestrated_checklist(
     serp_cfg = {}
     applied_limits = {}
     provider_used = None
+    request_serp_section = (analysis_config or {}).get('serp', {}) if analysis_config else {}
+    request_dfs_login = request_serp_section.get('dataforseoLogin')
+    request_dfs_pass = request_serp_section.get('dataforseoPassword')
+
+    resolved_serpapi_key = user_settings.get('serpapi_key') or os.environ.get('SERPAPI_KEY')
+    resolved_dfs_login = request_dfs_login or user_settings.get('dataforseo_login') or os.environ.get('DATAFORSEO_LOGIN')
+    resolved_dfs_pass = request_dfs_pass or user_settings.get('dataforseo_password') or os.environ.get('DATAFORSEO_PASSWORD')
 
     if analysis_config:
         mode = analysis_config.get('mode')
@@ -83,10 +90,9 @@ def run_orchestrated_checklist(
             has_creds = False
 
             if provider == 'serpapi':
-                has_creds = bool(user_settings.get('serpapi_key') or os.environ.get('SERPAPI_KEY'))
+                has_creds = bool(resolved_serpapi_key)
             elif provider == 'dataforseo':
-                has_creds = bool((user_settings.get('dataforseo_login') and user_settings.get('dataforseo_password')) or
-                                 (os.environ.get('DATAFORSEO_LOGIN') and os.environ.get('DATAFORSEO_PASSWORD')))
+                has_creds = bool(resolved_dfs_login and resolved_dfs_pass)
             elif provider == 'internal':
                 has_creds = True # Internal always allowed (scraping)
             elif provider == 'google_official':
@@ -225,10 +231,10 @@ def run_orchestrated_checklist(
                         'serp_provider': serp_cfg.get('provider', 'auto'),
                         'gl': geoTarget or 'es',
                         'hl': 'es',
-                        'cse_key': user_settings.get('serpapi_key'),
-                        'serpapi_key': user_settings.get('serpapi_key'),
-                        'dfs_login': user_settings.get('dataforseo_login'),
-                        'dfs_pass': user_settings.get('dataforseo_password'),
+                        'cse_key': resolved_serpapi_key,
+                        'serpapi_key': resolved_serpapi_key,
+                        'dfs_login': resolved_dfs_login,
+                        'dfs_pass': resolved_dfs_pass,
                         'top_n': limit_comp + 2 # Fetch a bit more
                     }
                     serp_res = dispatcher(kwPrincipal, cfg)
@@ -451,7 +457,7 @@ def run_orchestrated_checklist(
                 # 1. Check Provider
                 if serp_cfg.get('provider') != 'dataforseo':
                      clustering_status_msg = "Provider must be 'dataforseo' for clustering."
-                elif not (user_settings.get('dataforseo_login') and user_settings.get('dataforseo_password')):
+                elif not (resolved_dfs_login and resolved_dfs_pass):
                      clustering_status_msg = "DataForSEO credentials missing."
                 else:
                     # 2. Run Clustering
@@ -466,8 +472,8 @@ def run_orchestrated_checklist(
 
                         cfg = {
                             'mode': 'dataforseo',
-                            'dfs_login': user_settings.get('dataforseo_login'),
-                            'dfs_pass': user_settings.get('dataforseo_password'),
+                            'dfs_login': resolved_dfs_login,
+                            'dfs_pass': resolved_dfs_pass,
                             'top_n': top_n,
                             'gl': country,
                             'hl': lang
@@ -564,9 +570,9 @@ def run_orchestrated_checklist(
                     'serp_provider': serp_cfg.get('provider', 'auto'),
                     'gl': geoTarget or 'es',
                     'hl': 'es',
-                    'serpapi_key': user_settings.get('serpapi_key'),
-                    'dfs_login': user_settings.get('dataforseo_login'),
-                    'dfs_pass': user_settings.get('dataforseo_password'),
+                    'serpapi_key': resolved_serpapi_key,
+                    'dfs_login': resolved_dfs_login,
+                    'dfs_pass': resolved_dfs_pass,
                     'top_n': 10
                 }
 
@@ -748,10 +754,10 @@ def run_orchestrated_checklist(
 
     # ENGINE META (PUNTO 1 & 6)
     engine_meta = {
-        "serpProviderRequested": serp_cfg.get('provider', 'auto'),
-        "serpProviderUsed": provider_used,
-        "serpFallbackChain": [provider_used] if provider_used else [],
-        "providerFailureReasons": [],
+        "requestedProvider": serp_cfg.get('provider', 'auto'),
+        "usedProvider": provider_used or 'none',
+        "fallbackChain": [provider_used] if provider_used else [],
+        "providerFailureReasons": {},
         "competitorsAnalyzedCount": len(comp_data_list) if 'comp_data_list' in locals() else 0,
         "competitorsSkippedReason": advanced_blocked_reason if not advanced_mode else None
     }
@@ -773,9 +779,12 @@ def run_orchestrated_checklist(
         "UX": ux_res,
         "WPO": wpo_res,
         "ENLACE": enlace_res,
+        "OPORTUNIDADES": opt_res,
         "OPORTUNIDADES_VS_KW_OBJETIVO": opt_res,
         "SEMANTICA": sem_res,
+        "GEO_IMAGENES": geo_img_res,
         "GEOLOCALIZACION_IMAGENES": geo_img_res,
+        "CTA": cta_res,
         "LLAMADA_A_LA_ACCION": cta_res
     }
 

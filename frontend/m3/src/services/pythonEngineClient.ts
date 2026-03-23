@@ -114,7 +114,10 @@ export const createBatchJob = async (payload: BatchJobPayload): Promise<BatchJob
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      items: payload.items,
+      config: payload.config,
+    }),
   });
 
   if (!response.ok) {

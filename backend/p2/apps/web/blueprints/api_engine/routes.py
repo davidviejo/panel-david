@@ -19,7 +19,7 @@ def analyze():
 
     # New optional parameters for deep analysis
     # Maintain backward compatibility with old top-level params if analysisConfig is missing
-    analysis_config = data.get('analysisConfig')
+    analysis_config = data.get('analysisConfig') or data.get('config')
 
     # Legacy fallbacks
     analyze_competitors = data.get('analyzeCompetitors', False)

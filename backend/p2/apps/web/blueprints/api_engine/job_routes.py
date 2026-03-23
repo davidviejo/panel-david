@@ -15,15 +15,21 @@ MAX_URLS_PER_BATCH = int(os.environ.get('ENGINE_MAX_URLS_PER_BATCH', 5000))
 @api_engine_bp.route('/api/jobs', methods=['POST'])
 def create_analysis_job():
     data = safe_get_json()
+    items = data.get('items')
     urls = data.get('urls', [])
-    analysis_config = data.get('analysisConfig', {}) or {}
+    analysis_config = data.get('analysisConfig') or data.get('config') or {}
     gsc_queries_map = data.get('gscQueriesByUrl', {})
     user_notes = data.get('userNotes', '')
 
-    if not urls:
+    if items is None and urls:
+        items = urls
+    elif items is None:
+        items = []
+
+    if not items:
         return jsonify({'error': 'No URLs provided'}), 400
 
-    if len(urls) > MAX_URLS_PER_BATCH:
+    if len(items) > MAX_URLS_PER_BATCH:
         return jsonify({'error': f'Batch size exceeds limit of {MAX_URLS_PER_BATCH}'}), 400
 
     # Store gscQueries in analysis_config so runner can access it
@@ -40,12 +46,15 @@ def create_analysis_job():
         # Check provider
         provider = serp_section.get('provider')
         settings = get_user_settings()
+        req_dfs_login = serp_section.get('dataforseoLogin')
+        req_dfs_pass = serp_section.get('dataforseoPassword')
 
         has_creds = False
         if provider == 'serpapi':
             has_creds = bool(settings.get('serpapi_key') or os.environ.get('SERPAPI_KEY'))
         elif provider == 'dataforseo':
-            has_creds = bool((settings.get('dataforseo_login') and settings.get('dataforseo_password')) or
+            has_creds = bool((req_dfs_login and req_dfs_pass) or
+                             (settings.get('dataforseo_login') and settings.get('dataforseo_password')) or
                              (os.environ.get('DATAFORSEO_LOGIN') and os.environ.get('DATAFORSEO_PASSWORD')))
         elif provider == 'internal':
             has_creds = True
@@ -63,7 +72,7 @@ def create_analysis_job():
             # Queries for zero-click: up to max_kw.
 
             queries_per_url = 1 + max_kw
-            estimated_queries = len(urls) * queries_per_url
+            estimated_queries = len(items) * queries_per_url
 
             # Unit cost depends on provider.
             unit_cost = 0.01 # Default
@@ -90,7 +99,7 @@ def create_analysis_job():
         'advancedBlockedReason': advanced_blocked_reason
     }
 
-    items_data = urls
+    items_data = items
 
     try:
         job_id = create_job(job_data, items_data)
@@ -101,7 +110,7 @@ def create_analysis_job():
         return jsonify({
             "jobId": job_id,
             "status": "queued",
-            "total": len(urls),
+            "total": len(items),
             "advancedAllowed": advanced_allowed,
             "advancedBlockedReason": advanced_blocked_reason
         }), 201

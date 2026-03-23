@@ -63,6 +63,8 @@ export interface SeoChecklistSettings {
     provider: 'serpapi' | 'dataforseo' | 'internal';
     maxKeywordsPerUrl: number;
     maxCompetitorsPerKeyword: number;
+    dataforseoLogin?: string;
+    dataforseoPassword?: string;
   };
   budgets: {
     maxUrlsPerBatch: number;

@@ -8,6 +8,8 @@ const DEFAULT_SETTINGS: SeoChecklistSettings = {
     provider: 'serpapi',
     maxKeywordsPerUrl: 10,
     maxCompetitorsPerKeyword: 3,
+    dataforseoLogin: '',
+    dataforseoPassword: '',
   },
   budgets: {
     maxUrlsPerBatch: 50,
@@ -49,7 +51,12 @@ export const useSeoChecklistSettings = () => {
     (newSettings: Partial<SeoChecklistSettings>) => {
       if (!storageKey) return;
       setSettings((prev) => {
-        const updated = { ...prev, ...newSettings };
+        const updated = {
+          ...prev,
+          ...newSettings,
+          serp: { ...prev.serp, ...newSettings.serp },
+          budgets: { ...prev.budgets, ...newSettings.budgets },
+        };
         localStorage.setItem(storageKey, JSON.stringify(updated));
         return updated;
       });

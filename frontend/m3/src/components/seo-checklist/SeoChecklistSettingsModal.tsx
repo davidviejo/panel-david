@@ -120,10 +120,24 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                     </option>
                     <option
                       value="dataforseo"
-                      disabled={capabilities && !capabilities.serpProviders['dataforseo']}
+                      disabled={
+                        !!(
+                          capabilities &&
+                          !capabilities.serpProviders['dataforseo'] &&
+                          !(
+                            formData.serp.dataforseoLogin?.trim() &&
+                            formData.serp.dataforseoPassword?.trim()
+                          )
+                        )
+                      }
                     >
                       DataForSEO{' '}
-                      {capabilities && !capabilities.serpProviders['dataforseo']
+                      {capabilities &&
+                      !capabilities.serpProviders['dataforseo'] &&
+                      !(
+                        formData.serp.dataforseoLogin?.trim() &&
+                        formData.serp.dataforseoPassword?.trim()
+                      )
                         ? '(No disponible)'
                         : ''}
                     </option>
@@ -137,7 +151,59 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                         : ''}
                     </option>
                   </select>
+                  {formData.serp.provider === 'dataforseo' &&
+                    capabilities &&
+                    !capabilities.serpProviders['dataforseo'] &&
+                    !(
+                      formData.serp.dataforseoLogin?.trim() &&
+                      formData.serp.dataforseoPassword?.trim()
+                    ) && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                        DataForSEO no está configurado globalmente. Puedes usarlo desde aquí
+                        introduciendo tus credenciales.
+                      </p>
+                    )}
                 </div>
+
+                {formData.serp.provider === 'dataforseo' && (
+                  <div className="space-y-4 p-4 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-950/20">
+                    <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
+                      <AlertTriangle size={14} className="mt-0.5 text-blue-500 shrink-0" />
+                      <span>
+                        Estas credenciales se guardan en el navegador del proyecto actual y se
+                        envían al motor sólo cuando lanzas análisis avanzados desde esta pantalla.
+                      </span>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        DataForSEO Login
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.serp.dataforseoLogin || ''}
+                        onChange={(e) =>
+                          handleChange('serp', 'dataforseoLogin', e.target.value.trim())
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                        placeholder="email / login"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        DataForSEO Password
+                      </label>
+                      <input
+                        type="password"
+                        value={formData.serp.dataforseoPassword || ''}
+                        onChange={(e) =>
+                          handleChange('serp', 'dataforseoPassword', e.target.value)
+                        }
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                        placeholder="password"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
