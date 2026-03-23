@@ -12,11 +12,58 @@ import pandas as pd
 import io
 import concurrent.futures
 import re
+import json
+from urllib.parse import urljoin, urlparse
 from apps.tools.utils import is_safe_url
 
 checklist_bp = Blueprint('checklist', __name__, url_prefix='/checklist')
 
-GOOGLE_MAPS_PATTERN = re.compile(r'google.*maps')
+GOOGLE_MAPS_PATTERN = re.compile(r'(google\.[^/]+/maps|maps\.google)', re.IGNORECASE)
+FAQ_SCHEMA_TYPES = {'FAQPage', 'Question', 'Answer'}
+
+
+def _normalize_text(value):
+    return value.strip() if isinstance(value, str) else ''
+
+
+def _get_meta_content(soup, *names):
+    lowered = {name.lower() for name in names}
+    for meta in soup.find_all('meta'):
+        meta_name = (meta.get('name') or meta.get('property') or '').lower()
+        if meta_name in lowered:
+            return _normalize_text(meta.get('content', ''))
+    return ''
+
+
+def _extract_json_ld_payloads(soup):
+    payloads = []
+    for script in soup.find_all('script', type='application/ld+json'):
+        raw = script.get_text(strip=True)
+        if not raw:
+            continue
+        try:
+            payloads.append(json.loads(raw))
+        except json.JSONDecodeError:
+            continue
+    return payloads
+
+
+def _contains_faq_schema(payload):
+    if isinstance(payload, dict):
+        schema_type = payload.get('@type')
+        types = schema_type if isinstance(schema_type, list) else [schema_type]
+        if any(t in FAQ_SCHEMA_TYPES for t in types if isinstance(t, str)):
+            return True
+        return any(_contains_faq_schema(value) for value in payload.values())
+    if isinstance(payload, list):
+        return any(_contains_faq_schema(item) for item in payload)
+    return False
+
+
+def _is_internal_link(base_netloc, candidate_href):
+    parsed = urlparse(candidate_href)
+    return not parsed.netloc or parsed.netloc == base_netloc
+
 
 def check_url_compliance(url):
     """
@@ -36,51 +83,96 @@ def check_url_compliance(url):
         dict: Diccionario con 'summary', 'images', 'headers', 'links', 'snippet'.
     """
     data = {'summary': {}, 'images': [], 'headers': [], 'links': [], 'snippet': {}}
-    checklist_row = {'URL': url, 'Geolocalización': 'NO', 'Datos Estructurados': 'NO', 'Preguntas frecuentes': 'NO', 'Contenido': '0', 'Snippet': 'Falta', 'Imagenes': '0', 'Enlazado Interno': '0', 'Estructura': 'Mal'}
+    checklist_row = {
+        'URL': url,
+        'Geolocalización': 'NO',
+        'Datos Estructurados': 'NO',
+        'Preguntas frecuentes': 'NO',
+        'Contenido': '0',
+        'Snippet': 'Falta',
+        'Imagenes': '0',
+        'Enlazado Interno': '0',
+        'Estructura': 'Mal'
+    }
 
     if not is_safe_url(url):
         data['summary'] = checklist_row
         return data
+
     try:
         resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
-        if resp.status_code == 200:
-            soup = BeautifulSoup(resp.content, 'html.parser')
+        if resp.status_code != 200:
+            data['summary'] = checklist_row
+            return data
 
-            # Img: Verificar atributos alt
-            imgs = soup.find_all('img')
-            miss = sum(1 for i in imgs if not i.get('alt'))
-            checklist_row['Imagenes'] = f"{len(imgs)} ({miss} sin alt)"
-            for i in imgs: data['images'].append({'Origen':url, 'Src':i.get('src'), 'Alt':i.get('alt','MISSING')})
+        soup = BeautifulSoup(resp.content, 'html.parser')
+        base_netloc = urlparse(url).netloc
 
-            # Struct: Verificar jerarquía de encabezados
-            h1s = soup.find_all('h1')
-            if len(h1s)==1: checklist_row['Estructura'] = 'Correcta'
-            for h in soup.find_all(['h1','h2','h3']): data['headers'].append({'Tag':h.name, 'Txt':h.get_text(strip=True)})
+        imgs = soup.find_all('img')
+        missing_alt = sum(1 for img in imgs if not _normalize_text(img.get('alt')))
+        checklist_row['Imagenes'] = f"{len(imgs)} ({missing_alt} sin alt)"
+        for img in imgs:
+            data['images'].append({
+                'Origen': url,
+                'Src': urljoin(url, img.get('src', '')) if img.get('src') else '',
+                'Alt': _normalize_text(img.get('alt')) or 'MISSING'
+            })
 
-            # Links: Extraer enlaces internos
-            links = soup.find_all('a', href=True)
-            checklist_row['Enlazado Interno'] = f"{len(links)}"
-            for l in links: data['links'].append({'Href':l['href'], 'Anchor':l.get_text(strip=True)})
+        headers = soup.find_all(['h1', 'h2', 'h3'])
+        h1s = [h for h in headers if h.name == 'h1']
+        checklist_row['Estructura'] = 'Correcta' if len(h1s) == 1 else 'Mal'
+        for header in headers:
+            data['headers'].append({'Tag': header.name, 'Txt': header.get_text(strip=True)})
 
-            # Snippet: Verificar meta etiquetas básicas
-            t = soup.title.string if soup.title else ''
-            m = soup.find('meta', attrs={'name':'description'})
-            d = m['content'] if m else ''
-            if t and d: checklist_row['Snippet'] = 'Completo'
-            data['snippet'] = {'Title':t, 'Desc':d}
+        links = soup.find_all('a', href=True)
+        internal_links = []
+        for link in links:
+            absolute_href = urljoin(url, link['href'])
+            if _is_internal_link(base_netloc, absolute_href):
+                internal_links.append(link)
+                data['links'].append({
+                    'Href': absolute_href,
+                    'Anchor': link.get_text(strip=True)
+                })
+        checklist_row['Enlazado Interno'] = str(len(internal_links))
 
-            # Geo/Schema: Detección simple de mapas y json-ld
-            if soup.find('iframe', src=GOOGLE_MAPS_PATTERN): checklist_row['Geolocalización'] = 'SI'
-            if soup.find('script', type='application/ld+json'): checklist_row['Datos Estructurados'] = 'SI'
+        title = _normalize_text(soup.title.string if soup.title and soup.title.string else '')
+        description = _get_meta_content(soup, 'description', 'og:description')
+        if title and description:
+            checklist_row['Snippet'] = 'Completo'
+        elif title or description:
+            checklist_row['Snippet'] = 'Parcial'
+        data['snippet'] = {'Title': title, 'Desc': description}
 
-    except: pass
+        json_ld_payloads = _extract_json_ld_payloads(soup)
+
+        text_soup = BeautifulSoup(resp.content, 'html.parser')
+        for noisy_tag in text_soup(['script', 'style', 'noscript']):
+            noisy_tag.extract()
+        text_root = text_soup.body or text_soup
+        text_content = text_root.get_text(' ', strip=True)
+        checklist_row['Contenido'] = str(len(text_content.split())) if text_content else '0'
+
+        if json_ld_payloads:
+            checklist_row['Datos Estructurados'] = 'SI'
+        if any(_contains_faq_schema(payload) for payload in json_ld_payloads):
+            checklist_row['Preguntas frecuentes'] = 'SI'
+
+        if any(GOOGLE_MAPS_PATTERN.search(iframe.get('src', '')) for iframe in soup.find_all('iframe')):
+            checklist_row['Geolocalización'] = 'SI'
+
+    except requests.RequestException:
+        pass
+
     data['summary'] = checklist_row
     return data
+
 
 @checklist_bp.route('/')
 def index():
     """Renderiza el panel principal de la checklist."""
     return render_template('checklist/dashboard.html')
+
 
 @checklist_bp.route('/run', methods=['POST'])
 def run():
@@ -92,8 +184,10 @@ def run():
     res = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
         ft = {ex.submit(check_url_compliance, u): u for u in urls}
-        for f in concurrent.futures.as_completed(ft): res.append(f.result())
+        for f in concurrent.futures.as_completed(ft):
+            res.append(f.result())
     return jsonify({'status': 'ok', 'data': res})
+
 
 @checklist_bp.route('/download', methods=['POST'])
 def download():
@@ -103,14 +197,17 @@ def download():
     data = (request.get_json(silent=True) or {}).get('data', [])
     l_sum, l_img, l_head = [], [], []
     for i in data:
-        if 'summary' in i: l_sum.append(i['summary'])
+        if 'summary' in i:
+            l_sum.append(i['summary'])
         l_img.extend(i.get('images', []))
         l_head.extend(i.get('headers', []))
 
     o = io.BytesIO()
     with pd.ExcelWriter(o, engine='openpyxl') as w:
         pd.DataFrame(l_sum).to_excel(w, index=False, sheet_name="Checklist")
-        if l_img: pd.DataFrame(l_img).to_excel(w, index=False, sheet_name="Images")
-        if l_head: pd.DataFrame(l_head).to_excel(w, index=False, sheet_name="Structure")
+        if l_img:
+            pd.DataFrame(l_img).to_excel(w, index=False, sheet_name="Images")
+        if l_head:
+            pd.DataFrame(l_head).to_excel(w, index=False, sheet_name="Structure")
     o.seek(0)
     return send_file(o, download_name='checklist.xlsx', as_attachment=True)
