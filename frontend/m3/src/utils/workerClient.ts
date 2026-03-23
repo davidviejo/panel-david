@@ -1,24 +1,15 @@
 import { GSCRow } from '../types';
-import { InsightResult } from './gscInsights';
+import { GSCInsightsEngineResult } from './gscInsights';
 
-export interface GSCInsights {
-  quickWins: InsightResult;
-  strikingDistance: InsightResult;
-  lowCtr: InsightResult;
-  topQueries: InsightResult;
-  cannibalization: InsightResult;
-  zeroClicks: InsightResult;
-  featuredSnippets: InsightResult;
-  stagnantTraffic: InsightResult;
-  seasonality: InsightResult;
-  stableUrls: InsightResult;
-  internalRedirects: InsightResult;
+export interface GSCWorkerPayload {
+  currentRows: GSCRow[];
+  previousRows?: GSCRow[];
 }
 
-export const runAnalysisInWorker = (data: GSCRow[]): Promise<GSCInsights> => {
+export type GSCInsights = GSCInsightsEngineResult;
+
+export const runAnalysisInWorker = (payload: GSCWorkerPayload): Promise<GSCInsights> => {
   return new Promise((resolve, reject) => {
-    // Create a new worker instance for each run to avoid state issues and ensure clean slate
-    // Vite handles this import syntax natively
     const worker = new Worker(new URL('../workers/gscInsights.worker.ts', import.meta.url), {
       type: 'module',
     });
@@ -38,7 +29,6 @@ export const runAnalysisInWorker = (data: GSCRow[]): Promise<GSCInsights> => {
       worker.terminate();
     };
 
-    // Send data to worker
-    worker.postMessage(data);
+    worker.postMessage(payload);
   });
 };

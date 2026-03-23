@@ -1,12 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  listSites,
-  getSearchAnalytics,
-  getGSCQueryPageData,
-} from '../services/googleSearchConsole';
+import { listSites, getSearchAnalytics, getGSCQueryPageData } from '../services/googleSearchConsole';
 import { runAnalysisInWorker } from '../utils/workerClient';
 import { useToast } from '../components/ui/ToastContext';
+
+const getPreviousRange = (startDate: string, endDate: string) => {
+  const start = new Date(`${startDate}T00:00:00Z`);
+  const end = new Date(`${endDate}T00:00:00Z`);
+  const diffDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1);
+
+  const previousEnd = new Date(start);
+  previousEnd.setUTCDate(previousEnd.getUTCDate() - 1);
+  const previousStart = new Date(previousEnd);
+  previousStart.setUTCDate(previousStart.getUTCDate() - (diffDays - 1));
+
+  return {
+    previousStartDate: previousStart.toISOString().split('T')[0],
+    previousEndDate: previousEnd.toISOString().split('T')[0],
+  };
+};
 
 export const useGSCData = (accessToken: string | null, startDate?: string, endDate?: string) => {
   const { error: showError } = useToast();
@@ -15,14 +27,12 @@ export const useGSCData = (accessToken: string | null, startDate?: string, endDa
     () => localStorage.getItem('mediaflow_gsc_selected_site') || '',
   );
 
-  // Persist selected site
   useEffect(() => {
     if (selectedSite) {
       localStorage.setItem('mediaflow_gsc_selected_site', selectedSite);
     }
   }, [selectedSite]);
 
-  // 1. Query for Sites
   const {
     data: gscSites = [],
     isLoading: isLoadingSites,
@@ -31,10 +41,9 @@ export const useGSCData = (accessToken: string | null, startDate?: string, endDa
     queryKey: ['gscSites', accessToken],
     queryFn: () => listSites(accessToken!),
     enabled: !!accessToken,
-    staleTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: 1000 * 60 * 30,
   });
 
-  // Handle Sites Error
   useEffect(() => {
     if (sitesError) {
       console.error(sitesError);
@@ -42,13 +51,11 @@ export const useGSCData = (accessToken: string | null, startDate?: string, endDa
     }
   }, [sitesError, showError]);
 
-  // Effect to select first site when loaded or validate persisted site
   useEffect(() => {
     if (gscSites.length > 0) {
       if (!selectedSite) {
         setSelectedSite(gscSites[0].siteUrl);
       } else {
-        // Validate if persisted site still exists
         const exists = gscSites.find((s) => s.siteUrl === selectedSite);
         if (!exists) {
           setSelectedSite(gscSites[0].siteUrl);
@@ -57,7 +64,6 @@ export const useGSCData = (accessToken: string | null, startDate?: string, endDa
     }
   }, [gscSites, selectedSite]);
 
-  // 2. Query for Data & Insights
   const {
     data: siteData,
     isLoading: isLoadingData,
@@ -68,26 +74,32 @@ export const useGSCData = (accessToken: string | null, startDate?: string, endDa
       const finalEndDate = endDate || new Date().toISOString().split('T')[0];
       const finalStartDate =
         startDate || new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const { previousStartDate, previousEndDate } = getPreviousRange(finalStartDate, finalEndDate);
 
-      // Parallel Fetch: Date Data for Chart, Query+Page Data for Insights
-      const [dateData, queryPageData] = await Promise.all([
+      const [dateData, currentQueryPageData, previousQueryPageData] = await Promise.all([
         getSearchAnalytics(accessToken!, selectedSite, finalStartDate, finalEndDate),
         getGSCQueryPageData(accessToken!, selectedSite, finalStartDate, finalEndDate),
+        getGSCQueryPageData(accessToken!, selectedSite, previousStartDate, previousEndDate),
       ]);
 
-      // Offload heavy processing to Web Worker
-      const insights = await runAnalysisInWorker(queryPageData);
+      const insights = await runAnalysisInWorker({
+        currentRows: currentQueryPageData,
+        previousRows: previousQueryPageData,
+      });
 
       return {
         gscData: dateData,
         insights,
+        comparisonPeriod: {
+          current: { startDate: finalStartDate, endDate: finalEndDate },
+          previous: { startDate: previousStartDate, endDate: previousEndDate },
+        },
       };
     },
     enabled: !!accessToken && !!selectedSite,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
-  // Handle Data Error
   useEffect(() => {
     if (dataError) {
       console.error(dataError);
@@ -98,8 +110,6 @@ export const useGSCData = (accessToken: string | null, startDate?: string, endDa
   const clearData = () => {
     setSelectedSite('');
     localStorage.removeItem('mediaflow_gsc_selected_site');
-    // Invalidating queries might be better, but 'clearing' usually means UI reset.
-    // Since state is derived from queries, clearing selectedSite disables the data query.
     queryClient.removeQueries({ queryKey: ['gscData'] });
   };
 
@@ -108,21 +118,28 @@ export const useGSCData = (accessToken: string | null, startDate?: string, endDa
     selectedSite,
     setSelectedSite,
     gscData: siteData?.gscData || [],
+    comparisonPeriod: siteData?.comparisonPeriod || null,
     isLoadingGsc: isLoadingSites || isLoadingData,
-    insights: siteData?.insights || {
-      quickWins: null,
-      strikingDistance: null,
-      lowCtr: null,
-      topQueries: null,
-      cannibalization: null,
-      zeroClicks: null,
-      featuredSnippets: null,
-      stagnantTraffic: null,
-      seasonality: null,
-      stableUrls: null,
-      internalRedirects: null,
-    },
-    fetchSites: () => queryClient.invalidateQueries({ queryKey: ['gscSites'] }), // Manual refresh
+    insights:
+      siteData?.insights ||
+      ({
+        insights: [],
+        groupedInsights: [],
+        topOpportunities: [],
+        topRisks: [],
+        quickWins: null,
+        strikingDistance: null,
+        lowCtr: null,
+        topQueries: null,
+        cannibalization: null,
+        zeroClicks: null,
+        featuredSnippets: null,
+        stagnantTraffic: null,
+        seasonality: null,
+        stableUrls: null,
+        internalRedirects: null,
+      } as const),
+    fetchSites: () => queryClient.invalidateQueries({ queryKey: ['gscSites'] }),
     clearData,
   };
 };

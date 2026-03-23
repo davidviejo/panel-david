@@ -1,40 +1,24 @@
-import {
-  analyzeQuickWins,
-  analyzeStrikingDistance,
-  analyzeLowCtr,
-  getTopPerforming,
-  analyzeCannibalization,
-  analyzeZeroClickQueries,
-  analyzeFeaturedSnippets,
-  analyzeStagnantTraffic,
-  analyzeSeasonality,
-  analyzeStableUrls,
-  analyzeInternalRedirects,
-} from '../utils/gscInsights';
+import { analyzeGSCInsights } from '../utils/gscInsights';
 import { GSCRow } from '../types';
 
-addEventListener('message', (e: MessageEvent<GSCRow[]>) => {
-  const rows = e.data;
+interface GSCWorkerPayload {
+  currentRows: GSCRow[];
+  previousRows?: GSCRow[];
+}
 
-  if (!Array.isArray(rows)) {
-    postMessage({ type: 'ERROR', payload: 'Invalid data format: expected array of GSCRow' });
+addEventListener('message', (e: MessageEvent<GSCWorkerPayload>) => {
+  const payload = e.data;
+
+  if (!payload || !Array.isArray(payload.currentRows)) {
+    postMessage({ type: 'ERROR', payload: 'Invalid data format: expected currentRows array of GSCRow' });
     return;
   }
 
   try {
-    const insights = {
-      quickWins: analyzeQuickWins(rows),
-      strikingDistance: analyzeStrikingDistance(rows),
-      lowCtr: analyzeLowCtr(rows),
-      topQueries: getTopPerforming(rows),
-      cannibalization: analyzeCannibalization(rows),
-      zeroClicks: analyzeZeroClickQueries(rows),
-      featuredSnippets: analyzeFeaturedSnippets(rows),
-      stagnantTraffic: analyzeStagnantTraffic(rows),
-      seasonality: analyzeSeasonality(rows),
-      stableUrls: analyzeStableUrls(rows),
-      internalRedirects: analyzeInternalRedirects(rows),
-    };
+    const insights = analyzeGSCInsights({
+      currentRows: payload.currentRows,
+      previousRows: Array.isArray(payload.previousRows) ? payload.previousRows : [],
+    });
 
     postMessage({ type: 'SUCCESS', payload: insights });
   } catch (error) {
