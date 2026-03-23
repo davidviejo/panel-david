@@ -1,23 +1,21 @@
 import React, { useRef } from 'react';
-import { Download, Upload, Trash2 } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { useSettings } from '../context/SettingsContext';
-import { Client } from '../types';
+import { buildBackupPayload, isBackupPayload, restoreMediaFlowStorageSnapshot } from '../utils/backup';
 
 const DataManagementPanel: React.FC = () => {
-  const { clients, generalNotes, addClient, restoreProjectData, currentClientId } = useProject();
+  const { clients, generalNotes, restoreProjectData, currentClientId } = useProject();
   const { settings, updateSettings } = useSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
-    const data = {
-      version: 1,
-      exportedAt: Date.now(),
-      clients: clients,
-      generalNotes: generalNotes,
-      settings: settings,
-      currentClientId: currentClientId,
-    };
+    const data = buildBackupPayload({
+      clients,
+      generalNotes,
+      settings,
+      currentClientId,
+    });
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -68,21 +66,24 @@ const DataManagementPanel: React.FC = () => {
         const content = e.target?.result as string;
         const data = JSON.parse(content);
 
-        if (data.version && data.clients) {
+        if (isBackupPayload(data)) {
           if (
             window.confirm(
-              '¿Estás seguro de restaurar estos datos? Se recuperarán los proyectos, notas y configuraciones. ¡Atención! Los proyectos existentes que coincidan con el backup serán sobrescritos.',
+              '¿Estás seguro de restaurar estos datos? Se recuperarán todos los proyectos con sus checklists SEO, URLs, kanban, tareas, notas y configuraciones. ¡Atención! Los datos locales actuales serán reemplazados por el backup.',
             )
           ) {
-            // Use restoreProjectData for smart restore/overwrite
+            if (data.storage) {
+              restoreMediaFlowStorageSnapshot(data.storage);
+            }
+
             restoreProjectData(data.clients, data.generalNotes || [], data.currentClientId);
 
-            // Restore settings if available
             if (data.settings) {
               updateSettings(data.settings);
             }
 
-            alert('Datos restaurados correctamente.');
+            alert('Datos restaurados correctamente. La aplicación se recargará para aplicar todo el backup.');
+            window.location.reload();
           }
         } else {
           alert('Formato de archivo inválido.');
@@ -135,7 +136,7 @@ const DataManagementPanel: React.FC = () => {
         />
       </div>
       <p className="text-[10px] text-slate-400 mt-2 leading-tight">
-        Guarda una copia de seguridad de todos tus proyectos y notas.
+        Guarda una copia completa con todos tus proyectos, checklists SEO, URLs, kanban, tareas, notas y ajustes.
       </p>
     </div>
   );
