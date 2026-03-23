@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Clipboard, Upload } from 'lucide-react';
 import { SeoPage, CHECKLIST_POINTS, ChecklistItem, ChecklistKey } from '../../types/seoChecklist';
+import { normalizeSeoUrl } from '../../utils/seoUrlNormalizer';
 
 interface Props {
   isOpen: boolean;
@@ -44,7 +45,7 @@ export const ImportUrlsModal: React.FC<Props> = ({ isOpen, onClose, onImport, ex
 
         newPages.push({
           id: crypto.randomUUID(),
-          url: parts[0],
+          url: normalizeSeoUrl(parts[0]),
           kwPrincipal: parts[1],
           pageType: parts[2] || 'Article',
           geoTarget: parts[3] || '',
