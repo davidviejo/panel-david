@@ -1,13 +1,88 @@
-import { SeoPage, ChecklistKey, AnalysisConfigPayload } from '../types/seoChecklist';
+import {
+  SeoPage,
+  ChecklistKey,
+  AnalysisConfigPayload,
+  SeoChecklistSettings,
+} from '../types/seoChecklist';
 import { analyzeUrl, AnalysisResponse } from '../services/pythonEngineClient';
-import { getPageQueries } from '../services/googleSearchConsole';
+import { getPageMetrics, getPageQueries } from '../services/googleSearchConsole';
 import { normalizeSeoPageInput } from './seoUrlNormalizer';
+
+const isKeywordMissing = (keyword?: string) => {
+  const normalized = (keyword || '').trim();
+  return normalized === '' || normalized === '-';
+};
+
+const parseBrandTerms = (brandTerms?: string): string[] =>
+  (brandTerms || '')
+    .split(/[\n,;]/)
+    .map((term) => term.trim().toLowerCase())
+    .filter(Boolean);
+
+const excludeBrandQueries = (gscQueries: any[] = [], brandTerms: string[] = []) => {
+  if (!Array.isArray(gscQueries) || gscQueries.length === 0 || brandTerms.length === 0) {
+    return gscQueries;
+  }
+
+  return gscQueries.filter((row) => {
+    const query = String(row?.keys?.[0] || '')
+      .toLowerCase()
+      .trim();
+    if (!query) return false;
+    return !brandTerms.some((term) => query.includes(term));
+  });
+};
+
+const pickBestGscKeyword = (gscQueries: any[] = []): string | null => {
+  if (!Array.isArray(gscQueries) || gscQueries.length === 0) return null;
+
+  const sorted = [...gscQueries].sort((a, b) => {
+    const clickDiff = (b?.clicks || 0) - (a?.clicks || 0);
+    if (clickDiff !== 0) return clickDiff;
+
+    const impressionDiff = (b?.impressions || 0) - (a?.impressions || 0);
+    if (impressionDiff !== 0) return impressionDiff;
+
+    return (a?.position || Number.POSITIVE_INFINITY) - (b?.position || Number.POSITIVE_INFINITY);
+  });
+
+  const winner = sorted.find((row) => typeof row?.keys?.[0] === 'string' && row.keys[0].trim());
+  return winner?.keys?.[0]?.trim() || null;
+};
+
+const buildGscMetricsFromQueries = (gscQueries: any[] = []) => {
+  if (!Array.isArray(gscQueries) || gscQueries.length === 0) return undefined;
+
+  const clicks = gscQueries.reduce((sum, row) => sum + (row?.clicks || 0), 0);
+  const impressions = gscQueries.reduce((sum, row) => sum + (row?.impressions || 0), 0);
+  const weightedPosition = gscQueries.reduce(
+    (sum, row) => sum + (row?.position || 0) * (row?.impressions || 0),
+    0,
+  );
+
+  return {
+    clicks,
+    impressions,
+    ctr: impressions > 0 ? clicks / impressions : 0,
+    position: impressions > 0 ? weightedPosition / impressions : undefined,
+    queryCount: gscQueries.length,
+    source: 'query' as const,
+    updatedAt: Date.now(),
+  };
+};
 
 export const processAnalysisResult = (
   page: SeoPage,
   result: AnalysisResponse,
   gscQueries: any[] = [],
+  gscMetrics?: SeoPage['gscMetrics'],
+  checklistSettings?: Pick<SeoChecklistSettings, 'serp'>,
 ): Partial<SeoPage> => {
+  const brandTerms = checklistSettings?.serp.excludeBrandKeywords
+    ? parseBrandTerms(checklistSettings.serp.brandTerms)
+    : [];
+  const filteredGscQueries = excludeBrandQueries(gscQueries, brandTerms);
+
   // FIX: Sync LocalBusiness from DATOS_ESTRUCTURADOS to GEOLOCALIZACION
   // If structured data sees LocalBusiness, GEOLOCALIZACION should also reflect it.
   if (result.items) {
@@ -45,7 +120,7 @@ export const processAnalysisResult = (
   // If result already has it, we should probably respect it, but the original code overwrote it.
   // We'll follow the original logic: ensure the structure exists, then inject/overwrite if gscQueries is not empty.
 
-  if (gscQueries.length > 0 || !result.items?.OPORTUNIDADES?.autoData?.gscQueries) {
+  if (filteredGscQueries.length > 0 || !result.items?.OPORTUNIDADES?.autoData?.gscQueries) {
     if (!result.items) {
       result.items = {};
     }
@@ -56,8 +131,8 @@ export const processAnalysisResult = (
       result.items.OPORTUNIDADES.autoData = {};
     }
 
-    if (gscQueries.length > 0) {
-      result.items.OPORTUNIDADES.autoData.gscQueries = gscQueries;
+    if (filteredGscQueries.length > 0) {
+      result.items.OPORTUNIDADES.autoData.gscQueries = filteredGscQueries;
     }
 
     // Calculate kwFound if GSC data is present (either just injected or already there)
@@ -71,8 +146,17 @@ export const processAnalysisResult = (
     }
   }
 
+  const resolvedGscMetrics =
+    gscMetrics || page.gscMetrics || buildGscMetricsFromQueries(filteredGscQueries);
+  const currentGscQueries = result.items?.OPORTUNIDADES?.autoData?.gscQueries || filteredGscQueries;
+  const inferredKeyword = isKeywordMissing(page.kwPrincipal)
+    ? pickBestGscKeyword(currentGscQueries)
+    : null;
+
   const updates: Partial<SeoPage> = {
     url: page.url,
+    kwPrincipal: inferredKeyword || page.kwPrincipal,
+    gscMetrics: resolvedGscMetrics,
     lastAnalyzedAt: Date.now(),
     checklist: { ...page.checklist },
     advancedBlockedReason: result.advancedBlockedReason,
@@ -120,9 +204,11 @@ export const processAnalysisResult = (
 export const runPageAnalysis = async (
   page: SeoPage,
   analysisConfig?: AnalysisConfigPayload,
+  checklistSettings?: Pick<SeoChecklistSettings, 'serp'>,
 ): Promise<Partial<SeoPage>> => {
   const normalizedPage = normalizeSeoPageInput(page);
   let gscQueries: any[] = [];
+  let gscMetrics: SeoPage['gscMetrics'] | undefined = page.gscMetrics;
 
   // Check if page already has GSC data (to avoid re-fetching and respect limits)
   if (
@@ -139,8 +225,25 @@ export const runPageAnalysis = async (
       try {
         const end = new Date().toISOString().split('T')[0];
         const start = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        // Limit to 50 as requested
-        gscQueries = await getPageQueries(token, site, normalizedPage.url, start, end, 50);
+        const [pageMetricsRow, pageQueries] = await Promise.all([
+          getPageMetrics(token, site, normalizedPage.url, start, end),
+          getPageQueries(token, site, normalizedPage.url, start, end, 50),
+        ]);
+
+        gscQueries = pageQueries;
+        if (pageMetricsRow) {
+          gscMetrics = {
+            clicks: pageMetricsRow.clicks || 0,
+            impressions: pageMetricsRow.impressions || 0,
+            ctr: pageMetricsRow.ctr || 0,
+            position: pageMetricsRow.position,
+            queryCount: pageQueries.length,
+            source: 'page',
+            updatedAt: Date.now(),
+          };
+        } else if (pageQueries.length > 0) {
+          gscMetrics = buildGscMetricsFromQueries(pageQueries);
+        }
       } catch (e) {
         console.warn('Could not fetch GSC queries', e);
       }
@@ -158,7 +261,13 @@ export const runPageAnalysis = async (
     analysisConfig,
   });
 
-  const updates = processAnalysisResult(normalizedPage, result, gscQueries);
+  const updates = processAnalysisResult(
+    normalizedPage,
+    result,
+    gscQueries,
+    gscMetrics,
+    checklistSettings,
+  );
   updates.url = normalizedPage.url;
   return updates;
 };

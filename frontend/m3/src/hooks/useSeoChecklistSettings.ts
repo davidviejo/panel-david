@@ -10,6 +10,8 @@ const DEFAULT_SETTINGS: SeoChecklistSettings = {
     maxCompetitorsPerKeyword: 3,
     dataforseoLogin: '',
     dataforseoPassword: '',
+    excludeBrandKeywords: false,
+    brandTerms: '',
   },
   budgets: {
     maxUrlsPerBatch: 50,

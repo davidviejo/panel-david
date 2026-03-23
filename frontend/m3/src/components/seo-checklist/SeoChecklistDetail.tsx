@@ -4,6 +4,7 @@ import {
   CHECKLIST_POINTS,
   ChecklistKey,
   ChecklistItem as IChecklistItem,
+  SeoChecklistSettings,
 } from '../../types/seoChecklist';
 import { ChecklistItem } from './ChecklistItem';
 import { runPageAnalysis } from '../../utils/seoUtils';
@@ -30,6 +31,7 @@ interface Props {
     updates: Partial<IChecklistItem>,
   ) => void;
   onBack: () => void;
+  settings: SeoChecklistSettings;
 }
 
 export const SeoChecklistDetail: React.FC<Props> = ({
@@ -37,6 +39,7 @@ export const SeoChecklistDetail: React.FC<Props> = ({
   onUpdatePage,
   onUpdateChecklistItem,
   onBack,
+  settings,
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +104,7 @@ export const SeoChecklistDetail: React.FC<Props> = ({
     setIsAnalyzing(true);
     setError(null);
     try {
-      const updates = await runPageAnalysis(page);
+      const updates = await runPageAnalysis(page, undefined, settings);
       onUpdatePage(page.id, updates);
     } catch (err: any) {
       setError(err.message || 'Error de conexión con el motor de análisis.');
@@ -235,12 +238,16 @@ export const SeoChecklistDetail: React.FC<Props> = ({
               >
                 {page.url}
               </h1>
-              <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
+              <div className="flex items-center gap-3 text-sm text-slate-500 mt-1 flex-wrap">
                 <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-xs font-bold">
                   {page.kwPrincipal}
                 </span>
                 <span>{page.pageType}</span>
                 {page.cluster && <span>• {page.cluster}</span>}
+                <span>• Clics GSC: {page.gscMetrics?.clicks?.toLocaleString('es-ES') || 0}</span>
+                <span>
+                  • Impresiones GSC: {page.gscMetrics?.impressions?.toLocaleString('es-ES') || 0}
+                </span>
               </div>
               <button
                 onClick={handleEdit}

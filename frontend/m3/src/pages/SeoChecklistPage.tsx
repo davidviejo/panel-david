@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSeoChecklist } from '../hooks/useSeoChecklist';
+import { useSeoChecklistSettings } from '../hooks/useSeoChecklistSettings';
 import { SeoUrlList } from '../components/seo-checklist/SeoUrlList';
 import { SeoChecklistDetail } from '../components/seo-checklist/SeoChecklistDetail';
 import { ImportUrlsModal } from '../components/seo-checklist/ImportUrlsModal';
@@ -48,6 +49,8 @@ const SeoChecklistPage: React.FC = () => {
 
     fetchCaps();
   }, []);
+
+  const { settings } = useSeoChecklistSettings();
 
   const {
     pages,
@@ -181,6 +184,7 @@ const SeoChecklistPage: React.FC = () => {
       ) : (
         <SeoChecklistDetail
           page={selectedPage}
+          settings={settings}
           onUpdatePage={updatePage}
           onUpdateChecklistItem={updateChecklistItem}
           onBack={() => setSelectedPageId(null)}

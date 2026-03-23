@@ -28,6 +28,16 @@ export type ChecklistKey =
   | 'GEO_IMAGENES'
   | 'CTA';
 
+export interface SeoPageGscMetrics {
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position?: number;
+  queryCount?: number;
+  source?: 'page' | 'query';
+  updatedAt?: number;
+}
+
 export interface SeoPage {
   id: string;
   url: string;
@@ -35,6 +45,7 @@ export interface SeoPage {
   pageType: string;
   geoTarget?: string;
   cluster?: string;
+  gscMetrics?: SeoPageGscMetrics;
   checklist: Record<ChecklistKey, ChecklistItem>;
   lastAnalyzedAt?: number;
   competitors?: string[];
@@ -65,6 +76,8 @@ export interface SeoChecklistSettings {
     maxCompetitorsPerKeyword: number;
     dataforseoLogin?: string;
     dataforseoPassword?: string;
+    excludeBrandKeywords?: boolean;
+    brandTerms?: string;
   };
   budgets: {
     maxUrlsPerBatch: number;

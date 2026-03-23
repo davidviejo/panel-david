@@ -10,6 +10,7 @@ vi.mock('../services/pythonEngineClient', () => ({
 
 vi.mock('../services/googleSearchConsole', () => ({
   getPageQueries: vi.fn(),
+  getPageMetrics: vi.fn(),
 }));
 
 const mockPage: SeoPage = {
