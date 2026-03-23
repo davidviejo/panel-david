@@ -371,10 +371,16 @@
                                 <div class="form-text">Filtra el ruido y quédate sólo con las conversaciones relevantes.</div>
                             </div>
 
+                            <div class="mb-3">
+                                <label for="dataforseoLoginInput" class="form-label fw-semibold text-slate-800">DataForSEO login <span class="text-muted fw-normal">(opcional)</span></label>
+                                <input type="text" class="form-control" name="dataforseo_login" id="dataforseoLoginInput" placeholder="Se usará el login global si lo dejas vacío">
+                                <div class="form-text">Puedes sobreescribir aquí las credenciales guardadas en Settings.</div>
+                            </div>
+
                             <div class="mb-4">
-                                <label for="apiKeyInput" class="form-label fw-semibold text-slate-800">API Key SerpApi <span class="text-muted fw-normal">(opcional)</span></label>
-                                <input type="password" class="form-control" name="api_key" id="apiKeyInput" placeholder="Añádela si quieres usar tu propia clave">
-                                <div class="form-text">Si no la indicas, el sistema utilizará el proveedor configurado por defecto.</div>
+                                <label for="dataforseoPasswordInput" class="form-label fw-semibold text-slate-800">DataForSEO password <span class="text-muted fw-normal">(opcional)</span></label>
+                                <input type="password" class="form-control" name="dataforseo_password" id="dataforseoPasswordInput" placeholder="Se usará la password global si la dejas vacía">
+                                <div class="form-text">Este dashboard consulta directamente la API de DataForSEO para recuperar tendencias.</div>
                             </div>
 
                             <button type="button" id="analyzeBtn" class="btn trends-primary-btn w-100 fw-bold text-white" onclick="startTrends()">
@@ -543,7 +549,8 @@
     function resetUI() {
         document.getElementById('geoInput').disabled = false;
         document.getElementById('catInput').disabled = false;
-        document.getElementById('apiKeyInput').disabled = false;
+        document.getElementById('dataforseoLoginInput').disabled = false;
+        document.getElementById('dataforseoPasswordInput').disabled = false;
 
         const btn = document.getElementById('analyzeBtn');
         btn.disabled = false;
@@ -555,7 +562,8 @@
     function showLoading() {
         document.getElementById('geoInput').disabled = true;
         document.getElementById('catInput').disabled = true;
-        document.getElementById('apiKeyInput').disabled = true;
+        document.getElementById('dataforseoLoginInput').disabled = true;
+        document.getElementById('dataforseoPasswordInput').disabled = true;
 
         const btn = document.getElementById('analyzeBtn');
         btn.disabled = true;

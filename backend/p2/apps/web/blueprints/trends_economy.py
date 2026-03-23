@@ -1,7 +1,7 @@
 # apps/trends_economy.py
 """
 Módulo para el análisis de tendencias económicas y de búsqueda.
-Integra Google Trends (API interna y SerpApi) para monitorizar temas virales en tiempo real.
+Integra DataForSEO para monitorizar temas virales en tiempo real.
 Gestiona trabajos en segundo plano utilizando SQLite.
 """
 from flask import Blueprint, render_template, request, jsonify
@@ -122,16 +122,16 @@ def update_job_status(job_id, updates, conn=None):
             except Exception:
                 pass
 
-def worker_realtime_trends(job_id, geo, category, api_key=None):
+def worker_realtime_trends(job_id, geo, category, dataforseo_login=None, dataforseo_password=None):
     """
-    Worker en segundo plano para procesar tendencias.
-    Puede usar la API gratuita de Google, SerpApi o DataForSEO.
+    Worker en segundo plano para procesar tendencias usando DataForSEO.
 
     Args:
         job_id (str): ID del trabajo.
         geo (str): Geolocalización.
         category (str): Categoría de búsqueda.
-        api_key (str, optional): Clave API de SerpApi (desde UI).
+        dataforseo_login (str, optional): Login DataForSEO desde UI.
+        dataforseo_password (str, optional): Password DataForSEO desde UI.
     """
     init_db()
     conn = None
@@ -142,39 +142,17 @@ def worker_realtime_trends(job_id, geo, category, api_key=None):
 
         geo = geo.strip().upper()
 
-        # Determinar proveedor y credenciales
+        settings = get_user_settings('default')
         provider = 'dataforseo'
-        credentials = {}
+        credentials = {
+            'login': (dataforseo_login or '').strip() or os.getenv('DATAFORSEO_LOGIN') or settings.get('dataforseo_login'),
+            'password': (dataforseo_password or '').strip() or os.getenv('DATAFORSEO_PASSWORD') or settings.get('dataforseo_password')
+        }
 
-        # 1. SerpApi via UI (prioridad explícita del usuario)
-        if api_key and len(api_key.strip()) > 10:
-            provider = 'serpapi'
-            credentials['api_key'] = api_key.strip()
-            update_job_status(job_id, {'log_append': "🔑 Usando SerpApi (Key provista)..."}, conn=conn)
-        else:
-            # 2. Configuración Global (Env o DB)
-            settings = get_user_settings('default')
+        if not credentials['login'] or not credentials['password']:
+            raise ValueError('Faltan las credenciales de DataForSEO. Configúralas en Settings o introdúcelas en el formulario.')
 
-            env_provider = os.getenv('TRENDS_PROVIDER', '').lower()
-
-            # Credenciales DataForSEO
-            dfs_login = os.getenv('DATAFORSEO_LOGIN') or settings.get('dataforseo_login')
-            dfs_pass = os.getenv('DATAFORSEO_PASSWORD') or settings.get('dataforseo_password')
-
-            serp_key = os.getenv('SERPAPI_KEY') or settings.get('serpapi_key')
-
-            if env_provider == 'serpapi' and serp_key:
-                provider = 'serpapi'
-                credentials['api_key'] = serp_key
-                update_job_status(job_id, {'log_append': "🔑 Usando SerpApi (Config)..."}, conn=conn)
-            elif dfs_login and dfs_pass:
-                provider = 'dataforseo'
-                credentials['login'] = dfs_login
-                credentials['password'] = dfs_pass
-                update_job_status(job_id, {'log_append': "🛠️ Usando DataForSEO (predeterminado)..."}, conn=conn)
-            else:
-                provider = 'internal'
-                update_job_status(job_id, {'log_append': "⚠️ DataForSEO no está disponible. Usando Google Trends (interno)."}, conn=conn)
+        update_job_status(job_id, {'log_append': "🛠️ Usando DataForSEO API..."}, conn=conn)
 
         # Ejecutar estrategia
         update_job_status(job_id, {'progress': 50}, conn=conn)
@@ -214,7 +192,8 @@ def start_analysis():
     job_id = str(uuid.uuid4())
     geo = request.form.get('geo', 'ES')
     category = request.form.get('category', 'h')
-    api_key = request.form.get('api_key', '').strip()
+    dataforseo_login = request.form.get('dataforseo_login', '').strip()
+    dataforseo_password = request.form.get('dataforseo_password', '').strip()
 
     # Create initial job record
     conn = sqlite3.connect(DB_FILE)
@@ -224,7 +203,7 @@ def start_analysis():
     conn.commit()
     conn.close()
 
-    t = threading.Thread(target=worker_realtime_trends, args=(job_id, geo, category, api_key))
+    t = threading.Thread(target=worker_realtime_trends, args=(job_id, geo, category, dataforseo_login, dataforseo_password))
     t.start()
 
     return jsonify({"status": "started", "job_id": job_id})
