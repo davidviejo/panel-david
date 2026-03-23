@@ -9,6 +9,8 @@ import time
 import base64
 import logging
 from typing import List, Dict, Any, Optional
+from urllib.parse import quote_plus
+import re
 
 # Códigos de categoría para Google Trends Realtime (Internal / SerpApi)
 GOOGLE_CAT_CODES = {
@@ -36,6 +38,88 @@ ISO_TO_COUNTRY_NAME = {
     'BR': 'Brazil'
 }
 
+
+
+CATEGORY_AFFINITY_TERMS = {
+    'h': [],
+    'b': ['negocio', 'negocios', 'economía', 'economia', 'mercado', 'mercados', 'empresa', 'empresas', 'finanzas', 'financiero', 'inversión', 'inversion', 'startup'],
+    'e': ['cine', 'series', 'famosos', 'streaming', 'música', 'musica', 'celebridades', 'tv'],
+    'm': ['salud', 'médico', 'medico', 'hospital', 'farmacia', 'bienestar', 'mental'],
+    't': ['ia', 'ai', 'tecnología', 'tecnologia', 'software', 'app', 'apps', 'startup', 'gadgets', 'digital'],
+    's': ['deportes', 'fútbol', 'futbol', 'liga', 'nba', 'nfl', 'tenis', 'motor']
+}
+
+
+def _normalize_text(value: str) -> str:
+    return re.sub(r'[^a-z0-9áéíóúüñ ]+', ' ', (value or '').strip().lower())
+
+
+def _tokenize_focus_terms(focus_terms: str) -> List[str]:
+    if not focus_terms:
+        return []
+
+    raw_terms = re.split(r'[\n,;|]+', focus_terms)
+    cleaned = []
+    seen = set()
+    for raw in raw_terms:
+        term = _normalize_text(raw)
+        term = re.sub(r'\s+', ' ', term).strip()
+        if len(term) < 2 or term in seen:
+            continue
+        cleaned.append(term)
+        seen.add(term)
+    return cleaned
+
+
+def _score_result(item: Dict[str, Any], category: str, focus_terms: List[str], ranking_mode: str) -> Dict[str, Any]:
+    topic = item.get('topic', '')
+    context = item.get('context', '')
+    combined = _normalize_text(f"{topic} {context}")
+    score = 0
+    reasons = []
+    matched_terms = []
+
+    for term in focus_terms:
+        if term and term in combined:
+            term_score = 45 if term in _normalize_text(topic) else 28
+            if len(term.split()) > 1:
+                term_score += 10
+            score += term_score
+            matched_terms.append(term)
+            reasons.append(f"Coincide con '{term}'")
+
+    for affinity_term in CATEGORY_AFFINITY_TERMS.get(category, []):
+        if affinity_term in combined:
+            score += 12
+            if f"Afinidad con {affinity_term}" not in reasons:
+                reasons.append(f"Afinidad con {affinity_term}")
+
+    if ranking_mode == 'strict' and focus_terms and not matched_terms:
+        score -= 30
+    elif ranking_mode == 'discovery' and not matched_terms:
+        score += 8
+
+    item['relevance_score'] = max(score, 0)
+    item['matched_terms'] = matched_terms
+    item['fit_label'] = 'Alta prioridad' if score >= 60 else 'Media' if score >= 25 else 'Exploratoria'
+    item['opportunity_note'] = '; '.join(reasons[:3]) if reasons else 'Útil para vigilar cambios generales del mercado.'
+    return item
+
+
+def _prioritize_results(results: List[Dict[str, Any]], category: str, focus_terms: str = '', ranking_mode: str = 'balanced') -> List[Dict[str, Any]]:
+    parsed_terms = _tokenize_focus_terms(focus_terms)
+    enriched = [_score_result(dict(item), category, parsed_terms, ranking_mode) for item in results]
+
+    if parsed_terms:
+        enriched.sort(key=lambda item: (item.get('relevance_score', 0), item.get('rank', 0) * -1), reverse=True)
+    else:
+        enriched.sort(key=lambda item: item.get('rank', 0))
+
+    for new_rank, item in enumerate(enriched, start=1):
+        item['rank'] = new_rank
+        item['google_link'] = f"https://google.com/search?q={quote_plus(item.get('topic', ''))}"
+    return enriched
+
 class TrendsProvider:
     """Clase base abstracta para proveedores de tendencias."""
     def fetch_trends(self, geo: str, category: str, **kwargs) -> List[Dict[str, Any]]:
@@ -45,6 +129,8 @@ class GoogleInternalProvider(TrendsProvider):
     """Proveedor que usa la API interna (no oficial) de Google Trends."""
 
     def fetch_trends(self, geo: str, category: str, **kwargs) -> List[Dict[str, Any]]:
+        focus_terms = kwargs.get('focus_terms', '')
+        ranking_mode = kwargs.get('ranking_mode', 'balanced')
         cat_param = GOOGLE_CAT_CODES.get(category, 'all')
         # URL de Realtime
         url = f"https://trends.google.com/trends/api/realtimetrends?hl=es&tz=-60&cat={cat_param}&fi=0&fs=0&geo={geo}&ri=300&rs=20&sort=0"
@@ -99,7 +185,7 @@ class GoogleInternalProvider(TrendsProvider):
                 })
                 rank_c += 1
 
-            return results
+            return _prioritize_results(results, category, focus_terms=focus_terms, ranking_mode=ranking_mode)
 
         except Exception as e:
             logging.error(f"GoogleInternalProvider Error: {e}")
@@ -110,6 +196,8 @@ class SerpApiProvider(TrendsProvider):
 
     def fetch_trends(self, geo: str, category: str, **kwargs) -> List[Dict[str, Any]]:
         api_key = kwargs.get('api_key')
+        focus_terms = kwargs.get('focus_terms', '')
+        ranking_mode = kwargs.get('ranking_mode', 'balanced')
         if not api_key:
             raise ValueError("API Key requerida para SerpApi")
 
@@ -142,7 +230,7 @@ class SerpApiProvider(TrendsProvider):
                     "context": "API Externa",
                     "google_link": f"https://google.com/search?q={item.get('query','')}"
                 })
-            return results
+            return _prioritize_results(results, category, focus_terms=focus_terms, ranking_mode=ranking_mode)
         except Exception as e:
             logging.error(f"SerpApiProvider Error: {e}")
             raise e
@@ -158,6 +246,8 @@ class DataForSEOProvider(TrendsProvider):
     def fetch_trends(self, geo: str, category: str, **kwargs) -> List[Dict[str, Any]]:
         login = kwargs.get('login')
         password = kwargs.get('password')
+        focus_terms = kwargs.get('focus_terms', '')
+        ranking_mode = kwargs.get('ranking_mode', 'balanced')
 
         if not login or not password:
              raise ValueError("Credenciales DataForSEO requeridas")
@@ -210,7 +300,7 @@ class DataForSEOProvider(TrendsProvider):
                 })
                 rank += 1
 
-            return results
+            return _prioritize_results(results, category, focus_terms=focus_terms, ranking_mode=ranking_mode)
 
         except Exception as e:
             logging.error(f"DataForSEOProvider Error: {e}")

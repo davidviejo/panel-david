@@ -122,7 +122,7 @@ def update_job_status(job_id, updates, conn=None):
             except Exception:
                 pass
 
-def worker_realtime_trends(job_id, geo, category, dataforseo_login=None, dataforseo_password=None):
+def worker_realtime_trends(job_id, geo, category, focus_terms='', ranking_mode='balanced', dataforseo_login=None, dataforseo_password=None):
     """
     Worker en segundo plano para procesar tendencias usando DataForSEO.
 
@@ -157,7 +157,9 @@ def worker_realtime_trends(job_id, geo, category, dataforseo_login=None, datafor
         # Ejecutar estrategia
         update_job_status(job_id, {'progress': 50}, conn=conn)
 
-        results = fetch_trends_strategy(geo, category, provider_name=provider, **credentials)
+        update_job_status(job_id, {'log_append': f"🎯 Priorizando por temas: {focus_terms[:120]}" if focus_terms else "🧭 Modo exploración general activo."}, conn=conn)
+
+        results = fetch_trends_strategy(geo, category, provider_name=provider, focus_terms=focus_terms, ranking_mode=ranking_mode, **credentials)
 
         if not results:
              raise Exception("No se encontraron tendencias.")
@@ -192,6 +194,8 @@ def start_analysis():
     job_id = str(uuid.uuid4())
     geo = request.form.get('geo', 'ES')
     category = request.form.get('category', 'h')
+    focus_terms = request.form.get('focus_terms', '').strip()
+    ranking_mode = request.form.get('ranking_mode', 'balanced').strip() or 'balanced'
     dataforseo_login = request.form.get('dataforseo_login', '').strip()
     dataforseo_password = request.form.get('dataforseo_password', '').strip()
 
@@ -203,7 +207,7 @@ def start_analysis():
     conn.commit()
     conn.close()
 
-    t = threading.Thread(target=worker_realtime_trends, args=(job_id, geo, category, dataforseo_login, dataforseo_password))
+    t = threading.Thread(target=worker_realtime_trends, args=(job_id, geo, category, focus_terms, ranking_mode, dataforseo_login, dataforseo_password))
     t.start()
 
     return jsonify({"status": "started", "job_id": job_id})

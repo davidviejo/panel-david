@@ -372,6 +372,22 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="focusTermsInput" class="form-label fw-semibold text-slate-800">Temas o sectores prioritarios</label>
+                                <textarea class="form-control" name="focus_terms" id="focusTermsInput" rows="4" placeholder="Ej: medios, streaming, IA, publicidad digital, TV, podcasts"></textarea>
+                                <div class="form-text">Escribe verticales, entidades o temas separados por coma o salto de línea para priorizar tendencias útiles para tus clientes.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="rankingModeInput" class="form-label fw-semibold text-slate-800">Modo de priorización</label>
+                                <select class="form-select" name="ranking_mode" id="rankingModeInput">
+                                    <option value="balanced" selected>Balanceado · mezcla relevancia y descubrimiento</option>
+                                    <option value="strict">Estricto · prioriza sólo coincidencias claras</option>
+                                    <option value="discovery">Exploración · deja pasar señales emergentes</option>
+                                </select>
+                                <div class="form-text">Útil para medios: usa <strong>Estricto</strong> para verticales muy definidos y <strong>Exploración</strong> para hunting editorial.</div>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="dataforseoLoginInput" class="form-label fw-semibold text-slate-800">DataForSEO login <span class="text-muted fw-normal">(opcional)</span></label>
                                 <input type="text" class="form-control" name="dataforseo_login" id="dataforseoLoginInput" placeholder="Se usará el login global si lo dejas vacío">
                                 <div class="form-text">Puedes sobreescribir aquí las credenciales guardadas en Settings.</div>
@@ -469,9 +485,9 @@
                     </div>
                     <div class="col-md-4">
                         <div class="trends-metric-card">
-                            <div class="trends-label">País analizado</div>
-                            <div class="fw-bold fs-4 text-slate-900" id="summaryGeo">{{ current_project.geo or 'ES' }}</div>
-                            <div class="text-muted small mt-2">Mercado que alimenta los resultados mostrados.</div>
+                            <div class="trends-label">Enfoque temático</div>
+                            <div class="fw-bold fs-5 text-slate-900" id="summaryFocus">Sin filtro</div>
+                            <div class="text-muted small mt-2">Temas usados para reordenar oportunidades.</div>
                         </div>
                     </div>
                 </div>
@@ -495,8 +511,9 @@
                                     <tr>
                                         <th width="9%">#</th>
                                         <th width="31%">Tema</th>
-                                        <th width="38%">Contexto</th>
-                                        <th width="22%">Acción</th>
+                                        <th width="29%">Contexto</th>
+                                        <th width="20%">Prioridad</th>
+                                        <th width="20%">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody id="resultsBody"></tbody>
@@ -531,11 +548,13 @@
         const geoValue = document.getElementById('geoInput').value.trim().toUpperCase() || '{{ current_project.geo or "ES" }}';
         const categoryValue = document.getElementById('catInput').value;
         const categoryLabel = CATEGORY_LABELS[categoryValue] || 'General';
+        const focusValue = document.getElementById('focusTermsInput').value.trim();
+        const focusLabel = focusValue ? focusValue.split(/[,\n]/).map((term) => term.trim()).filter(Boolean).slice(0, 3).join(' · ') : 'Sin filtro';
 
-        document.getElementById('summaryGeo').textContent = geoValue;
         document.getElementById('metricGeo').textContent = geoValue;
         document.getElementById('resultsGeoBadge').textContent = geoValue;
         document.getElementById('summaryCategory').textContent = categoryLabel;
+        document.getElementById('summaryFocus').textContent = focusLabel;
     }
 
     function setProgress(progress, label) {
@@ -549,6 +568,8 @@
     function resetUI() {
         document.getElementById('geoInput').disabled = false;
         document.getElementById('catInput').disabled = false;
+        document.getElementById('focusTermsInput').disabled = false;
+        document.getElementById('rankingModeInput').disabled = false;
         document.getElementById('dataforseoLoginInput').disabled = false;
         document.getElementById('dataforseoPasswordInput').disabled = false;
 
@@ -562,6 +583,8 @@
     function showLoading() {
         document.getElementById('geoInput').disabled = true;
         document.getElementById('catInput').disabled = true;
+        document.getElementById('focusTermsInput').disabled = true;
+        document.getElementById('rankingModeInput').disabled = true;
         document.getElementById('dataforseoLoginInput').disabled = true;
         document.getElementById('dataforseoPasswordInput').disabled = true;
 
@@ -696,6 +719,9 @@
             const context = item.context || 'Sin contexto adicional disponible.';
             const traffic = item.traffic || 'Tráfico no informado';
             const link = item.google_link || '#';
+            const fitLabel = item.fit_label || 'Exploratoria';
+            const note = item.opportunity_note || 'Sin señal adicional';
+            const terms = Array.isArray(item.matched_terms) && item.matched_terms.length ? item.matched_terms.join(', ') : 'Sin match directo';
 
             tbody.innerHTML += `
                 <tr>
@@ -705,6 +731,13 @@
                         <small>${traffic}</small>
                     </td>
                     <td class="trends-context">${context}</td>
+                    <td>
+                        <div class="d-flex flex-column align-items-start gap-2">
+                            <span class="trends-source-badge"><i class="fas fa-bullseye"></i>${fitLabel}</span>
+                            <small class="text-muted">${note}</small>
+                            <small class="text-muted"><strong>Match:</strong> ${terms}</small>
+                        </div>
+                    </td>
                     <td>
                         <div class="d-flex flex-column align-items-start gap-2">
                             <span class="trends-source-badge"><i class="fas fa-arrow-trend-up"></i>${traffic}</span>
@@ -726,6 +759,8 @@
 
     document.getElementById('geoInput').addEventListener('input', updateSummary);
     document.getElementById('catInput').addEventListener('change', updateSummary);
+    document.getElementById('focusTermsInput').addEventListener('input', updateSummary);
+    document.getElementById('rankingModeInput').addEventListener('change', updateSummary);
     updateSummary();
 </script>
 {% endblock %}
