@@ -123,7 +123,7 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
     comparisonGscData,
     comparisonPeriod,
     isLoadingGsc,
-    insights: { insights, groupedInsights },
+    insights: { insights, groupedInsights, topQueries },
   } = useGSCData(gscAccessToken, startDate, endDate, comparisonMode);
 
   const {
