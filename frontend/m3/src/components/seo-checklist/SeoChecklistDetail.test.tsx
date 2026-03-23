@@ -36,6 +36,7 @@ const mockPage: SeoPage = {
   id: 'page-1',
   url: 'https://example.com/test',
   kwPrincipal: 'test keyword',
+  brandTerms: ['brand'],
   pageType: 'Article',
   cluster: 'Test Cluster',
   checklist: {
@@ -113,6 +114,7 @@ describe('SeoChecklistDetail', () => {
     expect(onUpdatePage).toHaveBeenCalledWith('page-1', {
       url: 'https://example.com/test',
       kwPrincipal: 'new keyword',
+      brandTerms: ['brand'],
       pageType: 'Product',
       cluster: 'Test Cluster',
       competitors: [],
@@ -148,5 +150,33 @@ describe('SeoChecklistDetail', () => {
 
     // Check it went back to view mode and original value is displayed
     expect(screen.getByText('test keyword')).toBeDefined();
+  });
+
+  it('permite guardar varias variantes de marca para excluirlas de la asignación automática', () => {
+    const onUpdatePage = vi.fn();
+    render(
+      <SeoChecklistDetail
+        page={mockPage}
+        onUpdatePage={onUpdatePage}
+        onUpdateChecklistItem={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle('Editar detalles'));
+
+    const brandInput = screen.getByPlaceholderText('Ej: nike, nike running, mi marca');
+    fireEvent.change(brandInput, { target: { value: 'brand pro' } });
+    fireEvent.click(screen.getByTitle('Añadir variante de marca'));
+    fireEvent.click(screen.getByTitle('Guardar cambios'));
+
+    expect(onUpdatePage).toHaveBeenCalledWith('page-1', {
+      url: 'https://example.com/test',
+      kwPrincipal: 'test keyword',
+      brandTerms: ['brand', 'brand pro'],
+      pageType: 'Article',
+      cluster: 'Test Cluster',
+      competitors: [],
+    });
   });
 });

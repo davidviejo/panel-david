@@ -95,6 +95,27 @@ describe('processAnalysisResult', () => {
     expect(updates.kwPrincipal).toBe('best kw');
   });
 
+  it('should exclude brand-term queries when inferring the primary keyword from GSC', () => {
+    const pageWithoutKeyword: SeoPage = {
+      ...mockPage,
+      kwPrincipal: '-',
+      brandTerms: ['brand', 'brand pro'],
+    };
+    const gscQueries = [
+      { keys: ['brand login'], clicks: 40, impressions: 500, ctr: 0.08, position: 1.2 },
+      { keys: ['brand pro pricing'], clicks: 22, impressions: 300, ctr: 0.07, position: 2.4 },
+      { keys: ['running shoes women'], clicks: 12, impressions: 180, ctr: 0.06, position: 3.1 },
+    ];
+
+    const updates = processAnalysisResult(
+      pageWithoutKeyword,
+      { pageId: 'page-1', items: {} },
+      gscQueries,
+    );
+
+    expect(updates.kwPrincipal).toBe('running shoes women');
+  });
+
   it('should store exact page GSC metrics when they are provided', () => {
     const gscMetrics = {
       clicks: 34,

@@ -8,7 +8,17 @@ const isKeywordMissing = (keyword?: string) => {
   return normalized === '' || normalized === '-';
 };
 
-const pickBestGscKeyword = (gscQueries: any[] = []): string | null => {
+const normalizeBrandTerms = (brandTerms: string[] = []) =>
+  brandTerms.map((term) => term.trim().toLowerCase()).filter(Boolean);
+
+const keywordContainsBrandTerm = (keyword: string, brandTerms: string[] = []) => {
+  const normalizedKeyword = keyword.trim().toLowerCase();
+  if (!normalizedKeyword) return false;
+
+  return normalizeBrandTerms(brandTerms).some((term) => normalizedKeyword.includes(term));
+};
+
+const pickBestGscKeyword = (gscQueries: any[] = [], excludedBrandTerms: string[] = []): string | null => {
   if (!Array.isArray(gscQueries) || gscQueries.length === 0) return null;
 
   const sorted = [...gscQueries].sort((a, b) => {
@@ -21,7 +31,10 @@ const pickBestGscKeyword = (gscQueries: any[] = []): string | null => {
     return (a?.position || Number.POSITIVE_INFINITY) - (b?.position || Number.POSITIVE_INFINITY);
   });
 
-  const winner = sorted.find((row) => typeof row?.keys?.[0] === 'string' && row.keys[0].trim());
+  const winner = sorted.find((row) => {
+    const candidate = typeof row?.keys?.[0] === 'string' ? row.keys[0].trim() : '';
+    return candidate && !keywordContainsBrandTerm(candidate, excludedBrandTerms);
+  });
   return winner?.keys?.[0]?.trim() || null;
 };
 
@@ -119,7 +132,7 @@ export const processAnalysisResult = (
     gscMetrics || page.gscMetrics || buildGscMetricsFromQueries(gscQueries);
   const currentGscQueries = result.items?.OPORTUNIDADES?.autoData?.gscQueries || gscQueries;
   const inferredKeyword = isKeywordMissing(page.kwPrincipal)
-    ? pickBestGscKeyword(currentGscQueries)
+    ? pickBestGscKeyword(currentGscQueries, page.brandTerms || [])
     : null;
 
   const updates: Partial<SeoPage> = {

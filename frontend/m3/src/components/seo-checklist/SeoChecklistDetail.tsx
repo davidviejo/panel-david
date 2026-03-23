@@ -46,22 +46,26 @@ export const SeoChecklistDetail: React.FC<Props> = ({
   const [editForm, setEditForm] = useState({
     url: page.url,
     kwPrincipal: page.kwPrincipal,
+    brandTerms: page.brandTerms || [],
     pageType: page.pageType,
     cluster: page.cluster || '',
     competitors: page.competitors || [],
   });
 
   const [newCompetitor, setNewCompetitor] = useState('');
+  const [newBrandTerm, setNewBrandTerm] = useState('');
 
   const handleEdit = () => {
     setEditForm({
       url: page.url,
       kwPrincipal: page.kwPrincipal,
+      brandTerms: page.brandTerms || [],
       pageType: page.pageType,
       cluster: page.cluster || '',
       competitors: page.competitors || [],
     });
     setNewCompetitor('');
+    setNewBrandTerm('');
     setIsEditing(true);
   };
 
@@ -73,6 +77,7 @@ export const SeoChecklistDetail: React.FC<Props> = ({
     onUpdatePage(page.id, {
       url: normalizeSeoUrl(editForm.url),
       kwPrincipal: editForm.kwPrincipal,
+      brandTerms: editForm.brandTerms,
       pageType: editForm.pageType,
       cluster: editForm.cluster,
       competitors: editForm.competitors,
@@ -94,6 +99,34 @@ export const SeoChecklistDetail: React.FC<Props> = ({
     setEditForm((prev) => ({
       ...prev,
       competitors: (prev.competitors || []).filter((_, i) => i !== index),
+    }));
+  };
+
+  const addBrandTerm = () => {
+    const normalizedTerm = newBrandTerm.trim();
+    if (!normalizedTerm) return;
+
+    setEditForm((prev) => {
+      const alreadyExists = (prev.brandTerms || []).some(
+        (term) => term.toLowerCase() === normalizedTerm.toLowerCase(),
+      );
+
+      if (alreadyExists) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        brandTerms: [...(prev.brandTerms || []), normalizedTerm],
+      };
+    });
+    setNewBrandTerm('');
+  };
+
+  const removeBrandTerm = (index: number) => {
+    setEditForm((prev) => ({
+      ...prev,
+      brandTerms: (prev.brandTerms || []).filter((_, i) => i !== index),
     }));
   };
 
@@ -146,6 +179,10 @@ export const SeoChecklistDetail: React.FC<Props> = ({
                     onChange={(e) => setEditForm({ ...editForm, kwPrincipal: e.target.value })}
                     className="w-full px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    Si dejas la keyword vacía, la inferencia automática ignorará las consultas que
+                    contengan cualquiera de las variantes de marca configuradas abajo.
+                  </p>
                 </div>
                 <div className="flex-1">
                   <label className="text-xs text-slate-500 font-semibold uppercase">Tipo</label>
@@ -164,6 +201,53 @@ export const SeoChecklistDetail: React.FC<Props> = ({
                     onChange={(e) => setEditForm({ ...editForm, cluster: e.target.value })}
                     className="w-full px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                <label className="text-xs text-slate-500 font-semibold uppercase block mb-2">
+                  Variantes de marca excluidas
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                  Añade una o varias palabras o expresiones de marca para que no se usen al
+                  asignar la keyword principal desde GSC.
+                </p>
+                <div className="space-y-2">
+                  {editForm.brandTerms &&
+                    editForm.brandTerms.map((term, idx) => (
+                      <div key={`${term}-${idx}`} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={term}
+                          readOnly
+                          className="flex-1 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/50 text-sm text-slate-600 dark:text-slate-400"
+                        />
+                        <button
+                          onClick={() => removeBrandTerm(idx)}
+                          className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                          title="Eliminar variante de marca"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newBrandTerm}
+                      onChange={(e) => setNewBrandTerm(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addBrandTerm()}
+                      placeholder="Ej: nike, nike running, mi marca"
+                      className="flex-1 px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                    <button
+                      onClick={addBrandTerm}
+                      className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-colors"
+                      title="Añadir variante de marca"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -237,10 +321,13 @@ export const SeoChecklistDetail: React.FC<Props> = ({
               </h1>
               <div className="flex items-center gap-3 text-sm text-slate-500 mt-1 flex-wrap">
                 <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-xs font-bold">
-                  {page.kwPrincipal}
+                  {page.kwPrincipal || 'Sin keyword principal'}
                 </span>
                 <span>{page.pageType}</span>
                 {page.cluster && <span>• {page.cluster}</span>}
+                {page.brandTerms && page.brandTerms.length > 0 && (
+                  <span>• Marca excluida: {page.brandTerms.join(', ')}</span>
+                )}
                 <span>• Clics GSC: {page.gscMetrics?.clicks?.toLocaleString('es-ES') || 0}</span>
                 <span>
                   • Impresiones GSC: {page.gscMetrics?.impressions?.toLocaleString('es-ES') || 0}
