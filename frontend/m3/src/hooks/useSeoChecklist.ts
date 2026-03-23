@@ -2,6 +2,73 @@ import { useState, useEffect, useCallback } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { SeoPage, ChecklistKey, ChecklistItem } from '../types/seoChecklist';
 
+const normalizeKeyword = (keyword?: string) => (keyword || '').trim().toLowerCase();
+
+const getPagePerformanceScore = (page: SeoPage) => {
+  const clicks = page.gscMetrics?.clicks || 0;
+  const impressions = page.gscMetrics?.impressions || 0;
+  const position = page.gscMetrics?.position ?? Number.POSITIVE_INFINITY;
+
+  return { clicks, impressions, position };
+};
+
+const shouldKeepKeywordOver = (candidate: SeoPage, currentWinner: SeoPage) => {
+  const candidateScore = getPagePerformanceScore(candidate);
+  const winnerScore = getPagePerformanceScore(currentWinner);
+
+  if (candidateScore.clicks !== winnerScore.clicks) {
+    return candidateScore.clicks > winnerScore.clicks;
+  }
+
+  if (candidateScore.impressions !== winnerScore.impressions) {
+    return candidateScore.impressions > winnerScore.impressions;
+  }
+
+  if (candidateScore.position !== winnerScore.position) {
+    return candidateScore.position < winnerScore.position;
+  }
+
+  return candidate.id < currentWinner.id;
+};
+
+export const enforceUniquePrimaryKeywords = (pages: SeoPage[]) => {
+  const winners = new Map<string, string>();
+
+  pages.forEach((page) => {
+    if (page.isBrandKeyword) return;
+
+    const normalizedKeyword = normalizeKeyword(page.kwPrincipal);
+    if (!normalizedKeyword || normalizedKeyword === '-') return;
+
+    const currentWinnerId = winners.get(normalizedKeyword);
+    if (!currentWinnerId) {
+      winners.set(normalizedKeyword, page.id);
+      return;
+    }
+
+    const currentWinner = pages.find((candidate) => candidate.id === currentWinnerId);
+    if (!currentWinner || shouldKeepKeywordOver(page, currentWinner)) {
+      winners.set(normalizedKeyword, page.id);
+    }
+  });
+
+  return pages.map((page) => {
+    if (page.isBrandKeyword) return page;
+
+    const normalizedKeyword = normalizeKeyword(page.kwPrincipal);
+    if (!normalizedKeyword || normalizedKeyword === '-') return page;
+
+    if (winners.get(normalizedKeyword) === page.id) {
+      return page;
+    }
+
+    return {
+      ...page,
+      kwPrincipal: '',
+    };
+  });
+};
+
 export const useSeoChecklist = () => {
   const { currentClientId } = useProject();
   const [pages, setPages] = useState<SeoPage[]>([]);
@@ -27,7 +94,7 @@ export const useSeoChecklist = () => {
   const addPages = useCallback(
     (newPages: SeoPage[]) => {
       setPages((prev) => {
-        const updated = [...prev, ...newPages];
+        const updated = enforceUniquePrimaryKeywords([...prev, ...newPages]);
         localStorage.setItem(storageKey, JSON.stringify(updated));
         return updated;
       });
@@ -38,7 +105,9 @@ export const useSeoChecklist = () => {
   const updatePage = useCallback(
     (id: string, updates: Partial<SeoPage>) => {
       setPages((prev) => {
-        const updated = prev.map((p) => (p.id === id ? { ...p, ...updates } : p));
+        const updated = enforceUniquePrimaryKeywords(
+          prev.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+        );
         localStorage.setItem(storageKey, JSON.stringify(updated));
         return updated;
       });
@@ -49,10 +118,12 @@ export const useSeoChecklist = () => {
   const bulkUpdatePages = useCallback(
     (updates: { id: string; changes: Partial<SeoPage> }[]) => {
       setPages((prev) => {
-        const updated = prev.map((p) => {
-          const update = updates.find((u) => u.id === p.id);
-          return update ? { ...p, ...update.changes } : p;
-        });
+        const updated = enforceUniquePrimaryKeywords(
+          prev.map((p) => {
+            const update = updates.find((u) => u.id === p.id);
+            return update ? { ...p, ...update.changes } : p;
+          }),
+        );
         localStorage.setItem(storageKey, JSON.stringify(updated));
         return updated;
       });

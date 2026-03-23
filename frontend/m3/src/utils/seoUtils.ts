@@ -3,29 +3,7 @@ import { analyzeUrl, AnalysisResponse } from '../services/pythonEngineClient';
 import { getPageMetrics, getPageQueries } from '../services/googleSearchConsole';
 import { normalizeSeoPageInput } from './seoUrlNormalizer';
 
-const isKeywordMissing = (keyword?: string) => {
-  const normalized = (keyword || '').trim();
-  return normalized === '' || normalized === '-';
-};
-
-const pickBestGscKeyword = (gscQueries: any[] = []): string | null => {
-  if (!Array.isArray(gscQueries) || gscQueries.length === 0) return null;
-
-  const sorted = [...gscQueries].sort((a, b) => {
-    const clickDiff = (b?.clicks || 0) - (a?.clicks || 0);
-    if (clickDiff !== 0) return clickDiff;
-
-    const impressionDiff = (b?.impressions || 0) - (a?.impressions || 0);
-    if (impressionDiff !== 0) return impressionDiff;
-
-    return (a?.position || Number.POSITIVE_INFINITY) - (b?.position || Number.POSITIVE_INFINITY);
-  });
-
-  const winner = sorted.find((row) => typeof row?.keys?.[0] === 'string' && row.keys[0].trim());
-  return winner?.keys?.[0]?.trim() || null;
-};
-
-const buildGscMetricsFromQueries = (gscQueries: any[] = []) => {
+export const buildGscMetricsFromQueries = (gscQueries: any[] = []) => {
   if (!Array.isArray(gscQueries) || gscQueries.length === 0) return undefined;
 
   const clicks = gscQueries.reduce((sum, row) => sum + (row?.clicks || 0), 0);
@@ -117,14 +95,9 @@ export const processAnalysisResult = (
 
   const resolvedGscMetrics =
     gscMetrics || page.gscMetrics || buildGscMetricsFromQueries(gscQueries);
-  const currentGscQueries = result.items?.OPORTUNIDADES?.autoData?.gscQueries || gscQueries;
-  const inferredKeyword = !page.isBrandKeyword && isKeywordMissing(page.kwPrincipal)
-    ? pickBestGscKeyword(currentGscQueries)
-    : null;
-
   const updates: Partial<SeoPage> = {
     url: page.url,
-    kwPrincipal: inferredKeyword || page.kwPrincipal,
+    kwPrincipal: page.kwPrincipal,
     gscMetrics: resolvedGscMetrics,
     lastAnalyzedAt: Date.now(),
     checklist: { ...page.checklist },

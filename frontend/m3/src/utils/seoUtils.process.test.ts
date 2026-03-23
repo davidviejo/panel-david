@@ -76,7 +76,7 @@ describe('processAnalysisResult', () => {
     expect(updates.checklist?.OPORTUNIDADES.autoData.gscQueries[0].keys[0]).toBe('existing');
   });
 
-  it('should infer the primary keyword from GSC when the current keyword is missing', () => {
+  it('should preserve the current primary keyword placeholder when it is missing', () => {
     const pageWithoutKeyword: SeoPage = {
       ...mockPage,
       kwPrincipal: '-',
@@ -92,7 +92,7 @@ describe('processAnalysisResult', () => {
       gscQueries,
     );
 
-    expect(updates.kwPrincipal).toBe('best kw');
+    expect(updates.kwPrincipal).toBe('-');
   });
 
   it('should store exact page GSC metrics when they are provided', () => {
