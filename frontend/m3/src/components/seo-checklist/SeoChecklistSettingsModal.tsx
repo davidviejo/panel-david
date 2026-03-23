@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, Database, DollarSign, Target, Shield, AlertTriangle } from 'lucide-react';
+import { X, Settings, Database, DollarSign, Shield, AlertTriangle, KeyRound } from 'lucide-react';
 import { SeoChecklistSettings, Capabilities } from '../../types/seoChecklist';
 
 interface Props {
@@ -118,15 +118,7 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                         ? '(No disponible)'
                         : ''}
                     </option>
-                    <option
-                      value="dataforseo"
-                      disabled={capabilities && !capabilities.serpProviders['dataforseo']}
-                    >
-                      DataForSEO{' '}
-                      {capabilities && !capabilities.serpProviders['dataforseo']
-                        ? '(No disponible)'
-                        : ''}
-                    </option>
+                    <option value="dataforseo">DataForSEO</option>
                     <option
                       value="internal"
                       disabled={capabilities && !capabilities.serpProviders['internal']}
@@ -138,6 +130,45 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                     </option>
                   </select>
                 </div>
+
+
+                {formData.serp.enabled && formData.serp.provider === 'dataforseo' && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-amber-800 dark:text-amber-300">
+                      <KeyRound size={16} />
+                      Credenciales runtime de DataForSEO
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Login / email
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.serp.dataforseoLogin || ''}
+                          onChange={(e) => handleChange('serp', 'dataforseoLogin', e.target.value)}
+                          placeholder="usuario@dominio.com"
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Password API
+                        </label>
+                        <input
+                          type="password"
+                          value={formData.serp.dataforseoPassword || ''}
+                          onChange={(e) => handleChange('serp', 'dataforseoPassword', e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">
+                      Si el servidor no tiene DataForSEO configurado, el checklist enviará estas credenciales en cada análisis avanzado para obtener competidores reales desde la SERP.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">

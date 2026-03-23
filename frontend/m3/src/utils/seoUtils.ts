@@ -2,6 +2,30 @@ import { SeoPage, ChecklistKey, AnalysisConfigPayload } from '../types/seoCheckl
 import { analyzeUrl, AnalysisResponse } from '../services/pythonEngineClient';
 import { getPageQueries } from '../services/googleSearchConsole';
 
+const KEY_MAP: Record<string, ChecklistKey> = {
+  CLUSTER: 'CLUSTER',
+  GEOLOCALIZACION: 'GEOLOCALIZACION',
+  DATOS_ESTRUCTURADOS: 'DATOS_ESTRUCTURADOS',
+  CONTENIDOS: 'CONTENIDOS',
+  SNIPPETS: 'SNIPPETS',
+  IMAGENES: 'IMAGENES',
+  ENLAZADO_INTERNO: 'ENLAZADO_INTERNO',
+  ESTRUCTURA: 'ESTRUCTURA',
+  UX: 'UX',
+  WPO: 'WPO',
+  ENLACE: 'ENLACE',
+  OPORTUNIDADES: 'OPORTUNIDADES',
+  OPORTUNIDADES_VS_KW_OBJETIVO: 'OPORTUNIDADES',
+  SEMANTICA: 'SEMANTICA',
+  GEO_IMAGENES: 'GEO_IMAGENES',
+  GEOLOCALIZACION_IMAGENES: 'GEO_IMAGENES',
+  CTA: 'CTA',
+  LLAMADA_A_LA_ACCION: 'CTA',
+};
+
+const normalizeChecklistKey = (key: string): ChecklistKey | null => KEY_MAP[key] || null;
+
+
 export const processAnalysisResult = (
   page: SeoPage,
   result: AnalysisResponse,
@@ -79,7 +103,10 @@ export const processAnalysisResult = (
 
   if (result.items) {
     Object.entries(result.items).forEach(([k, v]) => {
-      const key = k as ChecklistKey;
+      const key = normalizeChecklistKey(k);
+      if (!key || !updates.checklist) {
+        return;
+      }
       if (updates.checklist) {
         if (!updates.checklist[key]) {
           updates.checklist[key] = {

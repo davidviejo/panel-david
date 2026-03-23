@@ -37,8 +37,8 @@ export interface AnalysisResponse {
 }
 
 export interface BatchJobPayload {
-  items: AnalysisPayload[];
-  config?: AnalysisConfigPayload;
+  urls: AnalysisPayload[];
+  analysisConfig?: AnalysisConfigPayload;
 }
 
 export interface BatchJobResponse {
@@ -140,12 +140,11 @@ export const updateBatchJob = async (
   jobId: string,
   action: 'pause' | 'resume' | 'cancel',
 ): Promise<void> => {
-  const response = await fetch(`${ENGINE_URL}/api/jobs/${jobId}`, {
-    method: 'PATCH', // Assuming PATCH for updates, or POST to /actions
+  const response = await fetch(`${ENGINE_URL}/api/jobs/${jobId}/${action}`, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ action }),
   });
 
   if (!response.ok) {

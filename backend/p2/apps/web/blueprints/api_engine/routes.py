@@ -62,6 +62,8 @@ def analyze():
         response['appliedLimits'] = result['appliedLimits']
     if 'providerUsed' in result:
         response['providerUsed'] = result['providerUsed']
+    if 'engineMeta' in result:
+        response['engineMeta'] = result['engineMeta']
 
     return jsonify(response)
 

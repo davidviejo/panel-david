@@ -97,7 +97,7 @@ const SeoChecklistPage: React.FC = () => {
     }));
 
     try {
-      const response = await createBatchJob({ items, config });
+      const response = await createBatchJob({ urls: items, analysisConfig: config });
       const newJob: BatchJobStatus = {
         id: response.jobId,
         status: 'pending',

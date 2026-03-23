@@ -38,6 +38,23 @@ def check_dependency_error(*deps):
             return d['error']
     return None
 
+def _runtime_serp_credentials(analysis_config: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    serp = (analysis_config or {}).get('serp', {}) if isinstance(analysis_config, dict) else {}
+    return {
+        'dataforseo_login': serp.get('dataforseoLogin') or '',
+        'dataforseo_password': serp.get('dataforseoPassword') or '',
+    }
+
+
+def _resolve_user_settings(user_settings: Dict[str, Any], analysis_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    resolved = dict(user_settings or {})
+    runtime_creds = _runtime_serp_credentials(analysis_config)
+    if runtime_creds['dataforseo_login']:
+        resolved['dataforseo_login'] = runtime_creds['dataforseo_login']
+    if runtime_creds['dataforseo_password']:
+        resolved['dataforseo_password'] = runtime_creds['dataforseo_password']
+    return resolved
+
 def run_orchestrated_checklist(
     url: str,
     kwPrincipal: str,
@@ -61,7 +78,7 @@ def run_orchestrated_checklist(
     text_content = soup.get_text(" ", strip=True) if soup else ""
 
     # --- CONFIG & GUARDRAILS (Advanced Analysis) ---
-    user_settings = get_user_settings()
+    user_settings = _resolve_user_settings(get_user_settings(), analysis_config)
 
     advanced_mode = False
     advanced_blocked_reason = None

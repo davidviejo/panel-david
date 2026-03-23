@@ -12,6 +12,10 @@ from . import api_engine_bp
 # Hard limits
 MAX_URLS_PER_BATCH = int(os.environ.get('ENGINE_MAX_URLS_PER_BATCH', 5000))
 
+def _has_runtime_dfs_creds(analysis_config):
+    serp = (analysis_config or {}).get('serp', {}) if isinstance(analysis_config, dict) else {}
+    return bool(serp.get('dataforseoLogin') and serp.get('dataforseoPassword'))
+
 @api_engine_bp.route('/api/jobs', methods=['POST'])
 def create_analysis_job():
     data = safe_get_json()
@@ -46,7 +50,8 @@ def create_analysis_job():
             has_creds = bool(settings.get('serpapi_key') or os.environ.get('SERPAPI_KEY'))
         elif provider == 'dataforseo':
             has_creds = bool((settings.get('dataforseo_login') and settings.get('dataforseo_password')) or
-                             (os.environ.get('DATAFORSEO_LOGIN') and os.environ.get('DATAFORSEO_PASSWORD')))
+                             (os.environ.get('DATAFORSEO_LOGIN') and os.environ.get('DATAFORSEO_PASSWORD')) or
+                             _has_runtime_dfs_creds(analysis_config))
         elif provider == 'internal':
             has_creds = True
         elif provider == 'google_official':
@@ -142,6 +147,17 @@ def get_item_result_route(job_id, item_id):
     res = get_job_item_result(job_id, item_id)
     if res is None:
         return jsonify({'error': 'Result not available or item not found'}), 404
+
+    if isinstance(res, dict) and 'items' not in res:
+        item = next((i for i in get_job_items(job_id, status='done', page=1, page_size=1000).get('items', []) if i.get('item_id') == item_id), None)
+        return jsonify({
+            'pageId': item.get('page_id') if item else item_id,
+            'items': res,
+            'advancedExecuted': res.get('advancedExecuted'),
+            'advancedBlockedReason': res.get('advancedBlockedReason'),
+            'engineMeta': res.get('engineMeta')
+        })
+
     return jsonify(res)
 
 @api_engine_bp.route('/api/jobs/<job_id>/pause', methods=['POST'])
