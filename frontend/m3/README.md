@@ -44,6 +44,26 @@ npm run dev
 
 _La aplicación se iniciará en `http://localhost:5173`_
 
+### Módulo Trends Media integrado
+
+El antiguo proyecto standalone de Tendencias/Brief editorial ya no debe arrancarse por separado: ahora vive dentro de esta SPA en la ruta:
+
+```text
+/#/app/trends-media
+```
+
+Esto significa que:
+
+- se inicia con el mismo `npm run dev` del frontend principal;
+- comparte dependencias, navegación y despliegue con MediaFlow SEO;
+- el backend puede redirigir a esta vista integrada.
+
+Si ejecutas el backend Flask en otro host/puerto y quieres que `/trends/media` redirija correctamente a la SPA, define:
+
+```ini
+MEDIAFLOW_FRONTEND_URL=http://localhost:5173
+```
+
 ## 🛠 Funcionalidades
 
 - **Dashboard de Madurez SEO:** Seguimiento de tareas y progreso por módulos.

@@ -110,6 +110,24 @@ The Trends module supports multiple providers. It auto-detects based on configur
 2.  **DataForSEO**: Used if `TRENDS_PROVIDER` env var is set to `dataforseo` and credentials (`DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD`) are available (env or settings).
 3.  **Google Internal**: Default fallback if no other provider is configured.
 
+## 🔗 Trends Media integrado con el frontend principal
+
+El módulo editorial de Tendencias/Brief ya no se sirve como una app independiente dentro de `backend/p2/static/trends_media`.
+
+Ahora la ruta backend `/trends/media` redirige al frontend React integrado en:
+
+```text
+/#/app/trends-media
+```
+
+Si frontend y backend corren en diferentes hosts o puertos durante desarrollo, configura:
+
+```bash
+export MEDIAFLOW_FRONTEND_URL=http://localhost:5173
+```
+
+De este modo, la navegación desde Flask apuntará a la SPA principal sin depender del build estático legado.
+
 ---
 *Based on Manual de Operaciones v17 and Tech Report v18.*
 

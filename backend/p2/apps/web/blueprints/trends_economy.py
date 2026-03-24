@@ -4,7 +4,7 @@ Módulo para el análisis de tendencias económicas y de búsqueda.
 Integra DataForSEO para monitorizar temas virales en tiempo real.
 Gestiona trabajos en segundo plano utilizando SQLite.
 """
-from flask import Blueprint, render_template, request, jsonify, redirect, send_from_directory, url_for
+from flask import Blueprint, request, jsonify, redirect, url_for
 import threading
 import logging
 import json
@@ -12,6 +12,7 @@ import time
 import sqlite3
 import uuid
 import os
+from urllib.parse import urljoin
 
 from apps.web.blueprints.trends_provider import fetch_trends_strategy
 from apps.core.database import get_user_settings
@@ -20,9 +21,24 @@ trends_bp = Blueprint('trends_bp', __name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, '..', '..', '..', 'data', 'trends_jobs.db')
-TRENDS_MEDIA_DIST_DIR = os.path.join(BASE_DIR, '..', '..', '..', 'static', 'trends_media')
-
 _DB_INITIALIZED = False
+
+
+def resolve_trends_media_frontend_url() -> str:
+    """
+    Resuelve la URL canónica del módulo Trends Media ya migrado al frontend React.
+
+    Prioridad:
+    1. `MEDIAFLOW_FRONTEND_URL`, para entornos donde frontend y backend corren en hosts/puertos distintos.
+    2. Misma origin con HashRouter (`/#/app/trends-media`) cuando se sirve todo bajo el mismo dominio.
+    """
+    configured_base = (os.getenv('MEDIAFLOW_FRONTEND_URL') or '').strip().rstrip('/')
+    hash_route = '/#/app/trends-media'
+
+    if configured_base:
+        return urljoin(f'{configured_base}/', hash_route.lstrip('/'))
+
+    return hash_route
 
 def init_db():
     """
@@ -191,11 +207,11 @@ def dashboard():
 
 @trends_bp.route('/trends/media')
 def trends_media_app():
-    return send_from_directory(TRENDS_MEDIA_DIST_DIR, 'index.html')
+    return redirect(resolve_trends_media_frontend_url())
 
 @trends_bp.route('/trends/media/<path:asset_path>')
 def trends_media_assets(asset_path):
-    return send_from_directory(TRENDS_MEDIA_DIST_DIR, asset_path)
+    return redirect(resolve_trends_media_frontend_url())
 
 @trends_bp.route('/trends/start', methods=['POST'])
 def start_analysis():
