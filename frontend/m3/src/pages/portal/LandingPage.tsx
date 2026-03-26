@@ -165,10 +165,10 @@ const LandingPage: React.FC = () => {
           </div>
 
           <p className="max-w-2xl text-base leading-relaxed text-slate-600">
-            Consultor SEO especializado con más de 10 años de experiencia en posicionamiento web,
-            arquitectura de sitios y estrategia digital. Actualmente en agenciaSEO.eu, una de las
-            agencias de referencia en SEO a nivel nacional. Especializado en e-commerce, portales de
-            viajes y marketplaces de alto tráfico.
+            Consultor SEO con experiencia en pymes y grandes internacionales.
+            <br />
+            Lidero la visibilidad orgánica y el posicionamiento SEO de grandes marcas y emergentes
+            aportando valor.
           </p>
 
           <div className="grid max-w-2xl gap-3 sm:grid-cols-3">
