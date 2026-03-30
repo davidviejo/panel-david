@@ -18,7 +18,7 @@ from apps.core.database import (
     reset_all_projects,
     bulk_insert_projects
 )
-from apps.web.portal_bp import require_role
+from apps.web.portal_bp import require_role_web
 
 project_bp = Blueprint('project_bp', __name__)
 
@@ -43,7 +43,7 @@ def get_active_project():
 
 
 @project_bp.route('/projects/manager')
-@require_role(['operator'])
+@require_role_web(['operator'])
 def manager():
     return render_template(
         'projects/manager.html',
@@ -53,7 +53,7 @@ def manager():
 
 
 @project_bp.route('/projects/upload_clusters', methods=['POST'])
-@require_role(['operator'])
+@require_role_web(['operator'])
 def upload_clusters():
     """
     Ruta para procesar Excel/CSV y actualizar los clústeres del proyecto
@@ -126,7 +126,7 @@ def upload_clusters():
 
 
 @project_bp.route('/projects/save', methods=['POST'])
-@require_role(['operator'])
+@require_role_web(['operator'])
 def save():
     """
     Crea o actualiza un proyecto (Upsert).
@@ -200,7 +200,7 @@ def save():
 
 # Rutas estándar (export, import, delete, set_active...)
 @project_bp.route('/projects/export')
-@require_role(['operator'])
+@require_role_web(['operator'])
 def export_db():
     """
     Exporta todos los proyectos y su configuración en un archivo JSON.
@@ -219,7 +219,7 @@ def export_db():
 
 
 @project_bp.route('/projects/import', methods=['POST'])
-@require_role(['operator'])
+@require_role_web(['operator'])
 def import_db():
     """
     Importa proyectos desde un archivo JSON, reemplazando la base de datos
@@ -240,7 +240,7 @@ def import_db():
 
 
 @project_bp.route('/projects/reset_all')
-@require_role(['operator'])
+@require_role_web(['operator'])
 def reset_all():
     reset_all_projects()
     session.clear()
@@ -248,14 +248,14 @@ def reset_all():
 
 
 @project_bp.route('/projects/set_active/<p_id>')
-@require_role(['operator'])
+@require_role_web(['operator'])
 def set_active(p_id):
     session['active_project_id'] = p_id
     return redirect(request.referrer or '/')
 
 
 @project_bp.route('/projects/delete/<p_id>')
-@require_role(['operator'])
+@require_role_web(['operator'])
 def delete(p_id):
     delete_project(p_id)
     if str(session.get('active_project_id')) == str(p_id):

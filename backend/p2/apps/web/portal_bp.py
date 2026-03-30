@@ -1,20 +1,56 @@
-from flask import Blueprint, request, jsonify, make_response
+from flask import Blueprint, request, jsonify, make_response, session, redirect, url_for
 from apps.auth_utils import verify_token
 from apps.web.clients_store import get_safe_clients
 from functools import wraps
 
 portal_bp = Blueprint('portal_bp', __name__)
 
+WEB_AUTH_COOKIE = 'portal_auth_token'
+
+
+def _extract_bearer_token_from_header():
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        return auth_header.split(' ', 1)[1].strip()
+    return None
+
+
+def _get_payload_from_token(token):
+    if not token:
+        return None
+    return verify_token(token)
+
+
+def _get_web_payload():
+    """
+    Resolve auth payload for HTML views.
+    Priority: Flask session payload -> JWT in session -> JWT in HttpOnly cookie -> Bearer header.
+    """
+    payload = session.get('auth_payload')
+    if payload:
+        return payload
+
+    for token in (
+        session.get('auth_token'),
+        request.cookies.get(WEB_AUTH_COOKIE),
+        _extract_bearer_token_from_header(),
+    ):
+        payload = _get_payload_from_token(token)
+        if payload:
+            session['auth_payload'] = payload
+            return payload
+
+    return None
+
 def require_role(allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            auth_header = request.headers.get('Authorization')
-            if not auth_header or not auth_header.startswith('Bearer '):
+            token = _extract_bearer_token_from_header()
+            if not token:
                 return jsonify({'error': 'Missing or invalid Authorization header'}), 401
 
-            token = auth_header.split(' ')[1]
-            payload = verify_token(token)
+            payload = _get_payload_from_token(token)
 
             if not payload:
                 return jsonify({'error': 'Invalid or expired token'}), 401
@@ -32,6 +68,26 @@ def require_role(allowed_roles):
             request.user_payload = payload
             return f(*args, **kwargs)
         return decorated_function
+    return decorator
+
+
+def require_role_web(allowed_roles, login_endpoint='home'):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            payload = _get_web_payload()
+
+            if not payload:
+                return redirect(url_for(login_endpoint))
+
+            if payload.get('role') not in allowed_roles:
+                return redirect(url_for(login_endpoint))
+
+            request.user_payload = payload
+            return f(*args, **kwargs)
+
+        return decorated_function
+
     return decorator
 
 @portal_bp.route('/api/clients', methods=['GET'])
