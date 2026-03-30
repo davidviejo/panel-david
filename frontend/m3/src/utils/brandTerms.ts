@@ -22,6 +22,6 @@ export const isBrandTermMatch = (keyword: string, brandTerms: string[] = []) => 
     if (!normalizedTerm) return false;
 
     const pattern = new RegExp(`(^|[^a-z0-9])${escapeRegExp(normalizedTerm)}([^a-z0-9]|$)`);
-    return pattern.test(normalizedKeyword);
+    return pattern.test(normalizedKeyword) || normalizedKeyword.includes(normalizedTerm);
   });
 };

@@ -165,6 +165,72 @@ describe('processAnalysisResult', () => {
     expect(updates.checklist?.OPORTUNIDADES.autoData.primaryKeyword).toBe('vestidos fiesta');
   });
 
+
+  it('should keep current primary keyword when updating KW principal is disabled', () => {
+    const gscQueries = [
+      {
+        keys: ['better kw'],
+        query: 'better kw',
+        clicks: 999,
+        impressions: 1200,
+        ctr: 0.8,
+        position: 1,
+      },
+    ];
+
+    localStorage.setItem(
+      'mediaflow_seo_settings_test',
+      JSON.stringify({ allowKwPrincipalUpdate: false, brandTerms: [] }),
+    );
+
+    const updates = processAnalysisResult(mockPage, { pageId: 'page-1', items: {} }, gscQueries);
+
+    expect(updates.kwPrincipal).toBe('test');
+    expect(updates.checklist?.OPORTUNIDADES.autoData.primaryKeyword).toBe('test');
+
+    localStorage.removeItem('mediaflow_seo_settings_test');
+  });
+
+
+  it('should reject a primary keyword that contains the brand term even when concatenated', () => {
+    const pageWithoutKeyword: SeoPage = {
+      ...mockPage,
+      kwPrincipal: '',
+    };
+    const gscQueries = [
+      {
+        keys: ['zarahome vestidos'],
+        query: 'zarahome vestidos',
+        clicks: 120,
+        impressions: 300,
+        ctr: 0.4,
+        position: 1,
+      },
+      {
+        keys: ['vestidos fiesta'],
+        query: 'vestidos fiesta',
+        clicks: 20,
+        impressions: 150,
+        ctr: 0.13,
+        position: 2,
+      },
+    ];
+
+    localStorage.setItem(
+      'mediaflow_seo_settings_test',
+      JSON.stringify({ brandTerms: ['zara'] }),
+    );
+
+    const updates = processAnalysisResult(
+      pageWithoutKeyword,
+      { pageId: 'page-1', items: {} },
+      gscQueries,
+    );
+
+    expect(updates.kwPrincipal).toBe('vestidos fiesta');
+    expect(updates.checklist?.OPORTUNIDADES.autoData.primaryKeyword).toBe('vestidos fiesta');
+  });
+
   it('should inject GSC queries if provided', () => {
     const gscQueries = [{ keys: ['test'], clicks: 10 }];
     const result = {
