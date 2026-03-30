@@ -5,6 +5,8 @@ import { SeoChecklistDetail } from '../components/seo-checklist/SeoChecklistDeta
 import { ImportUrlsModal } from '../components/seo-checklist/ImportUrlsModal';
 import { BatchJobMonitor } from '../components/seo-checklist/BatchJobMonitor';
 import { Plus, ListChecks } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
 import {
   getCapabilities,
   createBatchJob,
@@ -74,7 +76,6 @@ const SeoChecklistPage: React.FC = () => {
   });
   const [isMonitorOpen, setIsMonitorOpen] = useState(false);
 
-
   useEffect(() => {
     localStorage.setItem('mediaflow_batch_jobs', JSON.stringify(jobs));
   }, [jobs]);
@@ -128,10 +129,10 @@ const SeoChecklistPage: React.FC = () => {
   const selectedPage = pages.find((p) => p.id === selectedPageId);
 
   return (
-    <div className="space-y-6">
+    <div className="page-shell">
       {!selectedPage ? (
         <>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <Card className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                 Checklist SEO (URLs)
@@ -142,10 +143,7 @@ const SeoChecklistPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               {jobs.length > 0 && (
-                <button
-                  onClick={() => setIsMonitorOpen(true)}
-                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2"
-                >
+                <Button onClick={() => setIsMonitorOpen(true)} variant="secondary">
                   <ListChecks size={20} />
                   Monitor Jobs (
                   {
@@ -155,17 +153,18 @@ const SeoChecklistPage: React.FC = () => {
                     ).length
                   }
                   )
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 onClick={() => setIsImportModalOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+                variant="primary"
+                className="font-bold"
               >
                 <Plus size={20} />
                 Importar URLs
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
 
           <SeoUrlList
             pages={pages}

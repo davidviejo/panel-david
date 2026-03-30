@@ -26,6 +26,9 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DEFAULT_KANBAN_COLUMNS } from '../config/kanban';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Badge } from '../components/ui/Badge';
 
 const KanbanBoard: React.FC = () => {
   const {
@@ -167,7 +170,7 @@ const KanbanBoard: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="page-shell h-full flex flex-col">
       <div className="mb-6 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Tablero Kanban</h1>
@@ -176,46 +179,34 @@ const KanbanBoard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsBulkModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 dark:bg-indigo-700 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-sm"
-          >
+          <Button onClick={() => setIsBulkModalOpen(true)} variant="primary">
             <Layers size={18} />
             <span className="hidden sm:inline">Acciones Masivas</span>
-          </button>
+          </Button>
 
           {isAddingColumn ? (
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-5">
-              <input
+              <Input
                 type="text"
                 value={newColumnTitle}
                 onChange={(e) => setNewColumnTitle(e.target.value)}
                 placeholder="Nombre de la columna"
-                className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 text-sm"
+                className="w-52"
                 autoFocus
                 onKeyDown={(e) => e.key === 'Enter' && handleAddColumn()}
               />
-              <button
-                onClick={handleAddColumn}
-                className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
+              <Button onClick={handleAddColumn} size="sm">
                 <Plus size={18} />
-              </button>
-              <button
-                onClick={() => setIsAddingColumn(false)}
-                className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
-              >
+              </Button>
+              <Button onClick={() => setIsAddingColumn(false)} variant="ghost" size="sm">
                 Cancel
-              </button>
+              </Button>
             </div>
           ) : (
-            <button
-              onClick={() => setIsAddingColumn(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors"
-            >
+            <Button onClick={() => setIsAddingColumn(true)} variant="secondary">
               <Plus size={18} />
               Nueva Columna
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -226,7 +217,7 @@ const KanbanBoard: React.FC = () => {
             {columns.map((column) => (
               <div
                 key={column.id}
-                className="flex-1 flex flex-col bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 h-full max-h-[calc(100vh-200px)] min-w-[220px]"
+                className="flex-1 flex min-w-[220px] max-h-[calc(100vh-200px)] flex-col rounded-brand-lg border border-border bg-surface-alt h-full"
               >
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 rounded-t-xl group/col">
                   <div className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-200">
@@ -234,9 +225,9 @@ const KanbanBoard: React.FC = () => {
                     {column.title}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-xs font-bold px-2 py-1 rounded-full">
+                    <Badge variant="neutral" className="normal-case tracking-normal">
                       {tasksByStatus[column.id]?.length || 0}
-                    </span>
+                    </Badge>
                     {!DEFAULT_KANBAN_COLUMNS.some((c) => c.id === column.id) && (
                       <button
                         onClick={() => {

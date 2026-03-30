@@ -4,6 +4,9 @@ import { useToast } from '../components/ui/ToastContext';
 import { useSettings } from '../context/SettingsContext';
 import DataManagementPanel from '../components/DataManagementPanel';
 import { parseBrandTerms } from '../utils/brandTerms';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
 
 const Settings: React.FC = () => {
   const { settings, updateSettings } = useSettings();
@@ -37,49 +40,41 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 bg-slate-900 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-slate-500/10">
-          <Key size={24} className="text-blue-400" />
+    <div className="page-shell mx-auto max-w-4xl animate-fade-in">
+      <div className="mb-8 flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-brand-lg bg-surface-alt text-primary shadow-brand">
+          <Key size={24} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Ajustes del Sistema</h1>
-          <p className="text-slate-500 dark:text-slate-400">
-            Gestiona tus claves de API y configuración local.
-          </p>
+          <h1 className="section-title">Ajustes del Sistema</h1>
+          <p className="section-subtitle">Gestiona tus claves de API y configuración local.</p>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 dark:border-slate-700 pb-4">
-          <h2 className="font-bold text-lg dark:text-white">Claves de API y Modelos (IA)</h2>
+      <Card>
+        <div className="mb-6 border-b border-border pb-4">
+          <h2 className="text-lg font-bold text-foreground">Claves de API y Modelos (IA)</h2>
         </div>
 
         <div className="space-y-8">
-          {/* Gemini */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                Google Gemini
-              </label>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="text-sm font-bold text-foreground">Google Gemini</label>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-xs text-slate-500">API Key</label>
-                <input
+                <label className="text-xs text-muted">API Key</label>
+                <Input
                   type="password"
                   value={geminiKey}
                   onChange={(e) => setGeminiKey(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-slate-500">Modelo</label>
+                <label className="text-xs text-muted">Modelo</label>
                 <select
                   value={geminiModel}
                   onChange={(e) => setGeminiModel(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                  className="w-full rounded-brand-md border border-border bg-surface-alt px-4 py-2 text-sm text-foreground outline-none"
                 >
                   <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
                   <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
@@ -89,33 +84,29 @@ const Settings: React.FC = () => {
             </div>
           </div>
 
-          <div className="border-t border-slate-100 dark:border-slate-700"></div>
+          <div className="border-t border-border" />
 
-          {/* OpenAI */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                OpenAI (ChatGPT)
-              </label>
-              <span className="text-xs text-slate-400">Opcional</span>
+              <label className="text-sm font-bold text-foreground">OpenAI (ChatGPT)</label>
+              <span className="text-xs text-muted">Opcional</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-xs text-slate-500">API Key</label>
-                <input
+                <label className="text-xs text-muted">API Key</label>
+                <Input
                   type="password"
                   value={openaiKey}
                   onChange={(e) => setOpenaiKey(e.target.value)}
                   placeholder="sk-..."
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-slate-500">Modelo</label>
+                <label className="text-xs text-muted">Modelo</label>
                 <select
                   value={openaiModel}
                   onChange={(e) => setOpenaiModel(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                  className="w-full rounded-brand-md border border-border bg-surface-alt px-4 py-2 text-sm text-foreground outline-none"
                 >
                   <option value="gpt-4o">GPT-4o</option>
                   <option value="gpt-4-turbo">GPT-4 Turbo</option>
@@ -126,33 +117,29 @@ const Settings: React.FC = () => {
             </div>
           </div>
 
-          <div className="border-t border-slate-100 dark:border-slate-700"></div>
+          <div className="border-t border-border" />
 
-          {/* Mistral */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                Mistral AI
-              </label>
-              <span className="text-xs text-slate-400">Opcional</span>
+              <label className="text-sm font-bold text-foreground">Mistral AI</label>
+              <span className="text-xs text-muted">Opcional</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-xs text-slate-500">API Key</label>
-                <input
+                <label className="text-xs text-muted">API Key</label>
+                <Input
                   type="password"
                   value={mistralKey}
                   onChange={(e) => setMistralKey(e.target.value)}
                   placeholder="..."
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-slate-500">Modelo</label>
+                <label className="text-xs text-muted">Modelo</label>
                 <select
                   value={mistralModel}
                   onChange={(e) => setMistralModel(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                  className="w-full rounded-brand-md border border-border bg-surface-alt px-4 py-2 text-sm text-foreground outline-none"
                 >
                   <option value="mistral-large-latest">Mistral Large</option>
                   <option value="mistral-medium">Mistral Medium</option>
@@ -163,69 +150,62 @@ const Settings: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 dark:border-slate-700 pb-4">
-          <h2 className="font-bold text-lg dark:text-white">Google Search Console</h2>
+      <Card>
+        <div className="mb-6 border-b border-border pb-4">
+          <h2 className="text-lg font-bold text-foreground">Google Search Console</h2>
         </div>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            OAuth 2.0 Client ID
-          </label>
-          <input
+          <label className="block text-sm font-medium text-foreground">OAuth 2.0 Client ID</label>
+          <Input
             type="text"
             value={gscClientId}
             onChange={(e) => setGscClientId(e.target.value)}
             placeholder="xxxx-xxxx.apps.googleusercontent.com"
-            className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           />
-          <p className="text-xs text-slate-400">
-            Necesario para conectar con GSC desde el navegador.
-          </p>
+          <p className="text-xs text-muted">Necesario para conectar con GSC desde el navegador.</p>
         </div>
-      </div>
+      </Card>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div className="flex items-center gap-2 mb-6 border-b border-slate-100 dark:border-slate-700 pb-4">
-          <h2 className="font-bold text-lg dark:text-white">Términos de marca</h2>
+      <Card>
+        <div className="mb-6 border-b border-border pb-4">
+          <h2 className="text-lg font-bold text-foreground">Términos de marca</h2>
         </div>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label className="block text-sm font-medium text-foreground">
             Keywords de marca a excluir como keyword principal
           </label>
           <textarea
             value={brandTermsText}
             onChange={(e) => setBrandTermsText(e.target.value)}
-            placeholder={"mi marca\nmarca oficial\nnombre comercial"}
-            className="w-full min-h-[140px] px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            placeholder={'mi marca\nmarca oficial\nnombre comercial'}
+            className="min-h-[140px] w-full rounded-brand-md border border-border bg-surface-alt px-4 py-3 text-foreground outline-none"
           />
-          <p className="text-xs text-slate-400">
-            Introduce un término por línea o separado por comas. Se usará para marcar URLs como
-            de marca al importar o reasignar keywords en la checklist. Detectados: {parsedBrandTerms.length}.
+          <p className="text-xs text-muted">
+            Introduce un término por línea o separado por comas. Se usará para marcar URLs como de
+            marca al importar o reasignar keywords en la checklist. Detectados:{' '}
+            {parsedBrandTerms.length}.
           </p>
         </div>
-      </div>
+      </Card>
 
       <div className="flex items-center gap-4 pt-4">
-        <button
-          onClick={handleSave}
-          className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all"
-        >
+        <Button onClick={handleSave}>
           <Save size={18} />
           Guardar Configuración
-        </button>
+        </Button>
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 border border-blue-100 dark:border-blue-800">
-        <h3 className="font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
+      <Card className="bg-primary-soft/40">
+        <h3 className="mb-2 flex items-center gap-2 font-bold text-foreground">
           <AlertTriangle size={18} /> Almacenamiento Local
         </h3>
-        <p className="text-sm text-blue-700 dark:text-blue-400">
+        <p className="text-sm text-muted">
           Estas claves se guardan únicamente en el almacenamiento local de tu navegador. No se
           envían a ningún servidor backend propio.
         </p>
-      </div>
+      </Card>
 
       <DataManagementPanel />
     </div>

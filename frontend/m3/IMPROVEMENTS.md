@@ -95,3 +95,52 @@ Tras un análisis exhaustivo del código, he identificado las siguientes áreas 
 
 24. **Monitor de Content Decay** [PENDIENTE]
     - **Mejora:** Algoritmo en `useGSCData` que compare periodos para detectar URLs con pérdida significativa de tráfico.
+
+## 🎨 Guía visual mínima (Design Layer compartida)
+
+### Tokens de marca
+
+Se definieron tokens globales en:
+
+- `tailwind.config.js` (mapeo Tailwind → variables CSS)
+- `src/index.css` (`:root` / `.dark`)
+
+Variables principales disponibles:
+
+- Colores: `--color-primary`, `--color-success`, `--color-warning`, `--color-danger`, `--color-surface`, `--color-border`, `--color-foreground`, etc.
+- Radios: `--radius-sm`, `--radius-md`, `--radius-lg`
+- Sombras: `--shadow-card`, `--shadow-brand`
+- Tipografía: `--font-sans`
+- Espaciado: `--space-18`
+
+### Componentes semánticos (`src/components/ui/`)
+
+- `Button` (`primary | secondary | ghost | danger`)
+- `Badge` (`primary | success | warning | danger | neutral`)
+- `Card`
+- `Input`
+- `Modal`
+
+### Ejemplos rápidos
+
+```tsx
+<Button variant="primary">Guardar</Button>
+<Button variant="danger">Eliminar</Button>
+
+<Badge variant="success">Activo</Badge>
+
+<Card>
+  <h3 className="section-title">Bloque</h3>
+  <Input placeholder="Buscar..." />
+</Card>
+
+<Modal isOpen={open} onClose={() => setOpen(false)} title="Detalle">
+  Contenido del modal
+</Modal>
+```
+
+### Regla de revisión obligatoria
+
+- ✅ En páginas (`src/pages/**`) **evitar clases de color directas** (`bg-blue-*`, `text-red-*`, etc.) para nuevos desarrollos.
+- ✅ Usar primero componentes semánticos (`Button`, `Badge`, `Card`, `Input`, `Modal`) y tokens (`primary`, `surface`, `border`, `foreground`).
+- ✅ Si se necesita un nuevo estado visual, extender tokens/variantes en la capa UI compartida en lugar de estilizar ad-hoc en la página.

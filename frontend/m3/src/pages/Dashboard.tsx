@@ -37,6 +37,11 @@ import {
 import { useToast } from '../components/ui/ToastContext';
 import { Skeleton } from '../components/ui/Skeleton';
 import { Spinner } from '../components/ui/Spinner';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { Modal } from '../components/ui/Modal';
 import { useGSCAuth } from '../hooks/useGSCAuth';
 import { GSCComparisonMode, useGSCData } from '../hooks/useGSCData';
 import { GSCDateRangeControl } from '../components/GSCDateRangeControl';
@@ -150,16 +155,12 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
   );
 
   const badge = useMemo(() => {
-    if (globalScore >= 95)
-      return { title: 'Chief SEO Officer', color: 'bg-emerald-100 text-emerald-700' };
-    if (globalScore >= 80)
-      return { title: 'Jefe de Audiencias', color: 'bg-amber-100 text-amber-700' };
-    if (globalScore >= 60)
-      return { title: 'Líder Técnico SEO', color: 'bg-purple-100 text-purple-700' };
-    if (globalScore >= 40)
-      return { title: 'Estratega SEO', color: 'bg-indigo-100 text-indigo-700' };
-    if (globalScore >= 20) return { title: 'Analista Junior', color: 'bg-blue-100 text-blue-700' };
-    return { title: 'Becario SEO', color: 'bg-slate-100 text-slate-600' };
+    if (globalScore >= 95) return { title: 'Chief SEO Officer', variant: 'success' as const };
+    if (globalScore >= 80) return { title: 'Jefe de Audiencias', variant: 'warning' as const };
+    if (globalScore >= 60) return { title: 'Líder Técnico SEO', variant: 'primary' as const };
+    if (globalScore >= 40) return { title: 'Estratega SEO', variant: 'primary' as const };
+    if (globalScore >= 20) return { title: 'Analista Junior', variant: 'primary' as const };
+    return { title: 'Becario SEO', variant: 'neutral' as const };
   }, [globalScore]);
 
   const chartData = useMemo(
@@ -399,7 +400,7 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
   );
 
   return (
-    <div className="space-y-8 animate-fade-in text-slate-900 dark:text-slate-100 relative">
+    <div className="page-shell relative animate-fade-in">
       {selectedInsight && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <ErrorBoundary>
@@ -422,123 +423,114 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
       )}
 
       {showInsightsHelp && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-700">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="font-bold text-lg flex items-center gap-2">
-                  <HelpCircle size={20} /> Ayuda · evitar reanalizar trabajo ya realizado
-                </h3>
-                <p className="text-sm text-slate-500 mt-2">
-                  Puedes excluir consultas/URLs ya gestionadas una a una o importando un listado en
-                  CSV.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowInsightsHelp(false)}
-                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
-                <div className="font-semibold text-slate-900 dark:text-white">
-                  Opción 1 · marcar desde cada insight
-                </div>
-                <ol className="mt-2 list-decimal pl-5 text-sm text-slate-600 dark:text-slate-300 space-y-2">
-                  <li>Abre un insight concreto.</li>
-                  <li>En cada fila usa el icono de bloquear para marcarla como "ya gestionada".</li>
-                  <li>
-                    La fila se ocultará aquí y dejará de entrar en futuros análisis del motor.
-                  </li>
-                </ol>
-              </div>
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
-                <div className="font-semibold text-slate-900 dark:text-white">
-                  Opción 2 · importar un sheet/CSV
-                </div>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                  Sube un CSV con cabeceras <strong>query</strong> y <strong>url</strong>, o con
-                  esas dos columnas en ese orden.
-                </p>
-                <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700">
-                  <Upload size={16} /> Importar CSV
-                  <input
-                    type="file"
-                    accept=".csv,text/csv"
-                    className="hidden"
-                    onChange={async (event) => {
-                      const file = event.target.files?.[0];
-                      if (!file) return;
-                      const content = await file.text();
-                      const importedCount = importEntries(content);
-                      showSuccess(`${importedCount} filas añadidas a exclusiones.`);
-                      event.target.value = '';
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/20 dark:text-amber-200">
-              <div className="font-semibold">Formato recomendado del sheet</div>
-              <pre className="mt-2 overflow-x-auto rounded-lg bg-white/80 dark:bg-slate-900/50 p-3 text-xs">{`query,url
-mejores zapatillas running,https://dominio.com/running
-auditoria seo local,https://dominio.com/seo-local`}</pre>
-              <p className="mt-2">
-                Exclusiones guardadas actualmente: <strong>{ignoredEntries.length}</strong>.
+        <Modal
+          isOpen={showInsightsHelp}
+          onClose={() => setShowInsightsHelp(false)}
+          title="Ayuda · evitar reanalizar trabajo ya realizado"
+          className="max-w-2xl"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-lg flex items-center gap-2 text-foreground">
+                <HelpCircle size={20} />
+              </h3>
+              <p className="text-sm text-muted mt-2">
+                Puedes excluir consultas/URLs ya gestionadas una a una o importando un listado en
+                CSV.
               </p>
             </div>
           </div>
-        </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
+              <div className="font-semibold text-slate-900 dark:text-white">
+                Opción 1 · marcar desde cada insight
+              </div>
+              <ol className="mt-2 list-decimal pl-5 text-sm text-slate-600 dark:text-slate-300 space-y-2">
+                <li>Abre un insight concreto.</li>
+                <li>
+                  En cada fila usa el icono de bloquear para marcarla como &quot;ya
+                  gestionada&quot;.
+                </li>
+                <li>La fila se ocultará aquí y dejará de entrar en futuros análisis del motor.</li>
+              </ol>
+            </div>
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
+              <div className="font-semibold text-slate-900 dark:text-white">
+                Opción 2 · importar un sheet/CSV
+              </div>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Sube un CSV con cabeceras <strong>query</strong> y <strong>url</strong>, o con esas
+                dos columnas en ese orden.
+              </p>
+              <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-brand-md bg-primary px-4 py-2 text-sm font-medium text-on-primary hover:bg-primary-hover">
+                <Upload size={16} /> Importar CSV
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={async (event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    const content = await file.text();
+                    const importedCount = importEntries(content);
+                    showSuccess(`${importedCount} filas añadidas a exclusiones.`);
+                    event.target.value = '';
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/20 dark:text-amber-200">
+            <div className="font-semibold">Formato recomendado del sheet</div>
+            <pre className="mt-2 overflow-x-auto rounded-lg bg-white/80 dark:bg-slate-900/50 p-3 text-xs">{`query,url
+mejores zapatillas running,https://dominio.com/running
+auditoria seo local,https://dominio.com/seo-local`}</pre>
+            <p className="mt-2">
+              Exclusiones guardadas actualmente: <strong>{ignoredEntries.length}</strong>.
+            </p>
+          </div>
+        </Modal>
       )}
 
       {showGscConfig && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg flex items-center gap-2">
-                <Settings size={20} /> Configuración Global API
-              </h3>
-              <button onClick={() => setShowGscConfig(false)}>
-                <X />
-              </button>
-            </div>
-            <p className="text-sm text-slate-500 mb-4 leading-relaxed">
-              Introduce el <strong>Client ID</strong> de tu proyecto en Google Cloud para conectar
-              Search Console.
-            </p>
-            <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
-              OAuth 2.0 Client ID
-            </label>
-            <input
-              type="text"
-              className="w-full p-3 border rounded-lg mb-4 bg-slate-50 dark:bg-slate-900 dark:border-slate-700 font-mono text-sm"
-              placeholder="xxxx-xxxx.apps.googleusercontent.com"
-              defaultValue={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-            />
-            <button
-              onClick={() => handleSaveClientId(clientId)}
-              className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Guardar Configuración Global
-            </button>
+        <Modal
+          isOpen={showGscConfig}
+          onClose={() => setShowGscConfig(false)}
+          title="Configuración Global API"
+          className="max-w-md"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-lg flex items-center gap-2 text-foreground">
+              <Settings size={20} />
+            </h3>
           </div>
-        </div>
+          <p className="text-sm text-slate-500 mb-4 leading-relaxed">
+            Introduce el <strong>Client ID</strong> de tu proyecto en Google Cloud para conectar
+            Search Console.
+          </p>
+          <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+            OAuth 2.0 Client ID
+          </label>
+          <Input
+            type="text"
+            className="mb-4 font-mono"
+            placeholder="xxxx-xxxx.apps.googleusercontent.com"
+            defaultValue={clientId}
+            onChange={(e) => setClientId(e.target.value)}
+          />
+          <Button onClick={() => handleSaveClientId(clientId)} className="w-full font-bold">
+            Guardar Configuración Global
+          </Button>
+        </Modal>
       )}
 
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-3">
             Visión General de Madurez
-            <span
-              className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${badge.color} border border-black/5`}
-            >
-              {badge.title}
-            </span>
+            <Badge variant={badge.variant}>{badge.title}</Badge>
           </h2>
           <p className="text-slate-500 dark:text-slate-400 mt-1">
             Sigue la evolución SEO de tu publicación desde la auditoría hasta la autoridad.
@@ -553,13 +545,10 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
               >
                 <Settings size={20} />
               </button>
-              <button
-                onClick={() => login()}
-                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium shadow-sm"
-              >
+              <Button onClick={() => login()} variant="secondary">
                 <LogIn size={16} className="text-blue-500" />
                 <span>Login con Google</span>
-              </button>
+              </Button>
             </>
           ) : (
             <div className="flex items-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 pr-4 shadow-sm">
@@ -583,30 +572,28 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
             </div>
           )}
           <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-2 hidden md:block"></div>
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
-          >
+          <Button onClick={handleExport} variant="secondary">
             <Download size={16} /> Exportar
-          </button>
+          </Button>
         </div>
       </header>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-2 border border-slate-200 dark:border-slate-700 flex items-center gap-2 shadow-sm h-16 w-full max-w-2xl">
-        <button
+      <Card className="h-16 w-full max-w-2xl p-2 flex items-center gap-2">
+        <Button
           onClick={simulateVoiceRecording}
+          size="sm"
           className={`p-3 rounded-lg transition-colors ${isRecording ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'}`}
         >
           <Mic size={20} />
-        </button>
-        <input
+        </Button>
+        <Input
           type="text"
           value={quickTask}
           onChange={(e) => setQuickTask(e.target.value)}
           placeholder={isRecording ? 'Escuchando...' : 'Nota rápida...'}
-          className="flex-1 bg-transparent outline-none text-slate-700 dark:text-slate-200 placeholder-slate-400 text-sm"
+          className="flex-1 border-0 bg-transparent"
         />
-      </div>
+      </Card>
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <HeroMetric
