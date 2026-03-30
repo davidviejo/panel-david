@@ -65,7 +65,7 @@ interface HeroMetricProps {
   title: string;
   value: string | number;
   description: string;
-  tone: string;
+  tone: 'primary' | 'success' | 'warning';
 }
 
 export const getVisibleSelectedGscSite = (
@@ -79,12 +79,18 @@ export const getVisibleSelectedGscSite = (
   return filteredGscSites.some((site) => site.siteUrl === selectedSite) ? selectedSite : '';
 };
 
+const heroToneStyles: Record<HeroMetricProps['tone'], string> = {
+  primary: 'bg-primary text-on-primary',
+  success: 'bg-success text-on-primary',
+  warning: 'bg-warning text-on-primary',
+};
+
 const HeroMetric: React.FC<HeroMetricProps> = ({ title, value, description, tone }) => (
-  <div className={`rounded-2xl p-5 text-white shadow-lg ${tone}`}>
+  <Card className={`rounded-2xl p-5 shadow-brand ${heroToneStyles[tone]}`}>
     <div className="text-xs font-bold uppercase tracking-[0.2em] opacity-80">{title}</div>
-    <div className="text-3xl font-bold mt-3">{value}</div>
-    <div className="text-xs opacity-80 mt-2 line-clamp-3">{description}</div>
-  </div>
+    <div className="mt-3 text-3xl font-bold">{value}</div>
+    <div className="mt-2 line-clamp-3 text-xs opacity-80">{description}</div>
+  </Card>
 );
 
 const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
@@ -326,83 +332,69 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
     low: 'Baja',
   };
 
-  const severityStyles = {
-    critical: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-    high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-    medium: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-    low: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-  } as const;
+  const severityVariant: Record<'critical' | 'high' | 'medium' | 'low', 'danger' | 'warning' | 'success'> = {
+    critical: 'danger',
+    high: 'warning',
+    medium: 'warning',
+    low: 'success',
+  };
 
-  const priorityStyles = {
-    high: 'bg-red-600 text-white',
-    medium: 'bg-amber-500 text-white',
-    low: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100',
-  } as const;
+  const priorityVariant: Record<'high' | 'medium' | 'low', 'danger' | 'warning' | 'neutral'> = {
+    high: 'danger',
+    medium: 'warning',
+    low: 'neutral',
+  };
 
   const InsightCard = ({ insight }: { insight: SeoInsight }) => (
     <button
       onClick={() => setSelectedInsight(insight)}
-      className="text-left bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500 transition-all"
+      className="surface-panel text-left p-5 transition-all hover:border-primary/40 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted">
               {insight.visualContext.categoryLabel}
             </span>
-            <span
-              className={`text-[10px] px-2 py-1 rounded-full font-bold ${priorityStyles[insight.priority]}`}
-            >
+            <Badge variant={priorityVariant[insight.priority]} className="text-[10px]">
               Prioridad {priorityLabel[insight.priority]}
-            </span>
-            <span
-              className={`text-[10px] px-2 py-1 rounded-full font-bold ${severityStyles[insight.severity]}`}
-            >
+            </Badge>
+            <Badge variant={severityVariant[insight.severity]} className="text-[10px]">
               {insight.severity}
-            </span>
+            </Badge>
           </div>
-          <h3 className="font-bold text-slate-900 dark:text-white text-base">{insight.title}</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-3">
+          <h3 className="text-base font-bold text-foreground">{insight.title}</h3>
+          <p className="mt-2 line-clamp-3 text-sm text-muted">
             {insight.summary}
           </p>
         </div>
         <div className="text-right min-w-[74px]">
-          <div className="text-2xl font-bold text-slate-900 dark:text-white">
-            {insight.affectedCount}
-          </div>
-          <div className="text-xs text-slate-400">elementos</div>
+          <div className="text-2xl font-bold text-foreground">{insight.affectedCount}</div>
+          <div className="text-xs text-muted">elementos</div>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3 mt-4 text-xs">
-        <div className="rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3">
-          <div className="text-slate-400 uppercase tracking-wide">Score</div>
-          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">
-            {insight.score}
-          </div>
+        <div className="metric-chip">
+          <div className="metric-label">Score</div>
+          <div className="text-lg font-bold text-foreground">{insight.score}</div>
         </div>
-        <div className="rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3">
-          <div className="text-slate-400 uppercase tracking-wide">Oportunidad</div>
-          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">
-            {insight.opportunity}
-          </div>
+        <div className="metric-chip">
+          <div className="metric-label">Oportunidad</div>
+          <div className="text-lg font-bold text-foreground">{insight.opportunity}</div>
         </div>
-        <div className="rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3">
-          <div className="text-slate-400 uppercase tracking-wide">Confianza</div>
-          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">
-            {insight.confidence}
-          </div>
+        <div className="metric-chip">
+          <div className="metric-label">Confianza</div>
+          <div className="text-lg font-bold text-foreground">{insight.confidence}</div>
         </div>
       </div>
-      <div className="mt-4 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-        {insight.reason}
-      </div>
+      <div className="mt-4 line-clamp-2 text-xs text-muted">{insight.reason}</div>
     </button>
   );
 
   return (
     <div className="page-shell relative animate-fade-in">
       {selectedInsight && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="overlay-backdrop animate-fade-in">
           <ErrorBoundary>
             <InsightDetailModal
               insight={selectedInsight}
@@ -442,11 +434,11 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
-              <div className="font-semibold text-slate-900 dark:text-white">
+            <div className="surface-subtle p-4">
+              <div className="font-semibold text-foreground">
                 Opción 1 · marcar desde cada insight
               </div>
-              <ol className="mt-2 list-decimal pl-5 text-sm text-slate-600 dark:text-slate-300 space-y-2">
+              <ol className="mt-2 list-decimal pl-5 text-sm text-muted space-y-2">
                 <li>Abre un insight concreto.</li>
                 <li>
                   En cada fila usa el icono de bloquear para marcarla como &quot;ya
@@ -455,11 +447,11 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
                 <li>La fila se ocultará aquí y dejará de entrar en futuros análisis del motor.</li>
               </ol>
             </div>
-            <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
-              <div className="font-semibold text-slate-900 dark:text-white">
+            <div className="surface-subtle p-4">
+              <div className="font-semibold text-foreground">
                 Opción 2 · importar un sheet/CSV
               </div>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              <p className="mt-2 text-sm text-muted">
                 Sube un CSV con cabeceras <strong>query</strong> y <strong>url</strong>, o con esas
                 dos columnas en ese orden.
               </p>
@@ -506,11 +498,11 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
               <Settings size={20} />
             </h3>
           </div>
-          <p className="text-sm text-slate-500 mb-4 leading-relaxed">
+          <p className="mb-4 text-sm leading-relaxed text-muted">
             Introduce el <strong>Client ID</strong> de tu proyecto en Google Cloud para conectar
             Search Console.
           </p>
-          <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+          <label className="mb-1 block text-xs font-bold uppercase text-muted">
             OAuth 2.0 Client ID
           </label>
           <Input

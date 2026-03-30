@@ -149,23 +149,23 @@ const KanbanBoard: React.FC = () => {
   const getColumnIcon = (id: string) => {
     switch (id) {
       case 'pending':
-        return <Circle className="text-slate-400" size={18} />;
+        return <Circle className="icon-tone-muted" size={18} />;
       case 'commitment':
-        return <Target className="text-indigo-500" size={18} />;
+        return <Target className="icon-tone-primary" size={18} />;
       case 'working-now':
-        return <PlayCircle className="text-amber-500" size={18} />;
+        return <PlayCircle className="icon-tone-warning" size={18} />;
       case 'in-progress':
-        return <Clock className="text-blue-500" size={18} />;
+        return <Clock className="icon-tone-info" size={18} />;
       case 'internal-review':
-        return <Eye className="text-purple-500" size={18} />;
+        return <Eye className="icon-tone-primary" size={18} />;
       case 'client-review':
-        return <UserCheck className="text-teal-500" size={18} />;
+        return <UserCheck className="icon-tone-info" size={18} />;
       case 'client-feedback':
-        return <MessageSquare className="text-orange-500" size={18} />;
+        return <MessageSquare className="icon-tone-warning" size={18} />;
       case 'completed':
-        return <CheckCircle2 className="text-emerald-500" size={18} />;
+        return <CheckCircle2 className="icon-tone-success" size={18} />;
       default:
-        return <Circle className="text-slate-400" size={18} />;
+        return <Circle className="icon-tone-muted" size={18} />;
     }
   };
 
@@ -173,10 +173,8 @@ const KanbanBoard: React.FC = () => {
     <div className="page-shell h-full flex flex-col">
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Tablero Kanban</h1>
-          <p className="text-slate-500 dark:text-slate-400">
-            Gestiona el flujo de trabajo de tu Roadmap.
-          </p>
+          <h1 className="section-title mb-2">Tablero Kanban</h1>
+          <p className="section-subtitle mt-0">Gestiona el flujo de trabajo de tu Roadmap.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={() => setIsBulkModalOpen(true)} variant="primary">
@@ -219,8 +217,8 @@ const KanbanBoard: React.FC = () => {
                 key={column.id}
                 className="flex-1 flex min-w-[220px] max-h-[calc(100vh-200px)] flex-col rounded-brand-lg border border-border bg-surface-alt h-full"
               >
-                <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 rounded-t-xl group/col">
-                  <div className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-200">
+                <div className="p-4 border-b border-border flex items-center justify-between bg-surface rounded-t-xl group/col">
+                  <div className="flex items-center gap-2 font-bold text-foreground">
                     {getColumnIcon(column.id)}
                     {column.title}
                   </div>
@@ -237,7 +235,7 @@ const KanbanBoard: React.FC = () => {
                             deleteKanbanColumn(column.id);
                           }
                         }}
-                        className="opacity-0 group-hover/col:opacity-100 text-slate-400 hover:text-rose-500 transition-opacity"
+                        className="opacity-0 group-hover/col:opacity-100 text-muted hover:text-danger transition-opacity"
                       >
                         <Trash2 size={16} />
                       </button>

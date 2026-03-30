@@ -74,7 +74,7 @@ const Settings: React.FC = () => {
                 <select
                   value={geminiModel}
                   onChange={(e) => setGeminiModel(e.target.value)}
-                  className="w-full rounded-brand-md border border-border bg-surface-alt px-4 py-2 text-sm text-foreground outline-none"
+                  className="form-control"
                 >
                   <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
                   <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
@@ -106,7 +106,7 @@ const Settings: React.FC = () => {
                 <select
                   value={openaiModel}
                   onChange={(e) => setOpenaiModel(e.target.value)}
-                  className="w-full rounded-brand-md border border-border bg-surface-alt px-4 py-2 text-sm text-foreground outline-none"
+                  className="form-control"
                 >
                   <option value="gpt-4o">GPT-4o</option>
                   <option value="gpt-4-turbo">GPT-4 Turbo</option>
@@ -139,7 +139,7 @@ const Settings: React.FC = () => {
                 <select
                   value={mistralModel}
                   onChange={(e) => setMistralModel(e.target.value)}
-                  className="w-full rounded-brand-md border border-border bg-surface-alt px-4 py-2 text-sm text-foreground outline-none"
+                  className="form-control"
                 >
                   <option value="mistral-large-latest">Mistral Large</option>
                   <option value="mistral-medium">Mistral Medium</option>
@@ -180,7 +180,7 @@ const Settings: React.FC = () => {
             value={brandTermsText}
             onChange={(e) => setBrandTermsText(e.target.value)}
             placeholder={'mi marca\nmarca oficial\nnombre comercial'}
-            className="min-h-[140px] w-full rounded-brand-md border border-border bg-surface-alt px-4 py-3 text-foreground outline-none"
+            className="form-textarea"
           />
           <p className="text-xs text-muted">
             Introduce un término por línea o separado por comas. Se usará para marcar URLs como de

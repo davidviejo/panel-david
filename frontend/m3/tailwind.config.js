@@ -8,6 +8,7 @@ export default {
         'primary-hover': 'rgb(var(--color-primary-hover) / <alpha-value>)',
         success: 'rgb(var(--color-success) / <alpha-value>)',
         warning: 'rgb(var(--color-warning) / <alpha-value>)',
+        info: 'rgb(var(--color-info) / <alpha-value>)',
         danger: 'rgb(var(--color-danger) / <alpha-value>)',
         'danger-hover': 'rgb(var(--color-danger-hover) / <alpha-value>)',
         surface: 'rgb(var(--color-surface) / <alpha-value>)',
@@ -19,6 +20,7 @@ export default {
         'primary-soft': 'rgb(var(--color-primary-soft) / <alpha-value>)',
         'success-soft': 'rgb(var(--color-success-soft) / <alpha-value>)',
         'warning-soft': 'rgb(var(--color-warning-soft) / <alpha-value>)',
+        'info-soft': 'rgb(var(--color-info-soft) / <alpha-value>)',
         'danger-soft': 'rgb(var(--color-danger-soft) / <alpha-value>)',
       },
       borderRadius: {

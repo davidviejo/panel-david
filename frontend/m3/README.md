@@ -96,3 +96,35 @@ MEDIAFLOW_FRONTEND_URL=http://localhost:5173
 - **AI Tools:** Herramientas de generación y análisis potenciadas por Gemini (Client-Side).
 
 ---
+
+## 🎨 Capa de diseño compartida (Design System mínimo)
+
+La app usa tokens de marca centralizados en `tailwind.config.js` y `src/index.css`:
+
+- **Colores:** `primary`, `success`, `warning`, `info`, `danger`, `surface`, `border`, `foreground`, `muted`.
+- **Radios:** `rounded-brand-sm|md|lg`.
+- **Sombras:** `shadow-card`, `shadow-brand`.
+- **Spacing/Fuente:** variables CSS (`--space-*`, `--font-sans`).
+
+### Componentes semánticos (`src/components/ui`)
+
+- `Button` → variantes permitidas: `primary`, `secondary`, `ghost`, `danger`
+- `Badge` → variantes permitidas: `primary`, `success`, `warning`, `danger`, `neutral`
+- `Card`, `Input`, `Modal`
+
+### Utilidades semánticas recomendadas
+
+- `page-shell`, `section-title`, `section-subtitle`
+- `surface-panel`, `surface-subtle`
+- `form-control`, `form-textarea`
+- `metric-chip`, `metric-label`
+- `icon-tone-*` (`muted|primary|info|success|warning|danger`)
+
+### Regla de revisión (obligatoria)
+
+En páginas (`src/pages/**`) **evitar clases de color directas** (por ejemplo `text-slate-*`, `bg-blue-*`, `border-red-*`).
+
+Usar en su lugar:
+
+1. componentes semánticos de `src/components/ui/`, y/o
+2. utilidades semánticas definidas en `src/index.css` basadas en tokens.
