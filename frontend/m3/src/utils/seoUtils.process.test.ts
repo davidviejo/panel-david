@@ -165,6 +165,32 @@ describe('processAnalysisResult', () => {
     expect(updates.checklist?.OPORTUNIDADES.autoData.primaryKeyword).toBe('vestidos fiesta');
   });
 
+
+  it('should keep current primary keyword when updating KW principal is disabled', () => {
+    const gscQueries = [
+      {
+        keys: ['better kw'],
+        query: 'better kw',
+        clicks: 999,
+        impressions: 1200,
+        ctr: 0.8,
+        position: 1,
+      },
+    ];
+
+    localStorage.setItem(
+      'mediaflow_seo_settings_test',
+      JSON.stringify({ allowKwPrincipalUpdate: false, brandTerms: [] }),
+    );
+
+    const updates = processAnalysisResult(mockPage, { pageId: 'page-1', items: {} }, gscQueries);
+
+    expect(updates.kwPrincipal).toBe('test');
+    expect(updates.checklist?.OPORTUNIDADES.autoData.primaryKeyword).toBe('test');
+
+    localStorage.removeItem('mediaflow_seo_settings_test');
+  });
+
   it('should inject GSC queries if provided', () => {
     const gscQueries = [{ keys: ['test'], clicks: 10 }];
     const result = {
