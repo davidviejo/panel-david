@@ -81,6 +81,7 @@ describe('pythonEngineClient', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/api/jobs/job-1/items?page=2&pageSize=25&status=running'),
+      expect.objectContaining({ method: 'GET' }),
     );
     expect(response).toEqual({
       items: [

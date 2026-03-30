@@ -1,17 +1,6 @@
-import { resolveApiUrl } from './apiUrlHelper';
+import { HttpClientError, createHttpClient } from './httpClient';
 
-const API_URL = resolveApiUrl();
-
-const getHeaders = () => {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  const token = sessionStorage.getItem('portal_token');
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-};
+const httpClient = createHttpClient({ service: 'api' });
 
 /**
  * Genera un análisis SEO proxyando a través del backend para ocultar la API Key.
@@ -27,21 +16,18 @@ export const generateSEOAnalysis = async (
   vertical?: string,
 ): Promise<string> => {
   try {
-    const response = await fetch(`${API_URL}/api/ai/seo-analysis`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ content, type, vertical }),
+    const data = await httpClient.post<{ result?: string }>('api/ai/seo-analysis', {
+      content,
+      type,
+      vertical,
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return `Error: ${data.error || 'Problema de conexión con el backend.'}`;
-    }
 
     return data.result || 'No se generó análisis.';
   } catch (error) {
     console.error('Backend Gemini API Proxy Error:', error);
+    if (error instanceof HttpClientError) {
+      return `Error: ${error.message || 'Problema de conexión con el backend.'}`;
+    }
     return 'Error generando análisis. Por favor intenta más tarde.';
   }
 };
@@ -58,21 +44,17 @@ export const evaluateHeadlineChallenge = async (
   keywords: string,
 ): Promise<string> => {
   try {
-    const response = await fetch(`${API_URL}/api/ai/headline-challenge`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ headline, keywords }),
+    const data = await httpClient.post<{ result?: string }>('api/ai/headline-challenge', {
+      headline,
+      keywords,
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return `PUNTUACION: 0\nFEEDBACK: ${data.error || 'Error del servidor.'}\nMEJOR_VERSION: N/A`;
-    }
 
     return data.result || 'PUNTUACION: 0\nFEEDBACK: Error en la respuesta.\nMEJOR_VERSION: N/A';
   } catch (error) {
     console.error('Backend Gemini API Proxy Error:', error);
+    if (error instanceof HttpClientError) {
+      return `PUNTUACION: 0\nFEEDBACK: ${error.message || 'Error del servidor.'}\nMEJOR_VERSION: N/A`;
+    }
     return 'PUNTUACION: 0\nFEEDBACK: Error de conexión.\nMEJOR_VERSION: Intenta de nuevo.';
   }
 };

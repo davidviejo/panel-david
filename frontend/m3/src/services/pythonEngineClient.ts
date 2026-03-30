@@ -1,7 +1,7 @@
 import { ChecklistKey, AnalysisConfigPayload, Capabilities } from '../types/seoChecklist';
-import { resolveEngineUrl } from './apiUrlHelper';
+import { HttpClientError, createHttpClient } from './httpClient';
 
-const ENGINE_URL = resolveEngineUrl();
+const engineHttpClient = createHttpClient({ service: 'engine' });
 
 export interface AnalysisPayload {
   url: string;
@@ -152,26 +152,16 @@ const normalizeBatchJobItem = (raw: any): BatchJobItem => ({
   updated_at: raw.updated_at || raw.updatedAt || undefined,
 });
 
-const buildError = async (response: Response, fallback: string): Promise<Error> => {
-  try {
-    const data = await response.json();
-    if (data?.error) {
-      return new Error(data.error);
-    }
-    return new Error(fallback);
-  } catch {
-    const text = await response.text();
-    return new Error(text || fallback);
+const buildError = (error: unknown, fallback: string): Error => {
+  if (error instanceof HttpClientError) {
+    return new Error(error.message || fallback);
   }
+  return new Error((error as Error)?.message || fallback);
 };
 
 export const getCapabilities = async (): Promise<Capabilities | null> => {
   try {
-    const response = await fetch(`${ENGINE_URL}/api/capabilities`);
-    if (!response.ok) {
-      return null;
-    }
-    const data = await response.json();
+    const data = await engineHttpClient.get<Capabilities>('api/capabilities');
     return data as Capabilities;
   } catch (error) {
     console.warn('Failed to fetch capabilities:', error);
@@ -181,19 +171,7 @@ export const getCapabilities = async (): Promise<Capabilities | null> => {
 
 export const analyzeUrl = async (payload: AnalysisPayload): Promise<AnalysisResponse> => {
   try {
-    const response = await fetch(`${ENGINE_URL}/api/analyze`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      throw await buildError(response, `Engine Error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
+    const data = await engineHttpClient.post<AnalysisResponse>('api/analyze', payload);
     return data as AnalysisResponse;
   } catch (error: any) {
     console.error('Python Engine Error:', error);
@@ -204,48 +182,36 @@ export const analyzeUrl = async (payload: AnalysisPayload): Promise<AnalysisResp
 // Batch API Methods
 
 export const createBatchJob = async (payload: BatchJobPayload): Promise<BatchJobResponse> => {
-  const response = await fetch(`${ENGINE_URL}/api/jobs`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  try {
+    return await engineHttpClient.post<BatchJobResponse>('api/jobs', {
       items: payload.items,
       config: payload.config,
-    }),
-  });
-
-  if (!response.ok) {
-    if (response.status === 404) {
+    });
+  } catch (error) {
+    if (error instanceof HttpClientError && error.status === 404) {
       throw new Error('BATCH_API_NOT_FOUND');
     }
-    throw await buildError(response, `Failed to create batch job: ${response.statusText}`);
+    throw buildError(error, 'Failed to create batch job');
   }
-
-  return response.json();
 };
 
 export const getBatchJob = async (jobId: string): Promise<BatchJobStatus> => {
-  const response = await fetch(`${ENGINE_URL}/api/jobs/${jobId}`);
-  if (!response.ok) {
-    throw await buildError(response, `Failed to get job status: ${response.statusText}`);
+  try {
+    const response = await engineHttpClient.get<RawBatchJobStatus>(`api/jobs/${jobId}`);
+    return normalizeBatchJob(response);
+  } catch (error) {
+    throw buildError(error, 'Failed to get job status');
   }
-  return normalizeBatchJob((await response.json()) as RawBatchJobStatus);
 };
 
 export const updateBatchJob = async (
   jobId: string,
   action: 'pause' | 'resume' | 'cancel',
 ): Promise<void> => {
-  const response = await fetch(`${ENGINE_URL}/api/jobs/${jobId}/${action}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw await buildError(response, `Failed to update job: ${response.statusText}`);
+  try {
+    await engineHttpClient.post(`api/jobs/${jobId}/${action}`);
+  } catch (error) {
+    throw buildError(error, 'Failed to update job');
   }
 };
 
@@ -276,12 +242,12 @@ export const getBatchJobItems = async (
     params.append('status', status);
   }
 
-  const response = await fetch(`${ENGINE_URL}/api/jobs/${jobId}/items?${params.toString()}`);
-  if (!response.ok) {
-    throw await buildError(response, `Failed to get job items: ${response.statusText}`);
+  let data: RawBatchJobItemsResponse;
+  try {
+    data = await engineHttpClient.get<RawBatchJobItemsResponse>(`api/jobs/${jobId}/items?${params.toString()}`);
+  } catch (error) {
+    throw buildError(error, 'Failed to get job items');
   }
-
-  const data = (await response.json()) as RawBatchJobItemsResponse;
   return {
     items: (data.items || []).map(normalizeBatchJobItem),
     total: data.total || 0,
@@ -292,9 +258,9 @@ export const getBatchJobItemResult = async (
   jobId: string,
   itemId: string,
 ): Promise<AnalysisResponse> => {
-  const response = await fetch(`${ENGINE_URL}/api/jobs/${jobId}/items/${itemId}/result`);
-  if (!response.ok) {
-    throw await buildError(response, `Failed to get item result: ${response.statusText}`);
+  try {
+    return await engineHttpClient.get<AnalysisResponse>(`api/jobs/${jobId}/items/${itemId}/result`);
+  } catch (error) {
+    throw buildError(error, 'Failed to get item result');
   }
-  return response.json();
 };

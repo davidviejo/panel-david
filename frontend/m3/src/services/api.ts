@@ -1,4 +1,4 @@
-import { resolveApiUrl } from './apiUrlHelper';
+import { createHttpClient } from './httpClient';
 
 interface AuthResponse {
   token: string;
@@ -7,47 +7,11 @@ interface AuthResponse {
   error?: string;
 }
 
-const API_URL = resolveApiUrl();
-const DEFAULT_TIMEOUT_MS = 12000;
-
-const fetchJson = async <T>(
-  input: RequestInfo | URL,
-  init: RequestInit = {},
-  timeoutMs = DEFAULT_TIMEOUT_MS,
-): Promise<T> => {
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const res = await fetch(input, { ...init, signal: controller.signal });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error((data && data.error) || 'Request failed');
-    }
-    return data as T;
-  } finally {
-    window.clearTimeout(timeoutId);
-  }
-};
+const httpClient = createHttpClient({ service: 'api' });
 
 export const api = {
-  getHeaders: () => {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    const token = sessionStorage.getItem('portal_token');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
-  },
-
   authClientsArea: async (password: string): Promise<AuthResponse> => {
-    const data = await fetchJson<AuthResponse>(`${API_URL}/api/auth/clients-area`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    });
+    const data = await httpClient.post<AuthResponse>('api/auth/clients-area', { password }, { includeAuth: false });
     if (data.token) {
       sessionStorage.setItem('portal_token', data.token);
       sessionStorage.setItem('portal_role', data.role);
@@ -56,11 +20,7 @@ export const api = {
   },
 
   authProject: async (slug: string, password: string): Promise<AuthResponse> => {
-    const data = await fetchJson<AuthResponse>(`${API_URL}/api/auth/project/${slug}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    });
+    const data = await httpClient.post<AuthResponse>(`api/auth/project/${slug}`, { password }, { includeAuth: false });
     if (data.token) {
       sessionStorage.setItem('portal_token', data.token);
       sessionStorage.setItem('portal_role', data.role);
@@ -70,11 +30,7 @@ export const api = {
   },
 
   authOperator: async (password: string): Promise<AuthResponse> => {
-    const data = await fetchJson<AuthResponse>(`${API_URL}/api/auth/operator`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    });
+    const data = await httpClient.post<AuthResponse>('api/auth/operator', { password }, { includeAuth: false });
     if (data.token) {
       sessionStorage.setItem('portal_token', data.token);
       sessionStorage.setItem('portal_role', data.role);
@@ -89,20 +45,12 @@ export const api = {
     window.location.href = '/';
   },
 
-  getClients: async () => fetchJson(`${API_URL}/api/clients`, { headers: api.getHeaders() }),
+  getClients: async () => httpClient.get('api/clients'),
 
-  getPublicClients: async () =>
-    fetchJson(`${API_URL}/api/public/clients`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    }),
+  getPublicClients: async () => httpClient.get('api/public/clients', { includeAuth: false }),
 
-  getProjectOverview: async (slug: string) =>
-    fetchJson(`${API_URL}/api/${slug}/overview`, { headers: api.getHeaders() }),
+  getProjectOverview: async (slug: string) => httpClient.get(`api/${slug}/overview`),
 
   runOperatorTool: async (tool: string) =>
-    fetchJson(`${API_URL}/api/tools/run/${tool}`, {
-      method: 'POST',
-      headers: api.getHeaders(),
-    }),
+    httpClient.post(`api/tools/run/${tool}`, undefined),
 };
