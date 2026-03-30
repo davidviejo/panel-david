@@ -4,6 +4,7 @@ import {
   getBatchJobItems,
   updateBatchJob,
 } from './pythonEngineClient';
+import { endpoints } from './endpoints';
 
 describe('pythonEngineClient', () => {
   const fetchMock = vi.fn();
@@ -56,7 +57,7 @@ describe('pythonEngineClient', () => {
     await updateBatchJob('job-42', 'pause');
 
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringMatching(/\/api\/jobs\/job-42\/pause$/),
+      expect.stringContaining(endpoints.engine.jobAction('job-42', 'pause')),
       expect.objectContaining({ method: 'POST' }),
     );
   });
@@ -80,7 +81,7 @@ describe('pythonEngineClient', () => {
     const response = await getBatchJobItems('job-1', 'running', 2, 25);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/jobs/job-1/items?page=2&pageSize=25&status=running'),
+      expect.stringContaining(endpoints.engine.jobItems('job-1', new URLSearchParams({ page: '2', pageSize: '25', status: 'running' }))),
       expect.objectContaining({ method: 'GET' }),
     );
     expect(response).toEqual({

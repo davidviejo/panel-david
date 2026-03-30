@@ -39,16 +39,19 @@ const DEFAULT_ERROR_MESSAGE = 'Request failed';
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 const trimLeadingSlash = (value: string): string => value.replace(/^\/+/, '');
 
+const defaultApiBaseURL = resolveApiUrl();
+const defaultEngineBaseURL = resolveEngineUrl();
+
 const normalizeBaseUrl = (config: HttpClientConfig): string => {
   if (config.baseURL && config.baseURL.trim()) {
     return trimTrailingSlash(config.baseURL.trim());
   }
 
   if (config.service === 'engine') {
-    return resolveEngineUrl();
+    return defaultEngineBaseURL;
   }
 
-  return resolveApiUrl();
+  return defaultApiBaseURL;
 };
 
 const toRequestBody = (body: unknown): BodyInit | undefined => {

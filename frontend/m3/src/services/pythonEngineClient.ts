@@ -1,5 +1,6 @@
 import { ChecklistKey, AnalysisConfigPayload, Capabilities } from '../types/seoChecklist';
 import { HttpClientError, createHttpClient } from './httpClient';
+import { endpoints } from './endpoints';
 
 const engineHttpClient = createHttpClient({ service: 'engine' });
 
@@ -161,7 +162,7 @@ const buildError = (error: unknown, fallback: string): Error => {
 
 export const getCapabilities = async (): Promise<Capabilities | null> => {
   try {
-    const data = await engineHttpClient.get<Capabilities>('api/capabilities');
+    const data = await engineHttpClient.get<Capabilities>(endpoints.engine.capabilities());
     return data as Capabilities;
   } catch (error) {
     console.warn('Failed to fetch capabilities:', error);
@@ -171,7 +172,7 @@ export const getCapabilities = async (): Promise<Capabilities | null> => {
 
 export const analyzeUrl = async (payload: AnalysisPayload): Promise<AnalysisResponse> => {
   try {
-    const data = await engineHttpClient.post<AnalysisResponse>('api/analyze', payload);
+    const data = await engineHttpClient.post<AnalysisResponse>(endpoints.engine.analyze(), payload);
     return data as AnalysisResponse;
   } catch (error: any) {
     console.error('Python Engine Error:', error);
@@ -183,7 +184,7 @@ export const analyzeUrl = async (payload: AnalysisPayload): Promise<AnalysisResp
 
 export const createBatchJob = async (payload: BatchJobPayload): Promise<BatchJobResponse> => {
   try {
-    return await engineHttpClient.post<BatchJobResponse>('api/jobs', {
+    return await engineHttpClient.post<BatchJobResponse>(endpoints.engine.jobs(), {
       items: payload.items,
       config: payload.config,
     });
@@ -197,7 +198,7 @@ export const createBatchJob = async (payload: BatchJobPayload): Promise<BatchJob
 
 export const getBatchJob = async (jobId: string): Promise<BatchJobStatus> => {
   try {
-    const response = await engineHttpClient.get<RawBatchJobStatus>(`api/jobs/${jobId}`);
+    const response = await engineHttpClient.get<RawBatchJobStatus>(endpoints.engine.byId(jobId));
     return normalizeBatchJob(response);
   } catch (error) {
     throw buildError(error, 'Failed to get job status');
@@ -209,7 +210,7 @@ export const updateBatchJob = async (
   action: 'pause' | 'resume' | 'cancel',
 ): Promise<void> => {
   try {
-    await engineHttpClient.post(`api/jobs/${jobId}/${action}`);
+    await engineHttpClient.post(endpoints.engine.jobAction(jobId, action));
   } catch (error) {
     throw buildError(error, 'Failed to update job');
   }
@@ -244,7 +245,7 @@ export const getBatchJobItems = async (
 
   let data: RawBatchJobItemsResponse;
   try {
-    data = await engineHttpClient.get<RawBatchJobItemsResponse>(`api/jobs/${jobId}/items?${params.toString()}`);
+    data = await engineHttpClient.get<RawBatchJobItemsResponse>(endpoints.engine.jobItems(jobId, params));
   } catch (error) {
     throw buildError(error, 'Failed to get job items');
   }
@@ -259,7 +260,7 @@ export const getBatchJobItemResult = async (
   itemId: string,
 ): Promise<AnalysisResponse> => {
   try {
-    return await engineHttpClient.get<AnalysisResponse>(`api/jobs/${jobId}/items/${itemId}/result`);
+    return await engineHttpClient.get<AnalysisResponse>(endpoints.engine.jobItemResult(jobId, itemId));
   } catch (error) {
     throw buildError(error, 'Failed to get item result');
   }

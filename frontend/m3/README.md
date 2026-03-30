@@ -27,7 +27,29 @@ npm install
 
 ## ⚙️ Configuración (.env)
 
-Crea un archivo `.env` en la raíz del proyecto (puedes copiar `.env.example`). Las variables más importantes son:
+Crea un archivo `.env` en la raíz del proyecto (puedes copiar `.env.example`).
+
+### Variables de backend/API internas
+
+```ini
+# URL base del backend principal (opcional)
+VITE_API_URL=
+
+# Puerto del backend principal cuando no se define VITE_API_URL (opcional)
+VITE_API_PORT=5000
+
+# URL base del motor Python (opcional)
+VITE_PYTHON_ENGINE_URL=
+```
+
+Comportamiento por defecto:
+
+- Si `VITE_API_URL` está definida, el frontend la usa como base para el servicio `api`.
+- Si `VITE_API_URL` no está definida, el frontend construye la URL con el host/protocolo actuales del navegador y `VITE_API_PORT` (por defecto `5000`).
+- Si `VITE_PYTHON_ENGINE_URL` está definida, se usa para el servicio `engine`.
+- Si `VITE_PYTHON_ENGINE_URL` no está definida, el servicio `engine` reutiliza la base resuelta del servicio `api`.
+
+### Variables de integraciones externas
 
 ```ini
 # APIs Externas (Requerido para funcionalidades AI del cliente)

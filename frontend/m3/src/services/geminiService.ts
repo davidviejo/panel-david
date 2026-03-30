@@ -1,4 +1,5 @@
 import { HttpClientError, createHttpClient } from './httpClient';
+import { endpoints } from './endpoints';
 
 const httpClient = createHttpClient({ service: 'api' });
 
@@ -16,7 +17,7 @@ export const generateSEOAnalysis = async (
   vertical?: string,
 ): Promise<string> => {
   try {
-    const data = await httpClient.post<{ result?: string }>('api/ai/seo-analysis', {
+    const data = await httpClient.post<{ result?: string }>(endpoints.ai.seoAnalysis(), {
       content,
       type,
       vertical,
@@ -44,7 +45,7 @@ export const evaluateHeadlineChallenge = async (
   keywords: string,
 ): Promise<string> => {
   try {
-    const data = await httpClient.post<{ result?: string }>('api/ai/headline-challenge', {
+    const data = await httpClient.post<{ result?: string }>(endpoints.ai.headlineChallenge(), {
       headline,
       keywords,
     });
