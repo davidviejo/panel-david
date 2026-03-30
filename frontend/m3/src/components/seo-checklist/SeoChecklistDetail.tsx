@@ -110,14 +110,16 @@ export const SeoChecklistDetail: React.FC<Props> = ({
     setIsAnalyzing(true);
     setError(null);
     try {
-      const updates = await runPageAnalysis(page, {
+      const analysisConfig = {
         mode: settings.serp.enabled ? 'advanced' : 'basic',
         serp: {
           ...settings.serp,
           confirmed: settings.serp.enabled,
         },
         budgets: settings.budgets,
-      }, settings);
+      };
+
+      const updates = await runPageAnalysis(page, analysisConfig, settings);
       onUpdatePage(page.id, updates);
     } catch (err: any) {
       setError(err.message || 'Error de conexión con el motor de análisis.');
