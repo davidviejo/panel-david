@@ -4,6 +4,7 @@ import { SeoChecklistSettings } from '../types/seoChecklist';
 
 const DEFAULT_SETTINGS: SeoChecklistSettings = {
   brandTerms: [],
+  allowKwPrincipalUpdate: true,
   serp: {
     enabled: false,
     provider: 'dataforseo',

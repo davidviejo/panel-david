@@ -72,6 +72,7 @@ export interface Capabilities {
 
 export interface SeoChecklistSettings {
   brandTerms?: string[];
+  allowKwPrincipalUpdate?: boolean;
   serp: {
     enabled: boolean;
     provider: 'serpapi' | 'dataforseo' | 'internal';

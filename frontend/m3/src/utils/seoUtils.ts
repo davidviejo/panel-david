@@ -13,20 +13,29 @@ const normalizeGscQueryRow = (row: any) => {
   };
 };
 
-const getStoredBrandTerms = (): string[] => {
+const getStoredSeoChecklistSettings = () => {
   const settingsKey = Object.keys(localStorage).find((key) =>
     key.startsWith('mediaflow_seo_settings_'),
   );
-  if (!settingsKey) return [];
+  if (!settingsKey) return null;
 
   try {
     const raw = localStorage.getItem(settingsKey);
-    const parsed = raw ? JSON.parse(raw) : null;
-    return Array.isArray(parsed?.brandTerms) ? parsed.brandTerms : [];
+    return raw ? JSON.parse(raw) : null;
   } catch (error) {
     console.warn('Could not parse SEO checklist settings', error);
-    return [];
+    return null;
   }
+};
+
+const getStoredBrandTerms = (): string[] => {
+  const parsed = getStoredSeoChecklistSettings();
+  return Array.isArray(parsed?.brandTerms) ? parsed.brandTerms : [];
+};
+
+const shouldAllowKwPrincipalUpdate = () => {
+  const parsed = getStoredSeoChecklistSettings();
+  return parsed?.allowKwPrincipalUpdate !== false;
 };
 
 const isUsablePrimaryKeyword = (keyword?: string) => {
@@ -153,11 +162,18 @@ export const processAnalysisResult = (
 
   const normalizedGscQueries = gscQueries.map(normalizeGscQueryRow);
   const brandTerms = getStoredBrandTerms();
+  const allowKwPrincipalUpdate = shouldAllowKwPrincipalUpdate();
+  const currentPrimaryKeyword =
+    isUsablePrimaryKeyword(page.kwPrincipal) && !isBrandTermMatch(page.kwPrincipal, brandTerms)
+      ? page.kwPrincipal.trim()
+      : '';
+  const primaryKeywordFromQueries = pickPrimaryKeywordFromQueries(normalizedGscQueries, brandTerms);
+
   const resolvedPrimaryKeyword = page.isBrandKeyword
     ? ''
-    : isUsablePrimaryKeyword(page.kwPrincipal) && !isBrandTermMatch(page.kwPrincipal, brandTerms)
-      ? page.kwPrincipal.trim()
-      : pickPrimaryKeywordFromQueries(normalizedGscQueries, brandTerms);
+    : allowKwPrincipalUpdate
+      ? currentPrimaryKeyword || primaryKeywordFromQueries
+      : currentPrimaryKeyword;
 
   if (normalizedGscQueries.length > 0 || !result.items?.OPORTUNIDADES?.autoData?.gscQueries) {
     if (!result.items) {
