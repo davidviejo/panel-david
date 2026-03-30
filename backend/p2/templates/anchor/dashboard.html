@@ -11,7 +11,7 @@
 let cd=[];
 function run(){
     const u = document.getElementById('u').value.split('\n');
-    fetch('/anchor/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
+    fetch('/api/v1/anchor/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
     .then(r=>r.json()).then(d=>{
         cd=d.data;
         let h='<table class="table"><tr><th>Target</th><th>Inlinks</th><th>Top Anchors</th></tr>';

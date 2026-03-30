@@ -21,7 +21,7 @@
     document.addEventListener("DOMContentLoaded", function() { loadWorkflow(); });
     async function loadWorkflow() {
         try {
-            const res = await fetch('/workflow/data');
+            const res = await fetch('/api/v1/workflow/data');
             const data = await res.json();
             renderWorkflow(data);
         } catch (error) { console.error(error); }

@@ -18,7 +18,7 @@
 let cd = [];
 function run(){
     const u = document.getElementById('urls').value.split('\n');
-    fetch('/checklist/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
+    fetch('/api/v1/checklist/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
     .then(r=>r.json()).then(d=>{
         cd = d.data;
         let h = '';
@@ -30,7 +30,7 @@ function run(){
     });
 }
 function dl(){
-    fetch('/checklist/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:cd})})
+    fetch('/api/v1/checklist/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:cd})})
     .then(r=>r.blob()).then(b=>{ const u=window.URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download="check.xlsx"; a.click(); });
 }
 </script>

@@ -22,7 +22,7 @@
 </div>
 <script>
 function run(){
-    fetch('/roi/calculate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({traffic:document.getElementById('t').value, conv:document.getElementById('c').value, aov:document.getElementById('v').value, growth:document.getElementById('g').value})})
+    fetch('/api/v1/roi/calculate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({traffic:document.getElementById('t').value, conv:document.getElementById('c').value, aov:document.getElementById('v').value, growth:document.getElementById('g').value})})
     .then(r=>r.json()).then(d=>{
         document.getElementById('tot').innerText = d.totals.annual_revenue + '€';
         document.getElementById('seo').innerText = d.totals.seo_value + '€';

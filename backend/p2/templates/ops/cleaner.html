@@ -57,7 +57,7 @@ function runClean(){
     // Feedback visual rápido
     document.getElementById('outputData').value = "Procesando...";
     
-    fetch('/cleaner/process', {
+    fetch('/api/v1/cleaner/process', {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'}, 
         body: JSON.stringify({text: txt, mode: mode})

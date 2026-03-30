@@ -10,7 +10,7 @@
 <script>
 function run(){
     const u = document.getElementById('u').value.split('\n');
-    fetch('/redirect/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
+    fetch('/api/v1/redirect/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
     .then(r=>r.json()).then(d=>{
         let h = '';
         d.data.forEach(i=>{

@@ -24,7 +24,7 @@
 document.getElementById('m').addEventListener('change', e=>{ document.getElementById('apiBox').style.display = e.target.value.includes('api')?'block':'none'; });
 function run(){
     document.getElementById('res').innerHTML = 'Checking...';
-    fetch('/indexer/check', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    fetch('/api/v1/indexer/check', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
         urls:document.getElementById('u').value.split('\n'), mode:document.getElementById('m').value,
         delay:document.getElementById('d').value, cse_key:document.getElementById('k').value, cse_cx:document.getElementById('c').value
     })}).then(r=>r.json()).then(d=>{

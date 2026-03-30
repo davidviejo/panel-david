@@ -9,7 +9,7 @@
 </div>
 <script>
 function run(){
-    fetch('/headers/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:document.getElementById('u').value})})
+    fetch('/api/v1/headers/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:document.getElementById('u').value})})
     .then(r=>r.json()).then(d=>{
         const da = d.data;
         let sslInfo = da.ssl.days ? `<div class="alert alert-success">SSL Válido: ${da.ssl.days} días restantes (${da.ssl.expiry})</div>` : '<div class="alert alert-warning">Sin SSL</div>';

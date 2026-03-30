@@ -19,7 +19,7 @@
 <script>
 let cd=[];
 function run(){
-    fetch('/depth/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:document.getElementById('u').value, max_depth:document.getElementById('d').value, limit:document.getElementById('l').value})})
+    fetch('/api/v1/depth/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:document.getElementById('u').value, max_depth:document.getElementById('d').value, limit:document.getElementById('l').value})})
     .then(r=>r.json()).then(d=>{
         cd=d.data;
         document.getElementById('s0').innerText=d.stats.d0; document.getElementById('s1').innerText=d.stats.d1; document.getElementById('s2').innerText=d.stats.d2; document.getElementById('s3').innerText=d.stats.d3;

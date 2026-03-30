@@ -9,7 +9,7 @@
 </div>
 <script>
 function run(){
-    fetch('/prominence/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({input_data:document.getElementById('data').value})})
+    fetch('/api/v1/prominence/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({input_data:document.getElementById('data').value})})
     .then(r=>r.json()).then(d=>{
         let h = '';
         d.data.forEach(r=>{

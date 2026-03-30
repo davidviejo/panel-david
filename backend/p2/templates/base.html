@@ -321,7 +321,7 @@
     });
 
     function updateApiStats(){
-        fetch('/usage/stats').then(r=>r.json()).then(d=>{
+        fetch('/api/v1/usage/stats').then(r=>r.json()).then(d=>{
             const c=document.getElementById('apiCount'), b=document.getElementById('apiBar');
             if(c&&b){
                 c.innerText = d.count;
@@ -362,7 +362,7 @@
     // Auto-load config on start to update sidebar label
     document.addEventListener("DOMContentLoaded", function() {
         // Init Load just for the label
-        fetch('/ai/config').then(r=>r.json()).then(d=>{
+        fetch('/api/v1/ai/config').then(r=>r.json()).then(d=>{
             availableModels = d.models;
             currentModelId = d.current_model;
             updateLabel();

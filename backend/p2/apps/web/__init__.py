@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, redirect, request
 from apps.core.config import Config
 from apps.core.database import init_db
 
@@ -73,6 +73,11 @@ from apps.web.blueprints.snippet_tool import snippet_bp
 from apps.web.blueprints.enhance_tool import enhance_bp
 from apps.web.blueprints.ai_routes import ai_bp as ai_tools_bp
 from apps.web.blueprints.api_engine import api_engine_bp
+from apps.web.api_routes_map import (
+    API_V1_PREFIX,
+    LEGACY_TO_V1_ROUTES,
+    should_redirect_legacy_path,
+)
 
 # Portal Auth
 from apps.web.auth_bp import auth_bp
@@ -170,6 +175,20 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp)
     app.register_blueprint(portal_bp)
 
+    # --- API ALIASING ---
+    register_api_v1_aliases(app)
+
+    @app.before_request
+    def redirect_legacy_api_routes():
+        if request.path.startswith(API_V1_PREFIX):
+            return None
+        if not should_redirect_legacy_path(request.path):
+            return None
+        target_path = LEGACY_TO_V1_ROUTES[request.path]
+        if request.query_string:
+            target_path = f"{target_path}?{request.query_string.decode('utf-8')}"
+        return redirect(target_path, code=307)
+
     # --- CONTEXT PROCESSOR ---
     @app.context_processor
     def inject_project():
@@ -197,3 +216,41 @@ def create_app(config_class=Config):
         start_monitor()
 
     return app
+
+
+def register_api_v1_aliases(app):
+    """
+    Register `/api/v1/...` aliases for tool endpoints to provide
+    a unified API namespace while keeping legacy endpoints available.
+    """
+    existing_rules = [rule for rule in app.url_map.iter_rules()]
+    for idx, rule in enumerate(existing_rules):
+        if _should_skip_alias_rule(rule):
+            continue
+
+        new_rule = f"{API_V1_PREFIX}{rule.rule}"
+        if _rule_already_exists(app, new_rule):
+            continue
+
+        view_func = app.view_functions[rule.endpoint]
+        methods = sorted(m for m in rule.methods if m not in {'HEAD', 'OPTIONS'})
+        app.add_url_rule(
+            new_rule,
+            endpoint=f"api_v1_alias_{idx}_{rule.endpoint}",
+            view_func=view_func,
+            defaults=rule.defaults,
+            methods=methods,
+            strict_slashes=rule.strict_slashes,
+        )
+
+
+def _should_skip_alias_rule(rule):
+    if rule.endpoint == 'static':
+        return True
+    if rule.rule.startswith(API_V1_PREFIX):
+        return True
+    return rule.rule.startswith(('/seo', '/monitor', '/global-status', '/api/'))
+
+
+def _rule_already_exists(app, candidate_rule):
+    return any(existing.rule == candidate_rule for existing in app.url_map.iter_rules())

@@ -236,7 +236,7 @@
         btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Guardando...';
         btn.disabled = true;
 
-        fetch('/ai/preference', {
+        fetch('/api/v1/ai/preference', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
@@ -448,7 +448,7 @@
             btn.disabled = true;
         }
 
-        fetch('/ai/preference', {
+        fetch('/api/v1/ai/preference', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)

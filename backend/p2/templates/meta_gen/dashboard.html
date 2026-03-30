@@ -19,7 +19,7 @@
 <script>
 let cd=[];
 function run(){
-    fetch('/meta_gen/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    fetch('/api/v1/meta_gen/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
         urls:document.getElementById('u').value.split('\n').filter(x=>x.trim()),
         title_tpl:document.getElementById('tt').value, desc_tpl:document.getElementById('dt').value
     })}).then(r=>r.json()).then(d=>{
@@ -30,7 +30,7 @@ function run(){
     });
 }
 function dl(){
-    fetch('/meta_gen/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:cd})})
+    fetch('/api/v1/meta_gen/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:cd})})
     .then(r=>r.blob()).then(b=>{const u=window.URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download="meta.xlsx";a.click();});
 }
 </script>

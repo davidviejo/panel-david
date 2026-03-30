@@ -10,7 +10,7 @@
 <script>
 function run(){
     const u = document.getElementById('u').value.split('\n');
-    fetch('/robots/check', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
+    fetch('/api/v1/robots/check', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
     .then(r=>r.json()).then(d=>{
         let h = '<ul class="list-group">';
         d.data.forEach(i=>{

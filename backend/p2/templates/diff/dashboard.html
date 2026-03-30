@@ -10,7 +10,7 @@
 </div>
 <script>
 function run(){
-    fetch('/diff/compare', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url_a:document.getElementById('ua').value, url_b:document.getElementById('ub').value})})
+    fetch('/api/v1/diff/compare', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url_a:document.getElementById('ua').value, url_b:document.getElementById('ub').value})})
     .then(r=>r.json()).then(d=>{
         const a = d.a; const b = d.b;
         let html = `<table class="table"><tr><th>Campo</th><th>URL A</th><th>URL B</th></tr>`;

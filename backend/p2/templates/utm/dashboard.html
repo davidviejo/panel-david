@@ -12,7 +12,7 @@
 </div>
 <script>
 function run(){
-    fetch('/utm/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    fetch('/api/v1/utm/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
         urls:document.getElementById('u').value, source:document.getElementById('s').value,
         medium:document.getElementById('m').value, campaign:document.getElementById('c').value
     })}).then(r=>r.json()).then(d=>{ document.getElementById('out').value = d.urls.join('\n'); });

@@ -13,7 +13,7 @@
 </div>
 <script>
 function run(){
-    fetch('/local/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    fetch('/api/v1/local/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
         col_a:document.getElementById('a').value, col_b:document.getElementById('b').value, col_c:document.getElementById('c').value
     })}).then(r=>r.json()).then(d=>{ document.getElementById('res').value = d.keywords.join('\n'); });
 }

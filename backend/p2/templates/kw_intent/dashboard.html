@@ -33,7 +33,7 @@
 let currentData = [];
 function runIntent(){
     const kws = document.getElementById('kwInput').value;
-    fetch('/kw_intent/classify', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({keywords:kws})})
+    fetch('/api/v1/kw_intent/classify', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({keywords:kws})})
     .then(r=>r.json()).then(d=>{
         currentData = d.data;
         document.getElementById('sTrans').innerText = d.stats.trans;
@@ -47,7 +47,7 @@ function runIntent(){
     });
 }
 function downloadExcel(){
-    fetch('/kw_intent/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:currentData})})
+    fetch('/api/v1/kw_intent/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:currentData})})
     .then(r=>r.blob()).then(blob=>{ const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download="intent.xlsx"; document.body.appendChild(a); a.click(); a.remove(); });
 }
 </script>

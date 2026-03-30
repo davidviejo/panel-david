@@ -16,7 +16,7 @@
 <script>
 function run(){
     const u = document.getElementById('u').value.split('\n').filter(x=>x.trim());
-    fetch('/graph/build', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
+    fetch('/api/v1/graph/build', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
     .then(r=>r.json()).then(d=>{
         new vis.Network(document.getElementById('net'), {nodes:d.nodes, edges:d.edges}, {physics:{stabilization:false}});
     });

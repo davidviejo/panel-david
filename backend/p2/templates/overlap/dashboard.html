@@ -45,7 +45,7 @@ m.addEventListener('change', ()=>{
     document.getElementById('cx').style.display = m.value==='google_api_official'?'block':'none';
 });
 function run(){
-    fetch('/overlap/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    fetch('/api/v1/overlap/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
         kw_a:document.getElementById('ka').value, kw_b:document.getElementById('kb').value,
         mode:m.value, delay:document.getElementById('del').value,
         cookie:document.getElementById('cook').value, cse_key:document.getElementById('key').value, cse_cx:document.getElementById('cx').value

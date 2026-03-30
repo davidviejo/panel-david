@@ -9,7 +9,7 @@
 </div>
 <script>
 function run(){
-    fetch('/dorks/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({domain:document.getElementById('dom').value})})
+    fetch('/api/v1/dorks/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({domain:document.getElementById('dom').value})})
     .then(r=>r.json()).then(d=>{
         let h='';
         d.dorks.forEach(i=>{ h+=`<a href="${i.link}" target="_blank" class="list-group-item">${i.label} ↗</a>`; });

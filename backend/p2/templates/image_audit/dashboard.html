@@ -12,7 +12,7 @@
 let cd=[];
 function run(){
     const u = document.getElementById('u').value.split('\n');
-    fetch('/image_audit/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
+    fetch('/api/v1/image_audit/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
     .then(r=>r.json()).then(d=>{
         cd=d.data;
         let h='';
@@ -28,7 +28,7 @@ function run(){
     });
 }
 function dl(){
-    fetch('/image_audit/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:cd})})
+    fetch('/api/v1/image_audit/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:cd})})
     .then(r=>r.blob()).then(b=>{const u=window.URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download="img.xlsx";a.click();});
 }
 </script>

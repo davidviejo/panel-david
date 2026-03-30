@@ -108,7 +108,7 @@
         document.getElementById('resultsArea').classList.add('d-none');
 
         try {
-            const response = await fetch('/entities/analyze', { method: 'POST', body: formData });
+            const response = await fetch('/api/v1/entities/analyze', { method: 'POST', body: formData });
             const result = await response.json();
 
             document.getElementById('loading').classList.add('d-none');

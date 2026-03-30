@@ -16,7 +16,7 @@
 </div>
 <script>
 function run(){
-    fetch('/nap/check', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    fetch('/api/v1/nap/check', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
         urls:document.getElementById('u').value.split('\n'), name:document.getElementById('n').value,
         phone:document.getElementById('p').value, address:document.getElementById('a').value
     })}).then(r=>r.json()).then(d=>{

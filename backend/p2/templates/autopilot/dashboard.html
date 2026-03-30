@@ -164,7 +164,7 @@
             dfs_pass: document.getElementById('dfs_pass').value
         };
 
-        const res = await fetch('/autopilot/start', {
+        const res = await fetch('/api/v1/autopilot/start', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
@@ -173,7 +173,7 @@
 
         if (data.status === 'started') {
             const intv = setInterval(async () => {
-                const s = await fetch('/autopilot/status');
+                const s = await fetch('/api/v1/autopilot/status');
                 const d = await s.json();
                 document.getElementById('progressBar').style.width = d.progress + '%';
                 document.getElementById('actionText').innerText = d.current_action;
@@ -196,7 +196,7 @@
     }
 
     async function loadHistory() {
-        const res = await fetch('/autopilot/history');
+        const res = await fetch('/api/v1/autopilot/history');
         const data = await res.json();
         const div = document.getElementById('historyList');
 

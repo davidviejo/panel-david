@@ -807,7 +807,7 @@
     formData.append('dataforseo_password', settings.dataforseo_password || '');
 
     try {
-      const res = await fetch('/trends/start', { method: 'POST', body: formData });
+      const res = await fetch('/api/v1/trends/start', { method: 'POST', body: formData });
       const data = await res.json();
       if (data.status !== 'started') throw new Error('No se pudo iniciar el análisis.');
       currentJobId = data.job_id;

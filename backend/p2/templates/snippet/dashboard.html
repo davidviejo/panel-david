@@ -10,7 +10,7 @@
 </div>
 <script>
 function run(){
-    fetch('/snippet/check', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:document.getElementById('url').value, keyword:document.getElementById('kw').value})})
+    fetch('/api/v1/snippet/check', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:document.getElementById('url').value, keyword:document.getElementById('kw').value})})
     .then(r=>r.json()).then(d=>{
         const r = d.data;
         document.getElementById('res').innerHTML = `<h5>Score: ${r.score}</h5><p>${r.text}</p><small>${r.msg.join(', ')}</small>`;

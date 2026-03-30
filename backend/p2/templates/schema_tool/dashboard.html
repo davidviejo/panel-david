@@ -11,7 +11,7 @@
 <script>
 let cd=[];
 function run(){
-    fetch('/schema_tool/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:document.getElementById('u').value.split('\n')})})
+    fetch('/api/v1/schema_tool/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:document.getElementById('u').value.split('\n')})})
     .then(r=>r.json()).then(d=>{
         cd=d.data;
         let h='';
@@ -20,7 +20,7 @@ function run(){
     });
 }
 function dl(){
-    fetch('/schema_tool/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:cd})})
+    fetch('/api/v1/schema_tool/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:cd})})
     .then(r=>r.blob()).then(b=>{const u=window.URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download="schema.xlsx";a.click();});
 }
 </script>

@@ -87,7 +87,7 @@ function runDetector(){
     document.getElementById('loading').style.display='block';
     document.getElementById('resultsArea').style.display='none';
     
-    fetch('/schema_detector/run', {
+    fetch('/api/v1/schema_detector/run', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({urls: urls})
     })
@@ -148,7 +148,7 @@ function copyModalContent() {
 }
 
 function downloadExcel(){
-    fetch('/schema_detector/download', {
+    fetch('/api/v1/schema_detector/download', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({data: currentData})
     })

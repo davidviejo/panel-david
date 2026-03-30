@@ -9,7 +9,7 @@
 </div>
 <script>
 function run(){
-    fetch('/health/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:document.getElementById('u').value})})
+    fetch('/api/v1/health/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:document.getElementById('u').value})})
     .then(r=>r.json()).then(d=>{
         let h = '';
         d.data.sort((a,b)=>a.status=='Err'? -1 : 1).forEach(i=>{

@@ -59,7 +59,7 @@ modeSel.addEventListener('change', () => {
 function run(){
     document.getElementById('loading').style.display='block';
     document.getElementById('res').style.display='none';
-    fetch('/benchmark/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    fetch('/api/v1/benchmark/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
         keyword:document.getElementById('keyword').value,
         my_url:document.getElementById('myUrl').value,
         mode:modeSel.value,

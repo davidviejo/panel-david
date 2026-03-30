@@ -58,7 +58,7 @@ function runReadability(){
     const text = document.getElementById('textInput').value;
     if(!text) return alert("Escribe algo");
     
-    fetch('/readability/analyze', {
+    fetch('/api/v1/readability/analyze', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({text: text})
     })

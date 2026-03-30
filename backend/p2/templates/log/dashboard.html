@@ -10,7 +10,7 @@
 <script>
 let cd=[];
 function run(){
-    fetch('/log/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({logs:document.getElementById('l').value})})
+    fetch('/api/v1/log/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({logs:document.getElementById('l').value})})
     .then(r=>r.json()).then(d=>{
         if(d.status=='empty') return alert('No bots found');
         cd=d.data;
@@ -20,7 +20,7 @@ function run(){
     });
 }
 function dl(){
-    fetch('/log/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:cd})})
+    fetch('/api/v1/log/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:cd})})
     .then(r=>r.blob()).then(b=>{const u=window.URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download="logs.xlsx";a.click();});
 }
 </script>

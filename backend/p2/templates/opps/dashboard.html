@@ -15,7 +15,7 @@
 </div>
 <script>
 function run(){
-    fetch('/opps/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    fetch('/api/v1/opps/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
         keyword:document.getElementById('kw').value, 
         target_url:document.getElementById('tgt').value,
         urls:document.getElementById('u').value.split('\n')

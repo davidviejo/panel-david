@@ -9,7 +9,7 @@
 </div>
 <script>
 function run(){
-    fetch('/duplicate/compare', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url1:document.getElementById('u1').value, url2:document.getElementById('u2').value})})
+    fetch('/api/v1/duplicate/compare', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url1:document.getElementById('u1').value, url2:document.getElementById('u2').value})})
     .then(r=>r.json()).then(d=>{ document.getElementById('res').innerText = d.ratio + "% Idéntico"; });
 }
 </script>

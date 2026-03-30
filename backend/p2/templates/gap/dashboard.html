@@ -72,7 +72,7 @@ function analyzeGap(){
     document.getElementById('resultsArea').style.display='none';
     document.getElementById('metricsPanel').style.display='none';
     
-    fetch('/gap/analyze', {
+    fetch('/api/v1/gap/analyze', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({my_url: myUrl, comp_urls: compUrls})
@@ -144,7 +144,7 @@ function renderTable(rows, compUrls){
 
 function downloadExcel(){
     if(currentData.length === 0) return;
-    fetch('/gap/download', {
+    fetch('/api/v1/gap/download', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({data: currentData, headers: currentHeaders})

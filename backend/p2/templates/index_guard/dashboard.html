@@ -11,7 +11,7 @@
 <script>
 function run(){
     const u = document.getElementById('u').value.split('\n');
-    fetch('/index_guard/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
+    fetch('/api/v1/index_guard/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
     .then(r=>r.json()).then(d=>{
         let h = '<table class="table table-sm"><tr><th>URL</th><th>Indexable</th><th>Canonical</th><th>Robots</th></tr>';
         d.data.forEach(r=>{

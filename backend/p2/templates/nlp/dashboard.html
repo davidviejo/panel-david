@@ -26,7 +26,7 @@ function run(){
     document.getElementById('loading').style.display='block';
     document.getElementById('res').innerHTML='';
     
-    fetch('/nlp/analyze_bulk', {
+    fetch('/api/v1/nlp/analyze_bulk', {
         method:'POST', headers:{'Content-Type':'application/json'}, 
         body:JSON.stringify({urls:u})
     })

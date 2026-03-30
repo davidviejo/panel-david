@@ -32,7 +32,7 @@ function runMining(){
     const mode = document.getElementById('mode').value;
     document.getElementById('loading').style.display='block';
     document.getElementById('resultsArea').style.display='none';
-    fetch('/suggest/mine', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({seed:seed, mode:mode})})
+    fetch('/api/v1/suggest/mine', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({seed:seed, mode:mode})})
     .then(r=>r.json()).then(d=>{
         document.getElementById('loading').style.display='none';
         document.getElementById('countBadge').innerText = d.count;

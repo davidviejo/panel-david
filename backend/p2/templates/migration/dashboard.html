@@ -21,11 +21,11 @@
 </div>
 <script>
 function genRed(){
-    fetch('/migration/generate_redirects', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pairs:document.getElementById('red').value, server:document.getElementById('srv').value})})
+    fetch('/api/v1/migration/generate_redirects', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pairs:document.getElementById('red').value, server:document.getElementById('srv').value})})
     .then(r=>r.json()).then(d=>document.getElementById('outRed').value=d.code);
 }
 function genSlug(){
-    fetch('/migration/slugify_bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({titles:document.getElementById('tit').value.split('\n')})})
+    fetch('/api/v1/migration/slugify_bulk', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({titles:document.getElementById('tit').value.split('\n')})})
     .then(r=>r.json()).then(d=>{ document.getElementById('outSlug').value = d.data.map(x=>x.slug).join('\n'); });
 }
 </script>

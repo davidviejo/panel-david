@@ -16,7 +16,7 @@
 <script>
 function run(){
     const u = document.getElementById('u').value.split('\n');
-    fetch('/wpo/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
+    fetch('/api/v1/wpo/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:u})})
     .then(r=>r.json()).then(d=>{
         let h = '<thead class="table-dark"><tr><th>URL</th><th>TTFB</th><th>Size</th></tr></thead>';
         d.data.forEach(i=>{

@@ -9,7 +9,7 @@
 </div>
 <script>
 function run(){
-    fetch('/extract/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:document.getElementById('u').value.split('\n')})})
+    fetch('/api/v1/extract/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({urls:document.getElementById('u').value.split('\n')})})
     .then(r=>r.json()).then(d=>{ document.getElementById('out').value = d.combined; });
 }
 </script>

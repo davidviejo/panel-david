@@ -9,7 +9,7 @@
 </div>
 <script>
 function run(){
-    fetch('/ctr/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({titles:document.getElementById('t').value})})
+    fetch('/api/v1/ctr/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({titles:document.getElementById('t').value})})
     .then(r=>r.json()).then(d=>{
         let h='';
         d.data.forEach(r=>{

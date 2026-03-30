@@ -46,7 +46,7 @@ function gen(){
         q: d.querySelector('.q').value,
         a: d.querySelector('.a').value
     }));
-    fetch('/extra/generate_faq_schema', {
+    fetch('/api/v1/extra/generate_faq_schema', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({questions:items})

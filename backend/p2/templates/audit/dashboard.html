@@ -24,7 +24,7 @@ function startAudit(){
     document.getElementById('loading').style.display='block';
     document.getElementById('resultsArea').style.display='none';
     const fd=new FormData(); fd.append('sitemap_url', url);
-    fetch('/audit/scan', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{
+    fetch('/api/v1/audit/scan', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{
         document.getElementById('loading').style.display='none';
         currentData=d.data;
         let html='';
@@ -36,7 +36,7 @@ function startAudit(){
     });
 }
 function downloadExcel(){
-    fetch('/audit/download_report', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:currentData})})
+    fetch('/api/v1/audit/download_report', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:currentData})})
     .then(r=>r.blob()).then(b=>{const u=window.URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download="audit.xlsx"; a.click();});
 }
 </script>

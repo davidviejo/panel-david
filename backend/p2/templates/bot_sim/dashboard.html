@@ -60,7 +60,7 @@ function run() {
     document.getElementById('res').innerHTML =
         '<div class="alert alert-info">Analizando URLs...</div>';
 
-    fetch('/bot_sim/analyze', {
+    fetch('/api/v1/bot_sim/analyze', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ urls })
