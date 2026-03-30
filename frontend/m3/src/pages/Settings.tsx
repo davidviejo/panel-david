@@ -7,6 +7,8 @@ import { parseBrandTerms } from '../utils/brandTerms';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Textarea } from '../components/ui/Textarea';
 
 const Settings: React.FC = () => {
   const { settings, updateSettings } = useSettings();
@@ -71,15 +73,14 @@ const Settings: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-muted">Modelo</label>
-                <select
+                <Select
                   value={geminiModel}
                   onChange={(e) => setGeminiModel(e.target.value)}
-                  className="w-full rounded-brand-md border border-border bg-surface-alt px-4 py-2 text-sm text-foreground outline-none"
                 >
                   <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
                   <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                   <option value="gemini-pro">Gemini Pro (Legacy)</option>
-                </select>
+                </Select>
               </div>
             </div>
           </div>
@@ -103,16 +104,15 @@ const Settings: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-muted">Modelo</label>
-                <select
+                <Select
                   value={openaiModel}
                   onChange={(e) => setOpenaiModel(e.target.value)}
-                  className="w-full rounded-brand-md border border-border bg-surface-alt px-4 py-2 text-sm text-foreground outline-none"
                 >
                   <option value="gpt-4o">GPT-4o</option>
                   <option value="gpt-4-turbo">GPT-4 Turbo</option>
                   <option value="gpt-4">GPT-4</option>
                   <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                </select>
+                </Select>
               </div>
             </div>
           </div>
@@ -136,16 +136,15 @@ const Settings: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-muted">Modelo</label>
-                <select
+                <Select
                   value={mistralModel}
                   onChange={(e) => setMistralModel(e.target.value)}
-                  className="w-full rounded-brand-md border border-border bg-surface-alt px-4 py-2 text-sm text-foreground outline-none"
                 >
                   <option value="mistral-large-latest">Mistral Large</option>
                   <option value="mistral-medium">Mistral Medium</option>
                   <option value="mistral-small">Mistral Small</option>
                   <option value="open-mixtral-8x22b">Mixtral 8x22B</option>
-                </select>
+                </Select>
               </div>
             </div>
           </div>
@@ -176,11 +175,11 @@ const Settings: React.FC = () => {
           <label className="block text-sm font-medium text-foreground">
             Keywords de marca a excluir como keyword principal
           </label>
-          <textarea
+          <Textarea
             value={brandTermsText}
             onChange={(e) => setBrandTermsText(e.target.value)}
             placeholder={'mi marca\nmarca oficial\nnombre comercial'}
-            className="min-h-[140px] w-full rounded-brand-md border border-border bg-surface-alt px-4 py-3 text-foreground outline-none"
+            className="min-h-[140px]"
           />
           <p className="text-xs text-muted">
             Introduce un término por línea o separado por comas. Se usará para marcar URLs como de

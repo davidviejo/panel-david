@@ -6,10 +6,13 @@ export default {
       colors: {
         primary: 'rgb(var(--color-primary) / <alpha-value>)',
         'primary-hover': 'rgb(var(--color-primary-hover) / <alpha-value>)',
+        secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
+        'secondary-hover': 'rgb(var(--color-secondary-hover) / <alpha-value>)',
         success: 'rgb(var(--color-success) / <alpha-value>)',
         warning: 'rgb(var(--color-warning) / <alpha-value>)',
         danger: 'rgb(var(--color-danger) / <alpha-value>)',
         'danger-hover': 'rgb(var(--color-danger-hover) / <alpha-value>)',
+        overlay: 'rgb(var(--color-overlay) / <alpha-value>)',
         surface: 'rgb(var(--color-surface) / <alpha-value>)',
         'surface-alt': 'rgb(var(--color-surface-alt) / <alpha-value>)',
         border: 'rgb(var(--color-border) / <alpha-value>)',

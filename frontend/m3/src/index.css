@@ -7,10 +7,13 @@
 
   --color-primary: 37 99 235;
   --color-primary-hover: 29 78 216;
+  --color-secondary: 15 23 42;
+  --color-secondary-hover: 30 41 59;
   --color-success: 5 150 105;
   --color-warning: 217 119 6;
   --color-danger: 220 38 38;
   --color-danger-hover: 185 28 28;
+  --color-overlay: 15 23 42;
   --color-surface: 255 255 255;
   --color-surface-alt: 248 250 252;
   --color-border: 226 232 240;
@@ -34,6 +37,8 @@
 }
 
 .dark {
+  --color-secondary: 226 232 240;
+  --color-secondary-hover: 203 213 225;
   --color-surface: 30 41 59;
   --color-surface-alt: 15 23 42;
   --color-border: 71 85 105;
@@ -56,5 +61,9 @@
 
   .section-subtitle {
     @apply mt-1 text-sm text-muted;
+  }
+
+  .interactive-link {
+    @apply text-primary transition-colors hover:text-primary-hover;
   }
 }
