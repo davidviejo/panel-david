@@ -26,6 +26,8 @@ import { useToast } from '../components/ui/ToastContext';
 import { Skeleton } from '../components/ui/Skeleton';
 import { Spinner } from '../components/ui/Spinner';
 import ModuleTaskItem from '../components/ModuleTaskItem';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { useTranslation } from 'react-i18next';
 
 interface ModuleDetailProps {
   modules: ModuleData[];
@@ -58,6 +60,7 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({
   onToggleCustomRoadmap,
   onToggleTaskCommunicated,
 }) => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const moduleId = parseInt(id || '1', 10);
   const module = modules.find((m) => m.id === moduleId);
@@ -118,6 +121,7 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({
   const [zenMode, setZenMode] = useState(false);
   const [slackSent, setSlackSent] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null);
 
   // New Task State
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -226,16 +230,9 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({
 
   const handleDeleteTask = useCallback(
     (taskId: string) => {
-      if (
-        window.confirm(
-          '¿Estás seguro de que quieres eliminar esta ficha? Esta acción no se puede deshacer.',
-        )
-      ) {
-        onDeleteTask(moduleId, taskId);
-        showSuccess('Ficha eliminada.');
-      }
+      setPendingDeleteTaskId(taskId);
     },
-    [moduleId, onDeleteTask, showSuccess],
+    [],
   );
 
   const handleToggleExpand = useCallback((taskId: string) => {
@@ -736,6 +733,21 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({
           )}
         </div>
       )}
+      <ConfirmDialog
+        isOpen={pendingDeleteTaskId !== null}
+        title={t('feedback.confirm.delete_card_title')}
+        message={t('feedback.confirm.delete_card_message')}
+        confirmLabel={t('feedback.confirm.confirm')}
+        cancelLabel={t('feedback.confirm.cancel')}
+        onCancel={() => setPendingDeleteTaskId(null)}
+        onConfirm={() => {
+          if (pendingDeleteTaskId) {
+            onDeleteTask(moduleId, pendingDeleteTaskId);
+            showSuccess(t('feedback.messages.card_deleted'));
+          }
+          setPendingDeleteTaskId(null);
+        }}
+      />
     </div>
   );
 };

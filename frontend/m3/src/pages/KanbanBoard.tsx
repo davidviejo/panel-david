@@ -26,8 +26,13 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DEFAULT_KANBAN_COLUMNS } from '../config/kanban';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { useToast } from '../components/ui/ToastContext';
+import { useTranslation } from 'react-i18next';
 
 const KanbanBoard: React.FC = () => {
+  const { t } = useTranslation();
+  const { successAction } = useToast();
   const {
     modules,
     addTasksBulk,
@@ -50,6 +55,11 @@ const KanbanBoard: React.FC = () => {
 
   // Task detail modal state
   const [selectedTask, setSelectedTask] = useState<{ task: Task; moduleId: number } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const columns = currentClient?.kanbanColumns || DEFAULT_KANBAN_COLUMNS;
 
@@ -240,11 +250,17 @@ const KanbanBoard: React.FC = () => {
                     {!DEFAULT_KANBAN_COLUMNS.some((c) => c.id === column.id) && (
                       <button
                         onClick={() => {
-                          if (
-                            window.confirm('¿Borrar esta columna? Las tareas volverán a Pendiente.')
-                          ) {
-                            deleteKanbanColumn(column.id);
-                          }
+                          setConfirmAction({
+                            title: t('feedback.confirm.delete_column_title'),
+                            message: t('feedback.confirm.delete_column_message'),
+                            onConfirm: () => {
+                              deleteKanbanColumn(column.id);
+                              successAction(
+                                t('feedback.actions.delete'),
+                                t('feedback.entities.column'),
+                              );
+                            },
+                          });
                         }}
                         className="opacity-0 group-hover/col:opacity-100 text-slate-400 hover:text-rose-500 transition-opacity"
                       >
@@ -311,13 +327,17 @@ const KanbanBoard: React.FC = () => {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (
-                                        window.confirm(
-                                          '¿Seguro que quieres eliminar esta tarea completada del tablero?',
-                                        )
-                                      ) {
-                                        deleteTask(item.moduleId, item.task.id);
-                                      }
+                                      setConfirmAction({
+                                        title: t('feedback.confirm.delete_task_title'),
+                                        message: t('feedback.confirm.delete_task_message'),
+                                        onConfirm: () => {
+                                          deleteTask(item.moduleId, item.task.id);
+                                          successAction(
+                                            t('feedback.actions.delete'),
+                                            t('feedback.entities.task'),
+                                          );
+                                        },
+                                      });
                                     }}
                                     className="text-slate-400 hover:text-rose-500 transition-colors p-1"
                                     title="Eliminar tarea completada"
@@ -488,6 +508,18 @@ const KanbanBoard: React.FC = () => {
         moduleId={selectedTask?.moduleId || null}
         onUpdateTaskDetails={updateTaskDetails}
         onToggleTask={toggleTask}
+      />
+      <ConfirmDialog
+        isOpen={!!confirmAction}
+        title={confirmAction?.title || ''}
+        message={confirmAction?.message || ''}
+        confirmLabel={t('feedback.confirm.confirm')}
+        cancelLabel={t('feedback.confirm.cancel')}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => {
+          confirmAction?.onConfirm();
+          setConfirmAction(null);
+        }}
       />
     </div>
   );

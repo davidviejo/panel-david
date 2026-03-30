@@ -3,11 +3,17 @@ import { Download, Upload } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { useSettings } from '../context/SettingsContext';
 import { buildBackupPayload, isBackupPayload, restoreMediaFlowStorageSnapshot } from '../utils/backup';
+import ConfirmDialog from './ui/ConfirmDialog';
+import { useToast } from './ui/ToastContext';
+import { useTranslation } from 'react-i18next';
 
 const DataManagementPanel: React.FC = () => {
+  const { t } = useTranslation();
+  const { successAction, errorAction } = useToast();
   const { clients, generalNotes, restoreProjectData, currentClientId } = useProject();
   const { settings, updateSettings } = useSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingRestoreData, setPendingRestoreData] = React.useState<any | null>(null);
 
   const handleExport = () => {
     const data = buildBackupPayload({
@@ -67,30 +73,13 @@ const DataManagementPanel: React.FC = () => {
         const data = JSON.parse(content);
 
         if (isBackupPayload(data)) {
-          if (
-            window.confirm(
-              '¿Estás seguro de restaurar estos datos? Se recuperarán todos los proyectos con sus checklists SEO, URLs, kanban, tareas, notas y configuraciones. ¡Atención! Los datos locales actuales serán reemplazados por el backup.',
-            )
-          ) {
-            if (data.storage) {
-              restoreMediaFlowStorageSnapshot(data.storage);
-            }
-
-            restoreProjectData(data.clients, data.generalNotes || [], data.currentClientId);
-
-            if (data.settings) {
-              updateSettings(data.settings);
-            }
-
-            alert('Datos restaurados correctamente. La aplicación se recargará para aplicar todo el backup.');
-            window.location.reload();
-          }
+          setPendingRestoreData(data);
         } else {
-          alert('Formato de archivo inválido.');
+          errorAction(t('feedback.actions.import'), t('feedback.entities.backup'));
         }
       } catch (err) {
         console.error(err);
-        alert('Error al leer el archivo JSON.');
+        errorAction(t('feedback.actions.read'), t('feedback.entities.file'));
       }
     };
     reader.readAsText(file);
@@ -138,6 +127,32 @@ const DataManagementPanel: React.FC = () => {
       <p className="text-[10px] text-slate-400 mt-2 leading-tight">
         Guarda una copia completa con todos tus proyectos, checklists SEO, URLs, kanban, tareas, notas y ajustes.
       </p>
+      <ConfirmDialog
+        isOpen={!!pendingRestoreData}
+        title={t('feedback.confirm.restore_title')}
+        message={t('feedback.confirm.restore_message')}
+        confirmLabel={t('feedback.confirm.confirm')}
+        cancelLabel={t('feedback.confirm.cancel')}
+        onCancel={() => setPendingRestoreData(null)}
+        onConfirm={() => {
+          if (!pendingRestoreData) return;
+          if (pendingRestoreData.storage) {
+            restoreMediaFlowStorageSnapshot(pendingRestoreData.storage);
+          }
+          restoreProjectData(
+            pendingRestoreData.clients,
+            pendingRestoreData.generalNotes || [],
+            pendingRestoreData.currentClientId,
+          );
+          if (pendingRestoreData.settings) {
+            updateSettings(pendingRestoreData.settings);
+          }
+          successAction(t('feedback.actions.restore'), t('feedback.entities.data'));
+          setPendingRestoreData(null);
+          window.location.reload();
+        }}
+        variant="warning"
+      />
     </div>
   );
 };

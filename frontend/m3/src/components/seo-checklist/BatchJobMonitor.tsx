@@ -22,6 +22,9 @@ import {
   getBatchJobItemResult,
   AnalysisResponse,
 } from '../../services/pythonEngineClient';
+import ConfirmDialog from '../ui/ConfirmDialog';
+import { useToast } from '../ui/ToastContext';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   jobs: BatchJobStatus[];
@@ -31,6 +34,8 @@ interface Props {
 }
 
 export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult, onJobUpdate }) => {
+  const { t } = useTranslation();
+  const { successAction, errorAction } = useToast();
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'done' | 'errors' | 'queued'>('done');
   const [items, setItems] = useState<BatchJobItem[]>([]);
@@ -39,6 +44,7 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [applyingIds, setApplyingIds] = useState<Set<string>>(new Set());
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
 
   const selectedJob = jobs.find((j) => j.id === selectedJobId);
 
@@ -95,13 +101,23 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
 
   const handleAction = async (action: 'pause' | 'resume' | 'cancel') => {
     if (!selectedJobId) return;
+    if (action === 'cancel') {
+      setIsCancelConfirmOpen(true);
+      return;
+    }
+    await runJobAction(action);
+  };
+
+  const runJobAction = async (action: 'pause' | 'resume' | 'cancel') => {
+    if (!selectedJobId) return;
     try {
       await updateBatchJob(selectedJobId, action);
       // Immediately fetch update
       const updated = await getBatchJob(selectedJobId);
       onJobUpdate(updated);
+      successAction(t('feedback.actions.update'), t('feedback.entities.batch_job'));
     } catch (e) {
-      alert(`Error: ${e}`);
+      errorAction(t('feedback.actions.update'), t('feedback.entities.batch_job'));
     }
   };
 
@@ -114,7 +130,7 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
       setAppliedIds((prev) => new Set(prev).add(itemId));
     } catch (e) {
       console.error('Failed to apply result', e);
-      alert('Error applying result');
+      errorAction(t('feedback.actions.apply'), t('feedback.entities.result'));
     } finally {
       setApplyingIds((prev) => {
         const next = new Set(prev);
@@ -422,6 +438,19 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
           </button>
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={isCancelConfirmOpen}
+        title={t('feedback.confirm.cancel_job_title')}
+        message={t('feedback.confirm.cancel_job_message')}
+        confirmLabel={t('feedback.confirm.confirm')}
+        cancelLabel={t('feedback.confirm.cancel')}
+        onCancel={() => setIsCancelConfirmOpen(false)}
+        onConfirm={async () => {
+          setIsCancelConfirmOpen(false);
+          await runJobAction('cancel');
+        }}
+        variant="warning"
+      />
     </div>
   );
 };

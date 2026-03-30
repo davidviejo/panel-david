@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { CompletedTask } from '../types';
 import { CheckCircle2, Calendar, Plus, ClipboardList, PenTool, Trash2 } from 'lucide-react';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { useTranslation } from 'react-i18next';
+import { useToast } from '../components/ui/ToastContext';
 
 interface CompletedTasksProps {
   completedTasks: CompletedTask[];
@@ -13,9 +16,12 @@ const CompletedTasks: React.FC<CompletedTasksProps> = ({
   onAddManualTask,
   onDeleteLogEntry,
 }) => {
+  const { t } = useTranslation();
+  const { successAction } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,9 +34,7 @@ const CompletedTasks: React.FC<CompletedTasksProps> = ({
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este registro del historial?')) {
-      onDeleteLogEntry(id);
-    }
+    setPendingDeleteId(id);
   };
 
   const sortedTasks = [...completedTasks].sort((a, b) => b.completedAt - a.completedAt);
@@ -170,6 +174,21 @@ const CompletedTasks: React.FC<CompletedTasksProps> = ({
           </div>
         )}
       </div>
+      <ConfirmDialog
+        isOpen={pendingDeleteId !== null}
+        title={t('feedback.confirm.delete_log_title')}
+        message={t('feedback.confirm.delete_log_message')}
+        confirmLabel={t('feedback.confirm.confirm')}
+        cancelLabel={t('feedback.confirm.cancel')}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId) {
+            onDeleteLogEntry(pendingDeleteId);
+            successAction(t('feedback.actions.delete'), t('feedback.entities.log_entry'));
+          }
+          setPendingDeleteId(null);
+        }}
+      />
     </div>
   );
 };

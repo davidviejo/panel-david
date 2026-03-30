@@ -26,5 +26,54 @@
     "emergency_index": "INDEX DE EMERGENCIA",
     "indexing": "INDEXANDO..."
   },
-  "global_score": "Puntuación Global"
+  "global_score": "Puntuación Global",
+  "feedback": {
+    "templates": {
+      "success": "Acción completada: {{action}} {{subject}}.",
+      "error": "No se pudo completar: {{action}} {{subject}}.",
+      "warning": "Atención: {{action}} {{subject}}."
+    },
+    "actions": {
+      "delete": "eliminar",
+      "restore": "restaurar",
+      "send": "enviar",
+      "import": "importar",
+      "read": "leer",
+      "update": "actualizar",
+      "apply": "aplicar"
+    },
+    "entities": {
+      "task": "tarea",
+      "column": "columna",
+      "log_entry": "registro",
+      "card": "ficha",
+      "data": "datos",
+      "backup": "backup",
+      "file": "archivo",
+      "batch_job": "job",
+      "result": "resultado",
+      "indexing_request": "solicitud de indexación"
+    },
+    "messages": {
+      "card_deleted": "La ficha se eliminó correctamente."
+    },
+    "confirm": {
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "delete_column_title": "Eliminar columna",
+      "delete_column_message": "Esta columna se eliminará y sus tareas volverán a Pendiente.",
+      "delete_task_title": "Eliminar tarea",
+      "delete_task_message": "Esta tarea completada se eliminará del tablero. Esta acción no se puede deshacer.",
+      "delete_log_title": "Eliminar registro",
+      "delete_log_message": "¿Seguro que quieres eliminar este registro del historial?",
+      "delete_card_title": "Eliminar ficha",
+      "delete_card_message": "¿Estás seguro de que quieres eliminar esta ficha? Esta acción no se puede deshacer.",
+      "restore_title": "Restaurar backup",
+      "restore_message": "Se reemplazarán los datos locales actuales por el contenido del backup. ¿Deseas continuar?",
+      "cancel_job_title": "Cancelar job",
+      "cancel_job_message": "Este proceso por lotes se detendrá y no podrá continuar automáticamente.",
+      "emergency_index_title": "Confirmar indexación de emergencia",
+      "emergency_index_message": "Se enviará un ping a la API de Indexing para URLs críticas recientes."
+    }
+  }
 }

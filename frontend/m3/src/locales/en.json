@@ -26,5 +26,54 @@
     "emergency_index": "EMERGENCY INDEX",
     "indexing": "INDEXING..."
   },
-  "global_score": "Global Score"
+  "global_score": "Global Score",
+  "feedback": {
+    "templates": {
+      "success": "Action completed: {{action}} {{subject}}.",
+      "error": "Could not complete: {{action}} {{subject}}.",
+      "warning": "Warning: {{action}} {{subject}}."
+    },
+    "actions": {
+      "delete": "delete",
+      "restore": "restore",
+      "send": "send",
+      "import": "import",
+      "read": "read",
+      "update": "update",
+      "apply": "apply"
+    },
+    "entities": {
+      "task": "task",
+      "column": "column",
+      "log_entry": "history entry",
+      "card": "card",
+      "data": "data",
+      "backup": "backup",
+      "file": "file",
+      "batch_job": "batch job",
+      "result": "result",
+      "indexing_request": "indexing request"
+    },
+    "messages": {
+      "card_deleted": "The card was deleted successfully."
+    },
+    "confirm": {
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "delete_column_title": "Delete column",
+      "delete_column_message": "This column will be deleted and its tasks will return to Pending.",
+      "delete_task_title": "Delete task",
+      "delete_task_message": "This completed task will be removed from the board. This action cannot be undone.",
+      "delete_log_title": "Delete entry",
+      "delete_log_message": "Are you sure you want to delete this history entry?",
+      "delete_card_title": "Delete card",
+      "delete_card_message": "Are you sure you want to delete this card? This action cannot be undone.",
+      "restore_title": "Restore backup",
+      "restore_message": "Current local data will be replaced with backup contents. Do you want to continue?",
+      "cancel_job_title": "Cancel job",
+      "cancel_job_message": "This batch process will stop and cannot continue automatically.",
+      "emergency_index_title": "Confirm emergency indexing",
+      "emergency_index_message": "A ping will be sent to the Indexing API for recent critical URLs."
+    }
+  }
 }
