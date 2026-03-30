@@ -98,7 +98,7 @@ describe('processAnalysisResult', () => {
       { pageId: 'page-1', items: {} },
       gscQueries,
       undefined,
-      ['brand kw'],
+      { brandTerms: ['brand kw'] },
     );
 
     expect(updates.kwPrincipal).toBe('seo checklist');
@@ -127,7 +127,7 @@ describe('processAnalysisResult', () => {
       { pageId: 'page-1', items: {} },
       gscQueries,
       undefined,
-      ['brand kw'],
+      { brandTerms: ['brand kw'] },
     );
 
     expect(updates.kwPrincipal).toBe('');
@@ -164,7 +164,7 @@ describe('processAnalysisResult', () => {
       { pageId: 'page-1', items: {} },
       gscQueries,
       undefined,
-      ['zara'],
+      { brandTerms: ['zara'] },
     );
 
     expect(updates.kwPrincipal).toBe('vestidos fiesta');
@@ -189,8 +189,7 @@ describe('processAnalysisResult', () => {
       { pageId: 'page-1', items: {} },
       gscQueries,
       undefined,
-      [],
-      false,
+      { brandTerms: [], allowKwPrincipalUpdate: false },
     );
 
     expect(updates.kwPrincipal).toBe('test');
@@ -332,11 +331,22 @@ describe('processAnalysisResult', () => {
       items: {},
     });
 
-    const updates = await runPageAnalysis(
-      { ...mockPage, kwPrincipal: '' },
-      undefined,
-      undefined,
-    );
+    const updates = await runPageAnalysis({
+      ...mockPage,
+      kwPrincipal: '-',
+      checklist: {
+        ...mockPage.checklist,
+        OPORTUNIDADES: {
+          ...mockPage.checklist.OPORTUNIDADES,
+          autoData: {
+            gscQueries: [
+              { keys: ['projecta branded'], query: 'projecta branded', clicks: 100 },
+              { keys: ['generic kw'], query: 'generic kw', clicks: 50 },
+            ],
+          },
+        } as any,
+      } as any,
+    });
 
     expect(updates.kwPrincipal).toBe('');
     expect(updates.checklist?.OPORTUNIDADES.autoData.primaryKeyword).toBe('');

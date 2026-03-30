@@ -112,9 +112,16 @@ export const processAnalysisResult = (
   result: AnalysisResponse,
   gscQueries: any[] = [],
   gscMetrics?: SeoPage['gscMetrics'],
-  brandTerms: string[] = [],
-  allowKwPrincipalUpdate = true,
+  processingSettings: {
+    brandTerms?: string[];
+    allowKwPrincipalUpdate?: boolean;
+  } = {},
 ): Partial<SeoPage> => {
+  const brandTerms = Array.isArray(processingSettings.brandTerms)
+    ? processingSettings.brandTerms
+    : [];
+  const allowKwPrincipalUpdate = processingSettings.allowKwPrincipalUpdate !== false;
+
   // FIX: Sync LocalBusiness from DATOS_ESTRUCTURADOS to GEOLOCALIZACION
   // If structured data sees LocalBusiness, GEOLOCALIZACION should also reflect it.
   if (result.items) {
@@ -258,10 +265,12 @@ export const runPageAnalysis = async (
   const normalizedPage = normalizeSeoPageInput(page);
   const resolvedProjectSettings = projectSettings || getStoredSeoChecklistSettings();
   const resolvedAnalysisConfig = analysisConfig || buildDefaultAnalysisConfig(resolvedProjectSettings);
-  const resolvedBrandTerms = Array.isArray(resolvedProjectSettings?.brandTerms)
-    ? resolvedProjectSettings.brandTerms
-    : [];
-  const resolvedAllowKwPrincipalUpdate = resolvedProjectSettings?.allowKwPrincipalUpdate !== false;
+  const resolvedProcessingSettings = {
+    brandTerms: Array.isArray(resolvedProjectSettings?.brandTerms)
+      ? resolvedProjectSettings.brandTerms
+      : [],
+    allowKwPrincipalUpdate: resolvedProjectSettings?.allowKwPrincipalUpdate !== false,
+  };
   let gscQueries: any[] = [];
   let gscMetrics: SeoPage['gscMetrics'] | undefined = page.gscMetrics;
 
@@ -321,8 +330,7 @@ export const runPageAnalysis = async (
     result,
     gscQueries,
     gscMetrics,
-    resolvedBrandTerms,
-    resolvedAllowKwPrincipalUpdate,
+    resolvedProcessingSettings,
   );
   updates.url = normalizedPage.url;
   return updates;
