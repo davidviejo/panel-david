@@ -27,7 +27,7 @@ const OperatorPage: React.FC = () => {
       } else {
         setError('Acceso denegado');
       }
-    } catch (err) {
+    } catch {
       setError('Error de conexión');
     } finally {
       setLoading(false);
@@ -38,7 +38,7 @@ const OperatorPage: React.FC = () => {
     try {
       const res = await api.runOperatorTool(toolName);
       setOutput((prev) => [...prev, `> Run ${toolName}: ${res.status} - ${res.message}`]);
-    } catch (err) {
+    } catch {
       setOutput((prev) => [...prev, `> Error running ${toolName}`]);
     }
   };

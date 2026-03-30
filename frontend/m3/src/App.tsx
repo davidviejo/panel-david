@@ -35,6 +35,8 @@ const PublicRoutes: React.FC = () => (
   </>
 );
 
+const OperatorRoutes: React.FC = () => <Route path="/operator" element={<OperatorPage />} />;
+
 export const AppRoutes: React.FC = () => {
   const {
     modules,
@@ -71,13 +73,13 @@ export const AppRoutes: React.FC = () => {
       }
     >
       <Routes>
-        {/* Rutas públicas */}
+        {/* 1) Rutas públicas */}
         <PublicRoutes />
 
-        {/* Operador */}
-        <Route path="/operator" element={<OperatorPage />} />
+        {/* 2) Operador */}
+        <OperatorRoutes />
 
-        {/* Rutas internas */}
+        {/* 3) Rutas internas */}
         <Route
           path="/app/*"
           element={

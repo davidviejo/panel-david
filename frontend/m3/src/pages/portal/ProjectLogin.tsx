@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../services/api';
-import { Key } from 'lucide-react';
+import { ArrowLeft, Key } from 'lucide-react';
+import { PortalShell } from '../../components/shell/ShellVariants';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 
 const ProjectLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -24,7 +27,7 @@ const ProjectLogin: React.FC = () => {
       } else {
         setError('Contraseña incorrecta');
       }
-    } catch (err) {
+    } catch {
       setError('Error al conectar con el servidor');
     } finally {
       setLoading(false);
@@ -32,8 +35,8 @@ const ProjectLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+    <PortalShell contentClassName="flex min-h-screen items-center justify-center px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md p-8 shadow-xl">
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 text-purple-600">
             <Key className="w-6 h-6" />
@@ -66,24 +69,25 @@ const ProjectLogin: React.FC = () => {
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-slate-900/20"
+            className="h-12 w-full"
           >
             {loading ? 'Desbloquear' : 'Entrar'}
-          </button>
+          </Button>
         </form>
         <div className="mt-6 text-center">
-          <button
+          <Button
             onClick={() => navigate('/clientes')}
-            className="text-sm text-slate-400 hover:text-slate-600"
+            variant="ghost"
+            className="text-sm text-slate-500 hover:text-slate-700"
           >
-            ← Volver a lista de clientes
-          </button>
+            <ArrowLeft className="h-4 w-4" /> Volver a lista de clientes
+          </Button>
         </div>
-      </div>
-    </div>
+      </Card>
+    </PortalShell>
   );
 };
 

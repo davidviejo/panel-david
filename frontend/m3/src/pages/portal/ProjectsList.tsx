@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
-import { LayoutGrid, ExternalLink, Activity, ArrowRight, LogOut } from 'lucide-react';
+import { LayoutGrid, Activity, ArrowRight, LogOut } from 'lucide-react';
+import { PortalShell } from '../../components/shell/ShellVariants';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Spinner } from '../../components/ui/Spinner';
 
 interface Client {
   slug: string;
@@ -20,7 +25,7 @@ const ProjectsList: React.FC = () => {
       try {
         const data = await api.getClients();
         setClients(data);
-      } catch (err) {
+      } catch {
         // If error (likely 401), redirect to login
         navigate('/clientes');
       } finally {
@@ -32,28 +37,31 @@ const ProjectsList: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-400">
-        Cargando proyectos...
-      </div>
+      <PortalShell contentClassName="flex min-h-screen items-center justify-center px-4">
+        <EmptyState title="Cargando proyectos..." icon={<Spinner size={28} />} />
+      </PortalShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
-      <nav className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-            D
+    <PortalShell
+      header={
+        <nav className="border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+          <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center space-x-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 font-bold text-white">
+                D
+              </div>
+              <span className="text-lg font-bold text-slate-900">Portal de Clientes</span>
+            </div>
+            <Button onClick={() => api.logout()} variant="ghost" className="text-slate-600">
+              <LogOut className="h-4 w-4" /> Cerrar Sesión
+            </Button>
           </div>
-          <span className="font-bold text-lg text-slate-900">Portal de Clientes</span>
-        </div>
-        <button
-          onClick={() => api.logout()}
-          className="text-slate-500 hover:text-red-600 flex items-center text-sm font-medium transition-colors"
-        >
-          <LogOut className="w-4 h-4 mr-2" /> Cerrar Sesión
-        </button>
-      </nav>
+        </nav>
+      }
+      contentClassName="w-full py-8 text-slate-800"
+    >
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-10 flex justify-between items-end">
@@ -70,19 +78,17 @@ const ProjectsList: React.FC = () => {
         </div>
 
         {clients.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-            <LayoutGrid className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-slate-900 mb-2">No hay proyectos asignados</h3>
-            <p className="text-slate-500">
-              Contacta con administración si crees que esto es un error.
-            </p>
-          </div>
+          <EmptyState
+            icon={<LayoutGrid className="h-16 w-16 text-slate-300" />}
+            title="No hay proyectos asignados"
+            description="Contacta con administración si crees que esto es un error."
+          />
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {clients.map((client) => (
-              <div
+              <Card
                 key={client.slug}
-                className="group bg-white rounded-2xl p-6 border border-slate-200 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5 transition-all flex flex-col justify-between h-64 cursor-pointer"
+                className="group flex h-64 cursor-pointer flex-col justify-between rounded-brand-lg border border-border p-6 transition-all hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5"
                 onClick={() => navigate(`/p/${client.slug}`)}
               >
                 <div>
@@ -108,12 +114,12 @@ const ProjectsList: React.FC = () => {
                     Acceder <ArrowRight className="ml-1 w-4 h-4" />
                   </span>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
       </div>
-    </div>
+    </PortalShell>
   );
 };
 

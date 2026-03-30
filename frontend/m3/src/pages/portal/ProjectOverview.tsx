@@ -2,6 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { BarChart, Activity, AlertTriangle, CheckCircle, LogOut, ArrowLeft } from 'lucide-react';
+import { PortalShell } from '../../components/shell/ShellVariants';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Spinner } from '../../components/ui/Spinner';
 
 interface ProjectData {
   project: string;
@@ -23,7 +28,7 @@ const ProjectOverview: React.FC = () => {
       try {
         const res = await api.getProjectOverview(slug);
         setData(res);
-      } catch (err) {
+      } catch {
         navigate(`/p/${slug}`);
       } finally {
         setLoading(false);
@@ -34,40 +39,42 @@ const ProjectOverview: React.FC = () => {
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-400">
-        Cargando dashboard...
-      </div>
+      <PortalShell contentClassName="flex min-h-screen items-center justify-center px-4">
+        <EmptyState title="Cargando dashboard..." icon={<Spinner size={28} />} />
+      </PortalShell>
     );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
-      {/* Top Bar */}
-      <nav className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigate('/clientes/dashboard')}
-            className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-lg font-bold text-slate-900 leading-none">{data?.project}</h1>
-            <span className="text-xs text-slate-500 font-mono">Overview Dashboard</span>
+    <PortalShell
+      header={
+        <nav className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+          <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center space-x-4">
+              <Button
+                onClick={() => navigate('/clientes/dashboard')}
+                variant="ghost"
+                className="text-slate-500"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="text-lg font-bold leading-none text-slate-900">{data?.project}</h1>
+                <span className="font-mono text-xs text-slate-500">Overview Dashboard</span>
+              </div>
+            </div>
+            <Button onClick={() => api.logout()} variant="ghost" className="text-slate-500">
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
-        </div>
-        <button
-          onClick={() => api.logout()}
-          className="text-slate-400 hover:text-red-500 transition-colors"
-          title="Cerrar sesión"
-        >
-          <LogOut className="w-5 h-5" />
-        </button>
-      </nav>
+        </nav>
+      }
+      contentClassName="w-full py-8 text-slate-800"
+    >
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* KPI Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <Card className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-slate-500 mb-1">Tráfico Orgánico (Est.)</p>
               <p className="text-3xl font-bold text-slate-900">{data?.traffic}</p>
@@ -75,9 +82,9 @@ const ProjectOverview: React.FC = () => {
             <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
               <BarChart className="w-6 h-6" />
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <Card className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-slate-500 mb-1">Top 3 Keywords</p>
               <p className="text-3xl font-bold text-slate-900">{data?.keywords_top3}</p>
@@ -85,9 +92,9 @@ const ProjectOverview: React.FC = () => {
             <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
               <Activity className="w-6 h-6" />
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <Card className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-slate-500 mb-1">Health Score</p>
               <p
@@ -101,11 +108,11 @@ const ProjectOverview: React.FC = () => {
             >
               <CheckCircle className="w-6 h-6" />
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Issues List */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <Card className="overflow-hidden p-0">
           <div className="px-6 py-5 border-b border-slate-100 flex items-center">
             <AlertTriangle className="w-5 h-5 text-orange-500 mr-2" />
             <h3 className="font-bold text-slate-900">Problemas Recientes Detectados</h3>
@@ -121,10 +128,12 @@ const ProjectOverview: React.FC = () => {
               </div>
             ))}
             {(!data?.recent_issues || data.recent_issues.length === 0) && (
-              <div className="p-8 text-center text-slate-400">Todo parece estar en orden.</div>
+              <div className="p-6">
+                <EmptyState title="Todo parece estar en orden." />
+              </div>
             )}
           </div>
-        </div>
+        </Card>
 
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-400">
@@ -132,7 +141,7 @@ const ProjectOverview: React.FC = () => {
           </p>
         </div>
       </div>
-    </div>
+    </PortalShell>
   );
 };
 

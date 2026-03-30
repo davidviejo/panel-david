@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
-import { Lock } from 'lucide-react';
+import { ArrowLeft, Lock } from 'lucide-react';
+import { PortalShell } from '../../components/shell/ShellVariants';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 
 const ClientsLogin: React.FC = () => {
   const [password, setPassword] = useState('');
@@ -21,7 +24,7 @@ const ClientsLogin: React.FC = () => {
       } else {
         setError('Contraseña incorrecta');
       }
-    } catch (err) {
+    } catch {
       setError('Error al conectar con el servidor');
     } finally {
       setLoading(false);
@@ -29,8 +32,8 @@ const ClientsLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+    <PortalShell contentClassName="flex min-h-screen items-center justify-center px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md p-8 shadow-xl">
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
             <Lock className="w-6 h-6" />
@@ -59,25 +62,26 @@ const ClientsLogin: React.FC = () => {
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-slate-900/20"
+            className="h-12 w-full"
           >
             {loading ? 'Verificando...' : 'Acceder'}
-          </button>
+          </Button>
         </form>
 
         <div className="mt-6 text-center">
-          <button
+          <Button
             onClick={() => navigate('/')}
-            className="text-sm text-slate-400 hover:text-slate-600"
+            variant="ghost"
+            className="text-sm text-slate-500 hover:text-slate-700"
           >
-            ← Volver al inicio
-          </button>
+            <ArrowLeft className="h-4 w-4" /> Volver al inicio
+          </Button>
         </div>
-      </div>
-    </div>
+      </Card>
+    </PortalShell>
   );
 };
 
