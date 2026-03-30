@@ -17,9 +17,11 @@ export default {
         muted: 'rgb(var(--color-muted) / <alpha-value>)',
         'on-primary': 'rgb(var(--color-on-primary) / <alpha-value>)',
         'primary-soft': 'rgb(var(--color-primary-soft) / <alpha-value>)',
+        'secondary-soft': 'rgb(var(--color-secondary-soft) / <alpha-value>)',
         'success-soft': 'rgb(var(--color-success-soft) / <alpha-value>)',
         'warning-soft': 'rgb(var(--color-warning-soft) / <alpha-value>)',
         'danger-soft': 'rgb(var(--color-danger-soft) / <alpha-value>)',
+        overlay: 'rgb(var(--color-overlay) / <alpha-value>)',
       },
       borderRadius: {
         'brand-sm': 'var(--radius-sm)',

@@ -149,34 +149,32 @@ const KanbanBoard: React.FC = () => {
   const getColumnIcon = (id: string) => {
     switch (id) {
       case 'pending':
-        return <Circle className="text-slate-400" size={18} />;
+        return <Circle className="text-muted" size={18} />;
       case 'commitment':
-        return <Target className="text-indigo-500" size={18} />;
+        return <Target className="text-primary" size={18} />;
       case 'working-now':
-        return <PlayCircle className="text-amber-500" size={18} />;
+        return <PlayCircle className="text-warning" size={18} />;
       case 'in-progress':
-        return <Clock className="text-blue-500" size={18} />;
+        return <Clock className="text-primary" size={18} />;
       case 'internal-review':
-        return <Eye className="text-purple-500" size={18} />;
+        return <Eye className="text-primary" size={18} />;
       case 'client-review':
-        return <UserCheck className="text-teal-500" size={18} />;
+        return <UserCheck className="text-success" size={18} />;
       case 'client-feedback':
-        return <MessageSquare className="text-orange-500" size={18} />;
+        return <MessageSquare className="text-warning" size={18} />;
       case 'completed':
-        return <CheckCircle2 className="text-emerald-500" size={18} />;
+        return <CheckCircle2 className="text-success" size={18} />;
       default:
-        return <Circle className="text-slate-400" size={18} />;
+        return <Circle className="text-muted" size={18} />;
     }
   };
 
   return (
     <div className="page-shell h-full flex flex-col">
-      <div className="mb-6 flex justify-between items-center">
+      <div className="ui-page-header">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Tablero Kanban</h1>
-          <p className="text-slate-500 dark:text-slate-400">
-            Gestiona el flujo de trabajo de tu Roadmap.
-          </p>
+          <h1 className="section-title">Tablero Kanban</h1>
+          <p className="section-subtitle">Gestiona el flujo de trabajo de tu Roadmap.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={() => setIsBulkModalOpen(true)} variant="primary">
@@ -219,8 +217,8 @@ const KanbanBoard: React.FC = () => {
                 key={column.id}
                 className="flex-1 flex min-w-[220px] max-h-[calc(100vh-200px)] flex-col rounded-brand-lg border border-border bg-surface-alt h-full"
               >
-                <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 rounded-t-xl group/col">
-                  <div className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-200">
+                <div className="group/col flex items-center justify-between rounded-t-xl border-b border-border bg-surface p-4">
+                  <div className="flex items-center gap-2 font-bold text-foreground">
                     {getColumnIcon(column.id)}
                     {column.title}
                   </div>
@@ -237,7 +235,7 @@ const KanbanBoard: React.FC = () => {
                             deleteKanbanColumn(column.id);
                           }
                         }}
-                        className="opacity-0 group-hover/col:opacity-100 text-slate-400 hover:text-rose-500 transition-opacity"
+                        className="text-muted opacity-0 transition-opacity hover:text-danger group-hover/col:opacity-100"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -251,7 +249,7 @@ const KanbanBoard: React.FC = () => {
                       {...provided.droppableProps}
                       ref={provided.innerRef}
                       className={`flex-1 p-3 overflow-y-auto custom-scrollbar transition-colors flex flex-col ${
-                        snapshot.isDraggingOver ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''
+                        snapshot.isDraggingOver ? 'bg-primary-soft/40' : ''
                       }`}
                     >
                       {tasksByStatus[column.id]?.map((item, index) => (
@@ -261,29 +259,29 @@ const KanbanBoard: React.FC = () => {
                               onClick={() => setSelectedTask(item)}
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className={`bg-white dark:bg-slate-800 p-4 rounded-lg border shadow-sm mb-3 group hover:border-blue-300 dark:hover:border-blue-500 transition-all cursor-pointer ${
+                              className={`group mb-3 rounded-brand-md border bg-surface p-4 shadow-sm transition-all cursor-pointer hover:border-primary/50 ${
                                 snapshot.isDragging
-                                  ? 'shadow-xl ring-2 ring-blue-500 rotate-1'
-                                  : 'border-slate-200 dark:border-slate-700'
+                                  ? 'rotate-1 ring-2 ring-primary shadow-xl'
+                                  : 'border-border'
                               }`}
                             >
                               <div className="flex items-start justify-between gap-2 mb-3">
                                 <Link
                                   to={`/app/module/${item.moduleId}`}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="text-[10px] font-medium text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 uppercase tracking-wider bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors"
+                                  className="flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary transition-colors hover:bg-primary-soft/70"
                                   title={`Ir al Módulo ${item.moduleId}`}
                                 >
                                   Módulo {item.moduleId}
                                   <ExternalLink size={10} />
                                 </Link>
-                                <div className="flex items-center gap-2 text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-2 text-muted/50 opacity-0 transition-opacity group-hover:opacity-100">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedTask(item);
                                     }}
-                                    className="hover:text-blue-500 transition-colors p-1"
+                                    className="p-1 transition-colors hover:text-primary"
                                     title="Editar detalles"
                                   >
                                     <Edit2 size={14} />
@@ -293,7 +291,7 @@ const KanbanBoard: React.FC = () => {
                                   </div>
                                 </div>
                               </div>
-                              <h4 className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-3 leading-snug">
+                              <h4 className="mb-3 text-sm font-medium leading-snug text-foreground">
                                 {item.task.title}
                               </h4>
 
@@ -310,7 +308,7 @@ const KanbanBoard: React.FC = () => {
                                         deleteTask(item.moduleId, item.task.id);
                                       }
                                     }}
-                                    className="text-slate-400 hover:text-rose-500 transition-colors p-1"
+                                    className="p-1 text-muted transition-colors hover:text-danger"
                                     title="Eliminar tarea completada"
                                   >
                                     <Trash2 size={14} />
@@ -319,16 +317,16 @@ const KanbanBoard: React.FC = () => {
                               )}
 
                               {/* Task Details Edit */}
-                              <div className="space-y-2 mb-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                              <div className="mb-3 space-y-2 border-t border-border pt-3">
                                 <div
                                   className="flex items-center gap-2"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <User size={14} className="text-slate-400" />
+                                  <User size={14} className="text-muted" />
                                   <input
                                     type="text"
                                     placeholder="Asignar a..."
-                                    className="flex-1 bg-transparent text-xs text-slate-600 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none border-b border-transparent focus:border-blue-300 transition-colors py-0.5"
+                                    className="flex-1 border-b border-transparent bg-transparent py-0.5 text-xs text-foreground placeholder:text-muted transition-colors focus:border-primary/40 focus:outline-none"
                                     defaultValue={item.task.assignee || ''}
                                     onBlur={(e) =>
                                       updateTaskDetails(item.moduleId, item.task.id, {
@@ -341,11 +339,11 @@ const KanbanBoard: React.FC = () => {
                                   className="flex items-center gap-2"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <Calendar size={14} className="text-slate-400" />
+                                  <Calendar size={14} className="text-muted" />
                                   <input
                                     type="date"
                                     title="Fecha estimada"
-                                    className="flex-1 bg-transparent text-xs text-slate-600 dark:text-slate-300 focus:outline-none border-b border-transparent focus:border-blue-300 transition-colors py-0.5 cursor-pointer"
+                                    className="flex-1 cursor-pointer border-b border-transparent bg-transparent py-0.5 text-xs text-foreground transition-colors focus:border-primary/40 focus:outline-none"
                                     value={item.task.dueDate || ''}
                                     onChange={(e) =>
                                       updateTaskDetails(item.moduleId, item.task.id, {
@@ -358,11 +356,11 @@ const KanbanBoard: React.FC = () => {
                                   className="flex items-center gap-2"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <LinkIcon size={14} className="text-slate-400" />
+                                  <LinkIcon size={14} className="text-muted" />
                                   <input
                                     type="text"
                                     placeholder="Enlace externo..."
-                                    className="flex-1 bg-transparent text-xs text-blue-600 dark:text-blue-400 placeholder:text-slate-400 focus:outline-none border-b border-transparent focus:border-blue-300 transition-colors py-0.5"
+                                    className="flex-1 border-b border-transparent bg-transparent py-0.5 text-xs text-primary placeholder:text-muted transition-colors focus:border-primary/40 focus:outline-none"
                                     defaultValue={item.task.externalLink || ''}
                                     onBlur={(e) =>
                                       updateTaskDetails(item.moduleId, item.task.id, {
@@ -375,10 +373,10 @@ const KanbanBoard: React.FC = () => {
                                   className="flex items-start gap-2"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <FileText size={14} className="text-slate-400 mt-0.5" />
+                                  <FileText size={14} className="mt-0.5 text-muted" />
                                   <textarea
                                     placeholder="Notas adicionales..."
-                                    className="flex-1 bg-transparent text-xs text-slate-600 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none border-b border-transparent focus:border-blue-300 transition-colors py-0.5 resize-none overflow-hidden"
+                                    className="flex-1 resize-none overflow-hidden border-b border-transparent bg-transparent py-0.5 text-xs text-foreground placeholder:text-muted transition-colors focus:border-primary/40 focus:outline-none"
                                     rows={1}
                                     defaultValue={item.task.userNotes || ''}
                                     onBlur={(e) =>
@@ -399,10 +397,10 @@ const KanbanBoard: React.FC = () => {
                                 <span
                                   className={`text-[10px] px-2 py-0.5 rounded-full border ${
                                     item.task.impact === 'High'
-                                      ? 'text-rose-600 bg-rose-50 border-rose-100'
+                                      ? 'border-danger/20 bg-danger-soft text-danger'
                                       : item.task.impact === 'Medium'
-                                        ? 'text-amber-600 bg-amber-50 border-amber-100'
-                                        : 'text-slate-500 bg-slate-50 border-slate-100'
+                                        ? 'border-warning/20 bg-warning-soft text-warning'
+                                        : 'border-border bg-secondary-soft text-muted'
                                   }`}
                                 >
                                   {item.task.impact}
@@ -417,13 +415,13 @@ const KanbanBoard: React.FC = () => {
                       {/* Add Task Button/Input at bottom of column */}
                       <div className="mt-auto pt-2" onClick={(e) => e.stopPropagation()}>
                         {isAddingTask?.columnId === column.id ? (
-                          <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-blue-300 dark:border-blue-500 shadow-sm">
+                          <div className="rounded-brand-md border border-primary/40 bg-surface p-3 shadow-sm">
                             <input
                               type="text"
                               value={newTaskTitle}
                               onChange={(e) => setNewTaskTitle(e.target.value)}
                               placeholder="Título de la tarea..."
-                              className="w-full bg-transparent text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none mb-2"
+                              className="mb-2 w-full bg-transparent text-sm text-foreground placeholder:text-muted focus:outline-none"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleAddTask(column.id);
@@ -433,13 +431,13 @@ const KanbanBoard: React.FC = () => {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => setIsAddingTask(null)}
-                                className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                className="text-xs text-muted hover:text-foreground"
                               >
                                 Cancelar
                               </button>
                               <button
                                 onClick={() => handleAddTask(column.id)}
-                                className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
+                                className="rounded px-2 py-1 text-xs text-on-primary bg-primary hover:bg-primary-hover"
                               >
                                 Añadir
                               </button>
@@ -451,12 +449,9 @@ const KanbanBoard: React.FC = () => {
                               setIsAddingTask({ columnId: column.id });
                               setNewTaskTitle('');
                             }}
-                            className="w-full flex items-center justify-center gap-1 py-2 text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors group"
+                            className="group flex w-full items-center justify-center gap-1 rounded-lg py-2 text-sm text-muted transition-colors hover:bg-primary-soft/40 hover:text-primary"
                           >
-                            <Plus
-                              size={16}
-                              className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400"
-                            />
+                            <Plus size={16} className="text-muted group-hover:text-primary" />
                             Añadir tarjeta
                           </button>
                         )}
