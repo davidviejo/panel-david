@@ -25,6 +25,16 @@ const ProjectLogin = lazy(() => import('./pages/portal/ProjectLogin'));
 const ProjectOverview = lazy(() => import('./pages/portal/ProjectOverview'));
 const OperatorPage = lazy(() => import('./pages/portal/OperatorPage'));
 
+const PublicRoutes: React.FC = () => (
+  <>
+    <Route path="/" element={<LandingPage />} />
+    <Route path="/clientes" element={<ClientsLogin />} />
+    <Route path="/clientes/dashboard" element={<ProjectsList />} />
+    <Route path="/p/:slug" element={<ProjectLogin />} />
+    <Route path="/c/:slug/overview" element={<ProjectOverview />} />
+  </>
+);
+
 export const AppRoutes: React.FC = () => {
   const {
     modules,
@@ -52,84 +62,6 @@ export const AppRoutes: React.FC = () => {
     deleteNote,
   } = useProject();
 
-  const InternalApp = (
-    <Layout
-      modules={modules}
-      globalScore={globalScore}
-      clients={clients}
-      currentClientId={currentClientId}
-      onSwitchClient={switchClient}
-      onAddClient={addClient}
-      onDeleteClient={deleteClient}
-      generalNotes={generalNotes}
-      projectNotes={currentClient?.notes || []}
-      onAddNote={addNote}
-      onUpdateNote={updateNote}
-      onDeleteNote={deleteNote}
-    >
-      <Routes>
-        <Route
-          index
-          element={
-            <Dashboard modules={modules} globalScore={globalScore} onReset={resetCurrentProject} />
-          }
-        />
-        <Route
-          path="module/:id"
-          element={
-            <ModuleDetail
-              modules={modules}
-              onToggleTask={toggleTask}
-              onAddTask={addTask}
-              onDeleteTask={deleteTask}
-              onUpdateTaskNotes={updateTaskNotes}
-              onUpdateTaskImpact={updateTaskImpact}
-              clientVertical={currentClient?.vertical || 'media'}
-              clientName={currentClient?.name || 'Cliente'}
-              onToggleCustomRoadmap={toggleCustomRoadmapTask}
-              onToggleTaskCommunicated={toggleTaskCommunicated}
-            />
-          }
-        />
-        <Route
-          path="client-roadmap"
-          element={
-            <ClientRoadmap
-              modules={modules}
-              customRoadmapOrder={currentClient?.customRoadmapOrder}
-              onReorder={handleReorderRoadmap}
-              onToggleTask={toggleTask}
-              onRemoveFromRoadmap={toggleCustomRoadmapTask}
-              onUpdateTaskNotes={updateTaskNotes}
-              onUpdateTaskImpact={updateTaskImpact}
-              clientVertical={currentClient?.vertical || 'media'}
-              clientName={currentClient?.name || 'Cliente'}
-              onToggleTaskCommunicated={toggleTaskCommunicated}
-            />
-          }
-        />
-        <Route path="kanban" element={<KanbanBoard />} />
-        <Route path="checklist" element={<SeoChecklistPage />} />
-        <Route path="ai-roadmap" element={<AIRoadmap />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path="challenge" element={<SpeedChallenge />} />
-        <Route path="trends-media" element={<TrendsMediaPage />} />
-        <Route path="admin/ideas" element={<AdminIdeasPage />} />
-        <Route
-          path="completed-tasks"
-          element={
-            <CompletedTasks
-              completedTasks={currentClient?.completedTasksLog || []}
-              onAddManualTask={addManualCompletedTask}
-              onDeleteLogEntry={deleteCompletedTaskLog}
-            />
-          }
-        />
-        <Route path="*" element={<Navigate to="/app" replace />} />
-      </Routes>
-    </Layout>
-  );
-
   return (
     <Suspense
       fallback={
@@ -139,13 +71,98 @@ export const AppRoutes: React.FC = () => {
       }
     >
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/clientes" element={<ClientsLogin />} />
-        <Route path="/clientes/dashboard" element={<ProjectsList />} />
-        <Route path="/p/:slug" element={<ProjectLogin />} />
-        <Route path="/c/:slug/overview" element={<ProjectOverview />} />
+        {/* Rutas públicas */}
+        <PublicRoutes />
+
+        {/* Operador */}
         <Route path="/operator" element={<OperatorPage />} />
-        <Route path="/app/*" element={InternalApp} />
+
+        {/* Rutas internas */}
+        <Route
+          path="/app/*"
+          element={
+            <Layout
+              modules={modules}
+              globalScore={globalScore}
+              clients={clients}
+              currentClientId={currentClientId}
+              onSwitchClient={switchClient}
+              onAddClient={addClient}
+              onDeleteClient={deleteClient}
+              generalNotes={generalNotes}
+              projectNotes={currentClient?.notes || []}
+              onAddNote={addNote}
+              onUpdateNote={updateNote}
+              onDeleteNote={deleteNote}
+            >
+              <Routes>
+                <Route
+                  index
+                  element={
+                    <Dashboard
+                      modules={modules}
+                      globalScore={globalScore}
+                      onReset={resetCurrentProject}
+                    />
+                  }
+                />
+                <Route
+                  path="module/:id"
+                  element={
+                    <ModuleDetail
+                      modules={modules}
+                      onToggleTask={toggleTask}
+                      onAddTask={addTask}
+                      onDeleteTask={deleteTask}
+                      onUpdateTaskNotes={updateTaskNotes}
+                      onUpdateTaskImpact={updateTaskImpact}
+                      clientVertical={currentClient?.vertical || 'media'}
+                      clientName={currentClient?.name || 'Cliente'}
+                      onToggleCustomRoadmap={toggleCustomRoadmapTask}
+                      onToggleTaskCommunicated={toggleTaskCommunicated}
+                    />
+                  }
+                />
+                <Route
+                  path="client-roadmap"
+                  element={
+                    <ClientRoadmap
+                      modules={modules}
+                      customRoadmapOrder={currentClient?.customRoadmapOrder}
+                      onReorder={handleReorderRoadmap}
+                      onToggleTask={toggleTask}
+                      onRemoveFromRoadmap={toggleCustomRoadmapTask}
+                      onUpdateTaskNotes={updateTaskNotes}
+                      onUpdateTaskImpact={updateTaskImpact}
+                      clientVertical={currentClient?.vertical || 'media'}
+                      clientName={currentClient?.name || 'Cliente'}
+                      onToggleTaskCommunicated={toggleTaskCommunicated}
+                    />
+                  }
+                />
+                <Route path="kanban" element={<KanbanBoard />} />
+                <Route path="checklist" element={<SeoChecklistPage />} />
+                <Route path="ai-roadmap" element={<AIRoadmap />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="challenge" element={<SpeedChallenge />} />
+                <Route path="trends-media" element={<TrendsMediaPage />} />
+                <Route path="admin/ideas" element={<AdminIdeasPage />} />
+                <Route
+                  path="completed-tasks"
+                  element={
+                    <CompletedTasks
+                      completedTasks={currentClient?.completedTasksLog || []}
+                      onAddManualTask={addManualCompletedTask}
+                      onDeleteLogEntry={deleteCompletedTaskLog}
+                    />
+                  }
+                />
+                <Route path="*" element={<Navigate to="/app" replace />} />
+              </Routes>
+            </Layout>
+          }
+        />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>

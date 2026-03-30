@@ -5,6 +5,10 @@ import { Linkedin, Twitter, Globe, CheckCircle, FolderOpen, RefreshCw } from 'lu
 import { api } from '../../services/api';
 import { Spinner } from '../../components/ui/Spinner';
 import { useProject } from '../../context/ProjectContext';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { PortalShell } from '../../components/shell/ShellVariants';
 
 interface DisplayClient {
   slug: string;
@@ -122,28 +126,32 @@ const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-orange-500 selection:text-white">
-      <nav className="fixed z-50 w-full border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-2">
-            <div className="h-4 w-4 rotate-45 transform bg-orange-500"></div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">agenciaSEO.eu</span>
-          </div>
-
-          <div className="flex items-center space-x-8 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            <a href="#experience" className="transition-colors hover:text-orange-500">
-              Experiencia
-            </a>
-            <a href="#projects" className="transition-colors hover:text-orange-500">
-              Proyectos
-            </a>
+    <PortalShell
+      header={
+        <nav className="w-full border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+          <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center space-x-2">
-              <span className="h-2 w-2 rounded-full bg-green-500"></span>
-              <span className="text-green-500">Disponible</span>
+              <div className="h-4 w-4 rotate-45 transform bg-orange-500"></div>
+              <span className="text-xl font-bold tracking-tight text-slate-900">agenciaSEO.eu</span>
+            </div>
+
+            <div className="flex items-center space-x-8 text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <a href="#experience" className="transition-colors hover:text-orange-500">
+                Experiencia
+              </a>
+              <a href="#projects" className="transition-colors hover:text-orange-500">
+                Proyectos
+              </a>
+              <div className="flex items-center space-x-2">
+                <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                <span className="text-green-500">Disponible</span>
+              </div>
             </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      }
+      contentClassName="w-full text-slate-800 selection:bg-orange-500 selection:text-white"
+    >
 
       <section className="mx-auto flex max-w-7xl flex-col gap-12 px-4 pb-20 pt-40 sm:px-6 lg:flex-row lg:px-8">
         <div className="flex-shrink-0">
@@ -172,24 +180,24 @@ const LandingPage: React.FC = () => {
           </p>
 
           <div className="grid max-w-2xl gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <Card className="px-4 py-3 shadow-sm">
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Proyectos
               </div>
               <div className="mt-1 text-2xl font-bold text-slate-900">{statusSummary.total}</div>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            </Card>
+            <Card className="px-4 py-3 shadow-sm">
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Activos
               </div>
               <div className="mt-1 text-2xl font-bold text-emerald-600">{statusSummary.active}</div>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            </Card>
+            <Card className="px-4 py-3 shadow-sm">
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Locales
               </div>
               <div className="mt-1 text-2xl font-bold text-blue-700">{statusSummary.local}</div>
-            </div>
+            </Card>
           </div>
 
           <div className="flex flex-wrap gap-2 pt-2">
@@ -276,31 +284,33 @@ const LandingPage: React.FC = () => {
               reducir pasos, evitar duplicados y acelerar el acceso al panel.
             </p>
           </div>
-          <button
-            type="button"
+          <Button
             onClick={() => refetch()}
             disabled={isFetching}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-200 hover:text-orange-600 disabled:opacity-60"
+            variant="secondary"
+            className="border-slate-200 text-slate-700 hover:border-orange-200 hover:text-orange-600"
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
             Actualizar listado
-          </button>
+          </Button>
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-slate-500">
-            <Spinner size={26} className="mr-3" /> Cargando proyectos...
-          </div>
+          <EmptyState
+            title="Cargando proyectos..."
+            icon={<Spinner size={26} className="mr-1" />}
+          />
         ) : isError ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-rose-700">
-            No se pudo sincronizar el listado remoto. Puedes seguir entrando a tus proyectos locales
-            y reintentar la sincronización.
-          </div>
+          <EmptyState
+            className="border-rose-200 bg-rose-50 text-rose-700"
+            title="No se pudo sincronizar el listado remoto."
+            description="Puedes seguir entrando a tus proyectos locales y reintentar la sincronización."
+          />
         ) : combinedClients.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center text-slate-500">
-            <FolderOpen className="mx-auto mb-3 h-12 w-12 text-slate-300" />
-            No hay proyectos activos visibles.
-          </div>
+          <EmptyState
+            icon={<FolderOpen className="h-12 w-12 text-slate-300" />}
+            title="No hay proyectos activos visibles."
+          />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {combinedClients.map((client) => (
@@ -308,7 +318,7 @@ const LandingPage: React.FC = () => {
                 key={client.slug}
                 type="button"
                 onClick={() => handleAccess(client)}
-                className="group rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg"
+                className="group rounded-brand-lg border border-border bg-surface p-5 text-left shadow-card transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -361,7 +371,7 @@ const LandingPage: React.FC = () => {
           </p>
         </div>
       </footer>
-    </div>
+    </PortalShell>
   );
 };
 

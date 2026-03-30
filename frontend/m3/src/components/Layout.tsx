@@ -38,6 +38,7 @@ import ClientSwitcher from './ClientSwitcher';
 import NotesPanel from './NotesPanel';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './ui/LanguageSwitcher';
+import { InternalShell } from './shell/ShellVariants';
 
 interface NavItemProps {
   to: string;
@@ -343,10 +344,8 @@ const Layout: React.FC<LayoutProps> = ({
     }
   };
 
-  return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden transition-colors duration-300">
-      {/* Top Navigation Bar */}
-      <header className="fixed top-0 left-0 w-full h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-50 shadow-sm">
+  const header = (
+    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 shadow-sm">
         <div className="flex items-center gap-8">
           {/* Logo */}
           <div className="flex items-center gap-2 font-bold text-xl text-slate-900 dark:text-white">
@@ -420,9 +419,10 @@ const Layout: React.FC<LayoutProps> = ({
           </button>
         </div>
       </header>
+  );
 
-      {/* Sidebar */}
-      <aside
+  const sidebar = (
+    <aside
         className={`
         fixed top-16 bottom-0 left-0 z-40 w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static flex flex-col pt-4
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -527,7 +527,10 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         </div>
       </aside>
+  );
 
+  return (
+    <InternalShell header={header} sidebar={sidebar} contentClassName="flex-1 overflow-auto pt-16 w-full">
       {/* Notes Panel */}
       <NotesPanel
         isOpen={isNotesOpen}
@@ -541,7 +544,7 @@ const Layout: React.FC<LayoutProps> = ({
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-900/50 w-full pt-16 relative">
+      <main className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-900/50 w-full relative">
         <div className="max-w-7xl mx-auto p-4 lg:p-8">{children}</div>
 
         {/* Shortcuts Modal (Simple) */}
@@ -586,7 +589,7 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         )}
       </main>
-    </div>
+    </InternalShell>
   );
 };
 

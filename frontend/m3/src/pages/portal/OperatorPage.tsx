@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { Terminal, Play } from 'lucide-react';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { OperatorShell } from '../../components/shell/ShellVariants';
 
 const OperatorPage: React.FC = () => {
   const [password, setPassword] = useState('');
@@ -41,8 +45,7 @@ const OperatorPage: React.FC = () => {
 
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-900 text-slate-200 p-8 font-mono">
-        <div className="max-w-4xl mx-auto">
+      <OperatorShell contentClassName="mx-auto w-full max-w-4xl px-4 py-8 font-mono">
           <div className="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
             <h1 className="text-2xl font-bold text-green-400 flex items-center">
               <Terminal className="mr-2" /> Operator Console
@@ -62,23 +65,27 @@ const OperatorPage: React.FC = () => {
             <div className="md:col-span-1 space-y-4">
               <h2 className="text-sm font-semibold text-slate-500 uppercase">Available Tools</h2>
               {['audit_crawl', 'gsc_sync', 'keyword_gap', 'backlink_check'].map((tool) => (
-                <button
+                <Button
                   key={tool}
                   onClick={() => runTool(tool)}
-                  className="w-full text-left px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 flex justify-between items-center transition-colors"
+                  variant="secondary"
+                  className="h-auto w-full justify-between border-slate-700 bg-slate-800 px-4 py-3 text-left text-slate-200 hover:bg-slate-700"
                 >
                   <span>{tool}</span>
                   <Play className="w-4 h-4 text-green-500" />
-                </button>
+                </Button>
               ))}
             </div>
             <div className="md:col-span-2">
               <h2 className="text-sm font-semibold text-slate-500 uppercase mb-4">
                 Console Output
               </h2>
-              <div className="bg-black/50 p-4 rounded-lg border border-slate-700 h-96 overflow-y-auto font-mono text-sm">
+              <Card className="h-96 overflow-y-auto border-slate-700 bg-black/50 p-4 text-sm">
                 {output.length === 0 ? (
-                  <span className="text-slate-600">Waiting for commands...</span>
+                  <EmptyState
+                    className="border-slate-700/80 bg-transparent py-16"
+                    title="Waiting for commands..."
+                  />
                 ) : (
                   output.map((line, i) => (
                     <div key={i} className="mb-1 border-b border-white/5 pb-1">
@@ -86,17 +93,16 @@ const OperatorPage: React.FC = () => {
                     </div>
                   ))
                 )}
-              </div>
+              </Card>
             </div>
           </div>
-        </div>
-      </div>
+      </OperatorShell>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
-      <div className="bg-slate-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-700">
+    <OperatorShell contentClassName="flex min-h-screen items-center justify-center px-4">
+      <Card className="w-full max-w-md border-slate-700 bg-slate-800 p-8 shadow-xl">
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 text-green-400">
             <Terminal className="w-6 h-6" />
@@ -125,13 +131,13 @@ const OperatorPage: React.FC = () => {
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-600 hover:bg-green-500 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50"
+            className="h-12 w-full bg-green-600 text-white hover:bg-green-500"
           >
             {loading ? 'Authenticating...' : 'Initialize'}
-          </button>
+          </Button>
         </form>
         <div className="mt-6 text-center">
           <button
@@ -141,8 +147,8 @@ const OperatorPage: React.FC = () => {
             Abort
           </button>
         </div>
-      </div>
-    </div>
+      </Card>
+    </OperatorShell>
   );
 };
 
