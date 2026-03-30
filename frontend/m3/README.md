@@ -96,3 +96,48 @@ MEDIAFLOW_FRONTEND_URL=http://localhost:5173
 - **AI Tools:** Herramientas de generación y análisis potenciadas por Gemini (Client-Side).
 
 ---
+
+## 🎨 Guía visual mínima (Design Layer compartida)
+
+La capa visual base vive en:
+
+- `tailwind.config.js` (tokens consumibles en Tailwind)
+- `src/index.css` (variables CSS de marca)
+- `src/components/ui/*` (componentes semánticos reutilizables)
+
+### Tokens de marca disponibles
+
+- **Colores**: `primary`, `secondary`, `success`, `warning`, `danger`, `surface`, `surface-alt`, `border`, `foreground`, `muted`, `overlay`.
+- **Radios**: `rounded-brand-sm`, `rounded-brand-md`, `rounded-brand-lg`.
+- **Sombras**: `shadow-card`, `shadow-brand`.
+- **Spacing**: `space-18`.
+- **Tipografía**: `font-sans` basada en `--font-sans`.
+
+### Componentes semánticos permitidos
+
+- `Button` → variantes: `primary`, `secondary`, `ghost`, `danger`.
+- `Badge`
+- `Card`
+- `Input`
+- `Select`
+- `Textarea`
+- `Modal`
+
+### Ejemplos rápidos
+
+```tsx
+<Card className="space-y-4">
+  <h2 className="section-title">Título</h2>
+  <Input placeholder="Buscar..." />
+  <div className="flex gap-2">
+    <Button variant="primary">Guardar</Button>
+    <Button variant="secondary">Cancelar</Button>
+    <Badge variant="success">Activo</Badge>
+  </div>
+</Card>
+```
+
+### Regla de revisión (obligatoria)
+
+- Evitar clases de color directas en páginas (por ejemplo `text-slate-*`, `bg-blue-*`, `border-red-*`).
+- Preferir tokens (`text-foreground`, `bg-surface`, `border-border`, etc.) y componentes semánticos de `src/components/ui`.
