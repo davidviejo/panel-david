@@ -19,9 +19,11 @@
   --color-on-primary: 255 255 255;
 
   --color-primary-soft: 219 234 254;
+  --color-secondary-soft: 241 245 249;
   --color-success-soft: 209 250 229;
   --color-warning-soft: 254 243 199;
   --color-danger-soft: 254 226 226;
+  --color-overlay: 15 23 42;
 
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
@@ -40,9 +42,25 @@
   --color-foreground: 241 245 249;
   --color-muted: 148 163 184;
   --color-primary-soft: 30 58 138;
+  --color-secondary-soft: 51 65 85;
   --color-success-soft: 6 78 59;
   --color-warning-soft: 120 53 15;
   --color-danger-soft: 127 29 29;
+  --color-overlay: 2 6 23;
+}
+
+@layer components {
+  .ui-select {
+    @apply w-full rounded-brand-md border border-border bg-surface-alt px-4 py-2 text-sm text-foreground outline-none transition-all focus:ring-4 focus:ring-primary/20;
+  }
+
+  .ui-textarea {
+    @apply w-full rounded-brand-md border border-border bg-surface-alt px-4 py-3 text-sm text-foreground outline-none transition-all placeholder:text-muted focus:ring-4 focus:ring-primary/20;
+  }
+
+  .ui-page-header {
+    @apply mb-6 flex items-center justify-between gap-4;
+  }
 }
 
 @layer utilities {
@@ -56,5 +74,9 @@
 
   .section-subtitle {
     @apply mt-1 text-sm text-muted;
+  }
+
+  .surface-soft {
+    @apply rounded-brand-md bg-surface-alt;
   }
 }

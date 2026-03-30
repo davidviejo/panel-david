@@ -65,7 +65,7 @@ interface HeroMetricProps {
   title: string;
   value: string | number;
   description: string;
-  tone: string;
+  tone: 'primary' | 'success' | 'warning' | 'danger';
 }
 
 export const getVisibleSelectedGscSite = (
@@ -79,8 +79,15 @@ export const getVisibleSelectedGscSite = (
   return filteredGscSites.some((site) => site.siteUrl === selectedSite) ? selectedSite : '';
 };
 
+const heroToneStyles: Record<HeroMetricProps['tone'], string> = {
+  primary: 'bg-primary text-on-primary',
+  success: 'bg-success text-on-primary',
+  warning: 'bg-warning text-on-primary',
+  danger: 'bg-danger text-on-primary',
+};
+
 const HeroMetric: React.FC<HeroMetricProps> = ({ title, value, description, tone }) => (
-  <div className={`rounded-2xl p-5 text-white shadow-lg ${tone}`}>
+  <div className={`rounded-2xl p-5 shadow-brand ${heroToneStyles[tone]}`}>
     <div className="text-xs font-bold uppercase tracking-[0.2em] opacity-80">{title}</div>
     <div className="text-3xl font-bold mt-3">{value}</div>
     <div className="text-xs opacity-80 mt-2 line-clamp-3">{description}</div>
@@ -326,83 +333,73 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
     low: 'Baja',
   };
 
-  const severityStyles = {
-    critical: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-    high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-    medium: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-    low: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  const severityBadgeVariant = {
+    critical: 'danger',
+    high: 'warning',
+    medium: 'primary',
+    low: 'success',
   } as const;
 
-  const priorityStyles = {
-    high: 'bg-red-600 text-white',
-    medium: 'bg-amber-500 text-white',
-    low: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100',
+  const priorityBadgeVariant = {
+    high: 'danger',
+    medium: 'warning',
+    low: 'neutral',
   } as const;
 
   const InsightCard = ({ insight }: { insight: SeoInsight }) => (
     <button
       onClick={() => setSelectedInsight(insight)}
-      className="text-left bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500 transition-all"
+      className="text-left rounded-2xl border border-border bg-surface p-5 shadow-sm transition-all hover:border-primary/50 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted">
               {insight.visualContext.categoryLabel}
             </span>
-            <span
-              className={`text-[10px] px-2 py-1 rounded-full font-bold ${priorityStyles[insight.priority]}`}
+            <Badge
+              variant={priorityBadgeVariant[insight.priority]}
+              className="px-2 py-1 text-[10px] font-bold"
             >
               Prioridad {priorityLabel[insight.priority]}
-            </span>
-            <span
-              className={`text-[10px] px-2 py-1 rounded-full font-bold ${severityStyles[insight.severity]}`}
+            </Badge>
+            <Badge
+              variant={severityBadgeVariant[insight.severity]}
+              className="px-2 py-1 text-[10px] font-bold"
             >
               {insight.severity}
-            </span>
+            </Badge>
           </div>
-          <h3 className="font-bold text-slate-900 dark:text-white text-base">{insight.title}</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-3">
-            {insight.summary}
-          </p>
+          <h3 className="text-base font-bold text-foreground">{insight.title}</h3>
+          <p className="mt-2 line-clamp-3 text-sm text-muted">{insight.summary}</p>
         </div>
         <div className="text-right min-w-[74px]">
-          <div className="text-2xl font-bold text-slate-900 dark:text-white">
-            {insight.affectedCount}
-          </div>
-          <div className="text-xs text-slate-400">elementos</div>
+          <div className="text-2xl font-bold text-foreground">{insight.affectedCount}</div>
+          <div className="text-xs text-muted">elementos</div>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3 mt-4 text-xs">
-        <div className="rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3">
-          <div className="text-slate-400 uppercase tracking-wide">Score</div>
-          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">
-            {insight.score}
-          </div>
+        <div className="surface-soft p-3">
+          <div className="uppercase tracking-wide text-muted">Score</div>
+          <div className="text-lg font-bold text-foreground">{insight.score}</div>
         </div>
-        <div className="rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3">
-          <div className="text-slate-400 uppercase tracking-wide">Oportunidad</div>
-          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">
-            {insight.opportunity}
-          </div>
+        <div className="surface-soft p-3">
+          <div className="uppercase tracking-wide text-muted">Oportunidad</div>
+          <div className="text-lg font-bold text-foreground">{insight.opportunity}</div>
         </div>
-        <div className="rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3">
-          <div className="text-slate-400 uppercase tracking-wide">Confianza</div>
-          <div className="text-lg font-bold text-slate-800 dark:text-slate-100">
-            {insight.confidence}
-          </div>
+        <div className="surface-soft p-3">
+          <div className="uppercase tracking-wide text-muted">Confianza</div>
+          <div className="text-lg font-bold text-foreground">{insight.confidence}</div>
         </div>
       </div>
-      <div className="mt-4 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-        {insight.reason}
-      </div>
+      <div className="mt-4 line-clamp-2 text-xs text-muted">{insight.reason}</div>
     </button>
   );
 
   return (
     <div className="page-shell relative animate-fade-in">
       {selectedInsight && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/60 p-4 backdrop-blur-sm animate-fade-in">
           <ErrorBoundary>
             <InsightDetailModal
               insight={selectedInsight}
@@ -582,7 +579,7 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
         <Button
           onClick={simulateVoiceRecording}
           size="sm"
-          className={`p-3 rounded-lg transition-colors ${isRecording ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'}`}
+          className={`rounded-lg p-3 transition-colors ${isRecording ? 'animate-pulse bg-danger-soft text-danger' : 'bg-secondary-soft text-muted'}`}
         >
           <Mic size={20} />
         </Button>
@@ -600,7 +597,7 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
           title="Insights activos"
           value={actionableInsights.length}
           description="Señales priorizadas por impacto, urgencia, confianza y facilidad de implementación."
-          tone="bg-gradient-to-br from-slate-900 to-slate-700"
+          tone="primary"
         />
         <HeroMetric
           title="Oportunidades top"
@@ -608,19 +605,19 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
           description={
             actionableTopOpportunities[0]?.title || 'Sin oportunidades destacadas en este periodo.'
           }
-          tone="bg-gradient-to-br from-emerald-500 to-teal-600"
+          tone="success"
         />
         <HeroMetric
           title="Riesgos top"
           value={actionableTopRisks.length}
           description={actionableTopRisks[0]?.title || 'No se detectan riesgos de alta prioridad.'}
-          tone="bg-gradient-to-br from-rose-500 to-red-700"
+          tone="danger"
         />
         <HeroMetric
           title="Comparativa"
           value={comparisonPeriod ? GSC_COMPARISON_MODE_LABELS[comparisonPeriod.mode] : 'N/A'}
           description={comparisonSummary}
-          tone="bg-gradient-to-br from-blue-500 to-indigo-600"
+          tone="warning"
         />
       </section>
 

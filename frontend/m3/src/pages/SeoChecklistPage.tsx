@@ -134,12 +134,8 @@ const SeoChecklistPage: React.FC = () => {
         <>
           <Card className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Checklist SEO (URLs)
-              </h1>
-              <p className="text-slate-500 dark:text-slate-400 mt-1">
-                Gestiona y analiza el SEO On-Page de tus URLs.
-              </p>
+              <h1 className="section-title">Checklist SEO (URLs)</h1>
+              <p className="section-subtitle">Gestiona y analiza el SEO On-Page de tus URLs.</p>
             </div>
             <div className="flex items-center gap-3">
               {jobs.length > 0 && (

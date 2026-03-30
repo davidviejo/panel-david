@@ -96,3 +96,46 @@ MEDIAFLOW_FRONTEND_URL=http://localhost:5173
 - **AI Tools:** Herramientas de generación y análisis potenciadas por Gemini (Client-Side).
 
 ---
+
+## 🎨 Capa de diseño compartida (Design System)
+
+La app usa tokens CSS en `src/index.css` y su puente en Tailwind (`tailwind.config.js`) para mantener consistencia visual:
+
+- Colores semánticos: `primary`, `success`, `warning`, `danger`, `surface`, `border`, `muted`.
+- Radios: `rounded-brand-sm|md|lg`.
+- Sombras: `shadow-card`, `shadow-brand`.
+- Tipografía: `font-sans` vía `--font-sans`.
+- Spacing de marca: `--space-18`.
+
+### Componentes UI semánticos (`src/components/ui`)
+
+- `Button` → variantes permitidas: `primary | secondary | ghost | danger`.
+- `Badge` → variantes permitidas: `primary | success | warning | danger | neutral`.
+- `Card` → contenedor base de superficie.
+- `Input` → campo de texto base.
+- `Modal` → diálogo con overlay semántico.
+
+### Utilidades semánticas globales
+
+- `section-title`, `section-subtitle`, `page-shell`.
+- `ui-select`, `ui-textarea`, `ui-page-header`.
+
+### Ejemplos rápidos
+
+```tsx
+<Button variant="primary">Guardar</Button>
+<Button variant="danger">Eliminar</Button>
+<Badge variant="success">Completado</Badge>
+<Card className="space-y-4">
+  <Input placeholder="Buscar..." />
+  <select className="ui-select">...</select>
+</Card>
+```
+
+### Regla de revisión UI
+
+En páginas (`src/pages/**`), evita clases de color directas (por ejemplo `text-blue-600`, `bg-slate-100`, `border-red-300`) y prioriza:
+
+1. Componentes semánticos en `src/components/ui`.
+2. Tokens de marca (`text-primary`, `bg-surface-alt`, `border-border`, etc.).
+3. Utilidades semánticas (`section-title`, `ui-select`, `ui-textarea`).
