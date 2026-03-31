@@ -355,6 +355,7 @@ export const SeoUrlList: React.FC<Props> = ({
     const analysisConfig = buildAnalysisConfig();
 
     onRunBatch(pagesToAnalyze, analysisConfig);
+    setIsConfirmModalOpen(false);
     setSelectedIds(new Set());
     return true;
   };
