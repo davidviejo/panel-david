@@ -717,8 +717,12 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          {gscAccessToken ? (
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 relative overflow-hidden">
+          <ErrorBoundary
+            title="Se interrumpió el panel de Search Console"
+            message="Falló la carga de datos de Search Console. Puedes reintentar sin perder el resto del Dashboard."
+          >
+            {gscAccessToken ? (
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 relative overflow-hidden">
               <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
                 <Search size={200} />
               </div>
@@ -898,65 +902,66 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
                   </div>
                 )}
               </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
-                      <CheckCircle2 size={24} />
-                    </div>
-                  </div>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
-                    Tareas Completadas
-                  </p>
-                  <h3 className="text-3xl font-bold mt-1">
-                    {modules.reduce(
-                      (acc, m) => acc + m.tasks.filter((t) => t.status === 'completed').length,
-                      0,
-                    )}
-                    <span className="text-slate-300 dark:text-slate-600 text-lg ml-2 font-normal">
-                      / {modules.reduce((acc, m) => acc + m.tasks.length, 0)}
-                    </span>
-                  </h3>
-                </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full mt-4">
-                  <div
-                    className="bg-blue-500 h-full rounded-full"
-                    style={{ width: `${globalScore}%` }}
-                  ></div>
-                </div>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+                        <CheckCircle2 size={24} />
+                      </div>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
+                      Tareas Completadas
+                    </p>
+                    <h3 className="text-3xl font-bold mt-1">
+                      {modules.reduce(
+                        (acc, m) => acc + m.tasks.filter((t) => t.status === 'completed').length,
+                        0,
+                      )}
+                      <span className="text-slate-300 dark:text-slate-600 text-lg ml-2 font-normal">
+                        / {modules.reduce((acc, m) => acc + m.tasks.length, 0)}
+                      </span>
+                    </h3>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full mt-4">
+                    <div
+                      className="bg-blue-500 h-full rounded-full"
+                      style={{ width: `${globalScore}%` }}
+                    ></div>
+                  </div>
+                </div>
 
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-2 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
-                      <AlertTriangle size={24} />
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="p-2 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
+                        <AlertTriangle size={24} />
+                      </div>
+                      <span className="bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-400 text-xs font-bold px-2 py-1 rounded-full">
+                        Acción Requerida
+                      </span>
                     </div>
-                    <span className="bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-400 text-xs font-bold px-2 py-1 rounded-full">
-                      Acción Requerida
-                    </span>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
+                      Próxima Prioridad
+                    </p>
+                    <h3 className="text-xl font-bold mt-1 line-clamp-2">
+                      {nextModule ? nextModule.title : 'Todo Limpio'}
+                    </h3>
                   </div>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
-                    Próxima Prioridad
-                  </p>
-                  <h3 className="text-xl font-bold mt-1 line-clamp-2">
-                    {nextModule ? nextModule.title : 'Todo Limpio'}
-                  </h3>
+                  {nextModule && (
+                    <button
+                      onClick={() => navigate(`/app/module/${nextModule.id}`)}
+                      className="mt-4 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1"
+                    >
+                      Ir al Módulo <ArrowRight size={16} />
+                    </button>
+                  )}
                 </div>
-                {nextModule && (
-                  <button
-                    onClick={() => navigate(`/app/module/${nextModule.id}`)}
-                    className="mt-4 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1"
-                  >
-                    Ir al Módulo <ArrowRight size={16} />
-                  </button>
-                )}
               </div>
-            </div>
-          )}
+            )}
+          </ErrorBoundary>
 
           <div className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
             <div className="flex justify-between items-center mb-6">
