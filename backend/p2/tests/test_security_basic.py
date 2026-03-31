@@ -41,7 +41,7 @@ class TestSecurityBasic(unittest.TestCase):
             self.assertEqual(result['error'], "Error de conexión", "Should return generic connection error")
 
     def test_scraper_core_playwright_error_suppression(self):
-        with patch('apps.tools.scraper_core.get_browser') as mock_browser:
+        with patch('apps.tools.scraper_core._run_async_playwright') as mock_browser:
             mock_browser.side_effect = Exception("Browser crash stack trace")
             result = _fetch_with_playwright("http://example.com")
             self.assertEqual(result['error'], "Error de navegación", "Should return generic navigation error")

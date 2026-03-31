@@ -1,12 +1,13 @@
 import time
 import random
 import threading
+import asyncio
 import requests
 import atexit
 import logging
 import base64
 from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 import urllib.parse
 from typing import List, Dict, Optional, Any, Union
 from flask import session, has_request_context
@@ -451,56 +452,34 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
 
 
 # --- BROWSER MANAGEMENT ---
-# NOTE: Playwright objects are not thread-safe. This implementation assumes
-# a process-based worker model (e.g., Gunicorn sync workers) where each
-# worker process has its own isolated Playwright instance.
-_PLAYWRIGHT_CONTEXT = None
-_PLAYWRIGHT = None
-_BROWSER = None
-_BROWSER_LOCK = threading.Lock()
+# NOTE: Use Async Playwright in an isolated thread/loop to avoid
+# "Playwright Sync API inside the asyncio loop" runtime errors.
+_PLAYWRIGHT_LOCK = threading.Lock()
 
 def cleanup_browser() -> None:
-    global _BROWSER, _PLAYWRIGHT, _PLAYWRIGHT_CONTEXT
-    with _BROWSER_LOCK:
-        if _BROWSER:
-            try:
-                _BROWSER.close()
-            except Exception:
-                pass
-            _BROWSER = None
-        if _PLAYWRIGHT:
-            try:
-                _PLAYWRIGHT.stop()
-            except Exception:
-                pass
-            _PLAYWRIGHT = None
-        _PLAYWRIGHT_CONTEXT = None
+    """No-op cleanup kept for backward compatibility with existing callers/tests."""
+    return None
 
 atexit.register(cleanup_browser)
 
-def get_browser() -> Any:
-    global _PLAYWRIGHT_CONTEXT, _PLAYWRIGHT, _BROWSER
-    with _BROWSER_LOCK:
-        if _BROWSER is None:
+def _run_async_playwright(url: str) -> str:
+    async def _runner() -> str:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
             try:
-                _PLAYWRIGHT_CONTEXT = sync_playwright()
-                _PLAYWRIGHT = _PLAYWRIGHT_CONTEXT.start()
-                _BROWSER = _PLAYWRIGHT.chromium.launch(headless=True)
-            except Exception as e:
-                # Si falla, limpiamos manualmente para evitar deadlock llamando a cleanup_browser
-                if _BROWSER:
-                    try:
-                        _BROWSER.close()
-                    except Exception: pass
-                    _BROWSER = None
-                if _PLAYWRIGHT:
-                    try:
-                        _PLAYWRIGHT.stop()
-                    except Exception: pass
-                    _PLAYWRIGHT = None
-                _PLAYWRIGHT_CONTEXT = None
-                raise e
-        return _BROWSER
+                page = await browser.new_page()
+                try:
+                    await page.goto(url, timeout=20000)
+                    return await page.content()
+                finally:
+                    await page.close()
+            finally:
+                await browser.close()
+
+    with _PLAYWRIGHT_LOCK:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(asyncio.run, _runner())
+            return future.result()
 
 # --- SCRAPER HÍBRIDO ---
 def _fetch_with_requests(url: str) -> Dict[str, Any]:
@@ -534,21 +513,8 @@ def _fetch_with_playwright(url: str) -> Dict[str, Any]:
     """
     result: Dict[str, Any] = {'url': url, 'content': None, 'status': 0, 'method': 'Playwright (JS)', 'error': None}
     try:
-        browser = get_browser()
-        try:
-            page = browser.new_page()
-        except Exception:
-            # Si el navegador falló o se cerró, reiniciamos una vez
-            cleanup_browser()
-            browser = get_browser()
-            page = browser.new_page()
-
-        try:
-            page.goto(url, timeout=20000)
-            result['content'] = page.content()
-            result['status'] = 200
-        finally:
-            page.close()
+        result['content'] = _run_async_playwright(url)
+        result['status'] = 200
     except Exception as e:
         logging.error(f"Scraper Playwright Error for {url}: {e}")
         result['error'] = 'Error de navegación'
