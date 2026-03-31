@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { AlertTriangle, DollarSign, Check, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, DollarSign, Check } from 'lucide-react';
 import { SeoChecklistSettings, Capabilities } from '../../types/seoChecklist';
 
 interface Props {
@@ -7,6 +7,7 @@ interface Props {
   onClose: () => void;
   onConfirm: () => void;
   selectedCount: number;
+  analysisMode: 'basic' | 'advanced';
   settings: SeoChecklistSettings;
   capabilities: Capabilities | null;
 }
@@ -22,6 +23,7 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
   onClose,
   onConfirm,
   selectedCount,
+  analysisMode,
   settings,
   capabilities,
 }) => {
@@ -35,7 +37,9 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
   let costPerKeyword = 0;
   let providerAvailable = true;
 
-  if (serp.enabled) {
+  const requiresAdvancedValidation = analysisMode === 'advanced' && serp.enabled;
+
+  if (requiresAdvancedValidation) {
     if (capabilities) {
       if (!capabilities.serpProviders[serp.provider]) {
         providerAvailable = false;
@@ -52,8 +56,11 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
   }
 
   const estimatedCost = estimatedKeywords * costPerKeyword;
-  const isOverBudget = estimatedCost > budgets.maxEstimatedCostPerBatch;
-  const isOverDaily = estimatedCost > budgets.dailyBudget;
+  const isOverBudget = requiresAdvancedValidation && estimatedCost > budgets.maxEstimatedCostPerBatch;
+  const isOverDaily = requiresAdvancedValidation && estimatedCost > budgets.dailyBudget;
+  const canExecuteBasic = analysisMode === 'basic';
+  const isExecuteDisabled =
+    !canExecuteBasic && (!confirmed || isOverBudget || isOverDaily || !providerAvailable);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -71,25 +78,29 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
               <span>URLs seleccionadas:</span>
               <span className="font-medium">{selectedCount}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Keywords estimadas:</span>
-              <span className="font-medium">{estimatedKeywords}</span>
-            </div>
-            <div className="flex justify-between text-base font-semibold pt-2 border-t border-slate-100 dark:border-slate-800">
-              <span>Coste Estimado:</span>
-              <span
-                className={
-                  estimatedCost > budgets.maxEstimatedCostPerBatch
-                    ? 'text-red-500'
-                    : 'text-emerald-500'
-                }
-              >
-                €{estimatedCost.toFixed(3)}
-              </span>
-            </div>
+            {analysisMode === 'advanced' && (
+              <>
+                <div className="flex justify-between">
+                  <span>Keywords estimadas:</span>
+                  <span className="font-medium">{estimatedKeywords}</span>
+                </div>
+                <div className="flex justify-between text-base font-semibold pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <span>Coste Estimado:</span>
+                  <span
+                    className={
+                      estimatedCost > budgets.maxEstimatedCostPerBatch
+                        ? 'text-red-500'
+                        : 'text-emerald-500'
+                    }
+                  >
+                    €{estimatedCost.toFixed(3)}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
-          {!providerAvailable && (
+          {!providerAvailable && analysisMode === 'advanced' && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-xl text-sm flex items-start gap-3">
               <AlertTriangle size={18} className="shrink-0 mt-0.5" />
               <div>
@@ -101,7 +112,7 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
             </div>
           )}
 
-          {providerAvailable && (isOverBudget || isOverDaily) && (
+          {providerAvailable && analysisMode === 'advanced' && (isOverBudget || isOverDaily) && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-xl text-sm flex items-start gap-3">
               <AlertTriangle size={18} className="shrink-0 mt-0.5" />
               <div>
@@ -118,7 +129,7 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
             </div>
           )}
 
-          {providerAvailable && !isOverBudget && !isOverDaily && (
+          {providerAvailable && analysisMode === 'advanced' && !isOverBudget && !isOverDaily && (
             <label className="flex items-start gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl cursor-pointer border border-slate-200 dark:border-slate-700">
               <input
                 type="checkbox"
@@ -132,6 +143,13 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
               </span>
             </label>
           )}
+
+          {analysisMode === 'basic' && (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 rounded-xl text-sm">
+              Modo básico seleccionado: se ejecutará sin validación de proveedor SERP ni confirmación
+              de coste.
+            </div>
+          )}
         </div>
 
         <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl">
@@ -143,7 +161,7 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
           </button>
           <button
             onClick={onConfirm}
-            disabled={!confirmed || isOverBudget || isOverDaily || !providerAvailable}
+            disabled={isExecuteDisabled}
             className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Check size={18} />

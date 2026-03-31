@@ -254,12 +254,13 @@ export const SeoUrlList: React.FC<Props> = ({
   };
 
   // Bulk Actions
-  const executeBatch = async () => {
+  const executeBatch = async (idsOverride?: Set<string>) => {
     setIsConfirmModalOpen(false);
     setIsAnalyzing(true);
     setBatchProgress(null);
 
-    const pagesToAnalyze = pages.filter((p) => selectedIds.has(p.id));
+    const idsToUse = idsOverride ?? selectedIds;
+    const pagesToAnalyze = pages.filter((p) => idsToUse.has(p.id));
 
     // Default concurrency or derived from somewhere? Using 3 as safe default
     const concurrency = 3;
@@ -296,7 +297,7 @@ export const SeoUrlList: React.FC<Props> = ({
         concurrency,
         (progress) => setBatchProgress(progress),
         // Cost estimator for batch processor (optional, heuristic)
-        (page) => {
+        () => {
           if (settings.serp.enabled && analysisMode === 'advanced') {
             let cost = 0;
             if (
@@ -367,7 +368,11 @@ export const SeoUrlList: React.FC<Props> = ({
     if (filteredPages.length === 0) return;
     const allIds = new Set(filteredPages.map((p) => p.id));
     setSelectedIds(allIds);
-    setIsConfirmModalOpen(true);
+    if (analysisMode === 'basic') {
+      executeBatch(allIds);
+    } else {
+      setIsConfirmModalOpen(true);
+    }
   };
 
   const handleBulkCluster = () => {
@@ -438,6 +443,7 @@ export const SeoUrlList: React.FC<Props> = ({
         onClose={() => setIsConfirmModalOpen(false)}
         onConfirm={executeBatch}
         selectedCount={selectedIds.size}
+        analysisMode={analysisMode}
         settings={settings}
         capabilities={capabilities}
       />
