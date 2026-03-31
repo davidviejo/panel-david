@@ -25,7 +25,7 @@ const ProjectLogin = lazy(() => import('./pages/portal/ProjectLogin'));
 const ProjectOverview = lazy(() => import('./pages/portal/ProjectOverview'));
 const OperatorPage = lazy(() => import('./pages/portal/OperatorPage'));
 
-const PublicRoutes: React.FC = () => (
+const publicRoutes = (
   <>
     <Route path="/" element={<LandingPage />} />
     <Route path="/clientes" element={<ClientsLogin />} />
@@ -35,7 +35,7 @@ const PublicRoutes: React.FC = () => (
   </>
 );
 
-const OperatorRoutes: React.FC = () => <Route path="/operator" element={<OperatorPage />} />;
+const operatorRoutes = <Route path="/operator" element={<OperatorPage />} />;
 
 export const AppRoutes: React.FC = () => {
   const {
@@ -74,10 +74,10 @@ export const AppRoutes: React.FC = () => {
     >
       <Routes>
         {/* 1) Rutas públicas */}
-        <PublicRoutes />
+        {publicRoutes}
 
         {/* 2) Operador */}
-        <OperatorRoutes />
+        {operatorRoutes}
 
         {/* 3) Rutas internas */}
         <Route
