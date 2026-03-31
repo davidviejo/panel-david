@@ -131,6 +131,8 @@ const SeoChecklistPage: React.FC = () => {
 
   const handleRunBatch = async (selectedPages: SeoPage[], config: AnalysisConfigPayload) => {
     // Construct payload
+    const shouldAnalyzeCompetitors = config.mode === 'advanced' && config.serp?.confirmed;
+
     const items: AnalysisPayload[] = selectedPages.map((p) => ({
       url: p.url,
       kwPrincipal: p.kwPrincipal,
@@ -143,6 +145,10 @@ const SeoChecklistPage: React.FC = () => {
       // We assume the backend can handle it or we skip it for now.
       // Or if we already have them in autoData, pass them.
       gscQueries: p.checklist.OPORTUNIDADES?.autoData?.gscQueries || [],
+      analyzeCompetitors: shouldAnalyzeCompetitors,
+      competitorUrls: (p.competitors || [])
+        .map((url) => (typeof url === 'string' ? url.trim() : ''))
+        .filter((url) => Boolean(url)),
     }));
 
     try {
