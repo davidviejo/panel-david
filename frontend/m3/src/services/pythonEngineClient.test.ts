@@ -62,6 +62,26 @@ describe('pythonEngineClient', () => {
     });
   });
 
+  it('keeps paused jobs as paused', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        jobId: 'job-paused',
+        status: 'paused',
+        total: 10,
+        processed: 4,
+        success: 4,
+        errors: 0,
+        createdAt: '2026-03-23T10:00:00Z',
+      }),
+    });
+
+    await expect(getBatchJob('job-paused')).resolves.toMatchObject({
+      id: 'job-paused',
+      status: 'paused',
+    });
+  });
+
   it('uses backend action endpoints for batch job controls', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
@@ -124,12 +144,19 @@ describe('pythonEngineClient', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
+          items: [{ item_id: 'item-paused', status: 'paused', url: 'https://example.com/paused' }],
+          total: 3,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
           items: [{ item_id: 'item-running', status: 'running', url: 'https://example.com/running' }],
           total: 2,
         }),
       });
 
-    const response = await getBatchJobItems('job-2', 'queued,running', 1, 50);
+    const response = await getBatchJobItems('job-2', 'queued,paused,running', 1, 50);
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -143,6 +170,16 @@ describe('pythonEngineClient', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
+      expect.stringContaining(
+        endpoints.engine.jobItems(
+          'job-2',
+          new URLSearchParams({ page: '1', pageSize: '50', status: 'paused' }),
+        ),
+      ),
+      expect.objectContaining({ method: 'GET' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
       expect.stringContaining(
         endpoints.engine.jobItems(
           'job-2',
@@ -161,6 +198,13 @@ describe('pythonEngineClient', () => {
           updated_at: undefined,
         },
         {
+          itemId: 'item-paused',
+          status: 'paused',
+          url: 'https://example.com/paused',
+          error: undefined,
+          updated_at: undefined,
+        },
+        {
           itemId: 'item-running',
           status: 'processing',
           url: 'https://example.com/running',
@@ -168,7 +212,7 @@ describe('pythonEngineClient', () => {
           updated_at: undefined,
         },
       ],
-      total: 3,
+      total: 6,
     });
   });
 });

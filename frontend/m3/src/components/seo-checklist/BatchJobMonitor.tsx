@@ -73,7 +73,7 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
         const statusMap = {
           done: 'done',
           errors: 'error',
-          queued: 'queued,running',
+          queued: 'queued,running,paused',
         };
 
         const status = statusMap[activeTab];
@@ -171,6 +171,8 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
                               ? 'bg-emerald-100 border-emerald-200 text-emerald-700'
                               : job.status === 'error'
                                 ? 'bg-red-100 border-red-200 text-red-700'
+                                : job.status === 'paused'
+                                  ? 'bg-amber-100 border-amber-200 text-amber-700'
                                 : job.status === 'cancelled'
                                   ? 'bg-slate-100 border-slate-200 text-slate-700'
                                   : 'bg-blue-100 border-blue-200 text-blue-700'
@@ -237,6 +239,8 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
                   className={`px-1.5 py-0.5 rounded border ${
                     selectedJob?.status === 'done'
                       ? 'bg-emerald-100 border-emerald-200 text-emerald-700'
+                      : selectedJob?.status === 'paused'
+                        ? 'bg-amber-100 border-amber-200 text-amber-700'
                       : selectedJob?.status === 'processing'
                         ? 'bg-blue-100 border-blue-200 text-blue-700'
                         : 'bg-slate-100 border-slate-200 text-slate-600'
@@ -260,7 +264,7 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
                 <Pause size={16} /> Pause
               </button>
             )}
-            {selectedJob?.status === 'pending' || (selectedJob?.status as any) === 'paused' ? (
+            {selectedJob?.status === 'pending' || selectedJob?.status === 'paused' ? (
               <button
                 onClick={() => handleAction('resume')}
                 className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 text-sm font-medium"
@@ -268,7 +272,9 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
                 <Play size={16} /> Resume
               </button>
             ) : null}
-            {(selectedJob?.status === 'processing' || selectedJob?.status === 'pending') && (
+            {(selectedJob?.status === 'processing' ||
+              selectedJob?.status === 'pending' ||
+              selectedJob?.status === 'paused') && (
               <button
                 onClick={() => handleAction('cancel')}
                 className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"
@@ -324,7 +330,7 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
-            Queued / Pending
+            Queued / Pending / Paused
           </button>
         </div>
 
@@ -359,7 +365,9 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
                     {item.status === 'error' && (
                       <AlertCircle size={16} className="text-red-500 shrink-0" />
                     )}
-                    {(item.status === 'pending' || item.status === 'processing') && (
+                    {(item.status === 'pending' ||
+                      item.status === 'processing' ||
+                      item.status === 'paused') && (
                       <Clock size={16} className="text-slate-400 shrink-0" />
                     )}
 

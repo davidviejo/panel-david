@@ -49,7 +49,7 @@ export interface BatchJobResponse {
   message?: string;
 }
 
-export type JobStatus = 'pending' | 'processing' | 'done' | 'cancelled' | 'error';
+export type JobStatus = 'pending' | 'paused' | 'processing' | 'done' | 'cancelled' | 'error';
 
 export interface BatchJobStatus {
   id: string;
@@ -67,7 +67,7 @@ export interface BatchJobStatus {
 
 export interface BatchJobItem {
   itemId: string; // correlates to pageId
-  status: 'pending' | 'processing' | 'done' | 'error';
+  status: 'pending' | 'paused' | 'processing' | 'done' | 'error';
   url: string;
   error?: string;
   updated_at?: string;
@@ -106,9 +106,10 @@ type RawBatchJobItemsResponse = {
 const mapJobStatus = (status?: string): JobStatus => {
   switch (status) {
     case 'queued':
-    case 'paused':
     case 'pending':
       return 'pending';
+    case 'paused':
+      return 'paused';
     case 'running':
     case 'processing':
       return 'processing';
