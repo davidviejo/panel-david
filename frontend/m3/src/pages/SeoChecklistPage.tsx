@@ -4,7 +4,7 @@ import { SeoUrlList } from '../components/seo-checklist/SeoUrlList';
 import { SeoChecklistDetail } from '../components/seo-checklist/SeoChecklistDetail';
 import { ImportUrlsModal } from '../components/seo-checklist/ImportUrlsModal';
 import { BatchJobMonitor } from '../components/seo-checklist/BatchJobMonitor';
-import { Plus, ListChecks, Sparkles, Table } from 'lucide-react';
+import { Plus, ListChecks, Sparkles, Table, KeyRound } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import {
@@ -17,6 +17,7 @@ import {
 import { Capabilities, AnalysisConfigPayload, SeoPage } from '../types/seoChecklist';
 import { processAnalysisResult } from '../utils/seoUtils';
 import { AutoClusterizationPanel } from '../components/seo-checklist/AutoClusterizationPanel';
+import { AutoAssignKeywordsPanel } from '../components/seo-checklist/AutoAssignKeywordsPanel';
 
 const SeoChecklistPage: React.FC = () => {
   const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
@@ -63,7 +64,7 @@ const SeoChecklistPage: React.FC = () => {
   } = useSeoChecklist();
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [activeView, setActiveView] = useState<'official' | 'auto_cluster'>('official');
+  const [activeView, setActiveView] = useState<'official' | 'auto_cluster' | 'auto_kw'>('official');
 
 
   // Batch Job State
@@ -183,6 +184,13 @@ const SeoChecklistPage: React.FC = () => {
                 <Sparkles size={16} />
                 Auto-clusterización
               </Button>
+              <Button
+                variant={activeView === 'auto_kw' ? 'primary' : 'secondary'}
+                onClick={() => setActiveView('auto_kw')}
+              >
+                <KeyRound size={16} />
+                Autoasignar KWs
+              </Button>
             </div>
           </Card>
 
@@ -196,8 +204,10 @@ const SeoChecklistPage: React.FC = () => {
               capabilities={capabilities}
               onRunBatch={handleRunBatch}
             />
-          ) : (
+          ) : activeView === 'auto_cluster' ? (
             <AutoClusterizationPanel pages={pages} onBulkUpdate={bulkUpdatePages} />
+          ) : (
+            <AutoAssignKeywordsPanel pages={pages} onBulkUpdate={bulkUpdatePages} />
           )}
         </>
       ) : (
