@@ -1,4 +1,12 @@
-import { Client, Note, ModuleData, ClientVertical } from '../types';
+import {
+  Client,
+  Note,
+  ModuleData,
+  ClientVertical,
+  IAVisibilityState,
+  IAVisibilityRunResult,
+  createDefaultIAVisibilityState,
+} from '../types';
 import { StrategyFactory } from '../strategies/StrategyFactory';
 import { INITIAL_MODULES } from '../constants';
 
@@ -26,12 +34,101 @@ const normalizeClientVertical = (vertical: unknown): ClientVertical => {
   return CLIENT_VERTICAL_ALIASES[normalized] || 'media';
 };
 
+
+
+const normalizeIAVisibilityHistoryItem = (item: unknown): IAVisibilityRunResult | null => {
+  if (!item || typeof item !== 'object') {
+    return null;
+  }
+
+  const raw = item as Partial<IAVisibilityRunResult> & Record<string, unknown>;
+  const sentimentSummary = raw.sentimentSummary && typeof raw.sentimentSummary === 'object'
+    ? raw.sentimentSummary
+    : {};
+
+  return {
+    id: typeof raw.id === 'string' && raw.id.length > 0 ? raw.id : crypto.randomUUID(),
+    createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
+    prompt: typeof raw.prompt === 'string' ? raw.prompt : '',
+    answer: typeof raw.answer === 'string' ? raw.answer : '',
+    source: typeof raw.source === 'string' ? raw.source : undefined,
+    competitorMentions: Array.isArray(raw.competitorMentions)
+      ? raw.competitorMentions
+          .filter((mention): mention is IAVisibilityRunResult['competitorMentions'][number] =>
+            !!mention && typeof mention === 'object' && typeof mention.competitor === 'string',
+          )
+          .map((mention) => ({
+            competitor: mention.competitor,
+            mentions: typeof mention.mentions === 'number' ? mention.mentions : 0,
+            sentiment:
+              mention.sentiment === 'positive' ||
+              mention.sentiment === 'neutral' ||
+              mention.sentiment === 'negative'
+                ? mention.sentiment
+                : 'neutral',
+          }))
+      : [],
+    sentimentSummary: {
+      positive:
+        typeof (sentimentSummary as Record<string, unknown>).positive === 'number'
+          ? ((sentimentSummary as Record<string, unknown>).positive as number)
+          : 0,
+      neutral:
+        typeof (sentimentSummary as Record<string, unknown>).neutral === 'number'
+          ? ((sentimentSummary as Record<string, unknown>).neutral as number)
+          : 0,
+      negative:
+        typeof (sentimentSummary as Record<string, unknown>).negative === 'number'
+          ? ((sentimentSummary as Record<string, unknown>).negative as number)
+          : 0,
+    },
+  };
+};
+
+const normalizeIAVisibilityState = (iaVisibility: unknown): IAVisibilityState => {
+  const defaults = createDefaultIAVisibilityState();
+
+  if (!iaVisibility || typeof iaVisibility !== 'object') {
+    return defaults;
+  }
+
+  const raw = iaVisibility as Partial<IAVisibilityState> & { config?: Record<string, unknown> };
+  const rawConfig = raw.config || {};
+
+  return {
+    config: {
+      tone: typeof rawConfig.tone === 'string' ? rawConfig.tone : defaults.config.tone,
+      objective:
+        typeof rawConfig.objective === 'string' ? rawConfig.objective : defaults.config.objective,
+      language:
+        typeof rawConfig.language === 'string' ? rawConfig.language : defaults.config.language,
+      location:
+        typeof rawConfig.location === 'string' ? rawConfig.location : defaults.config.location,
+      devices: Array.isArray(rawConfig.devices)
+        ? rawConfig.devices.filter((device): device is string => typeof device === 'string')
+        : defaults.config.devices,
+      competitors: Array.isArray(rawConfig.competitors)
+        ? rawConfig.competitors.filter((competitor): competitor is string => typeof competitor === 'string')
+        : defaults.config.competitors,
+      prompts: Array.isArray(rawConfig.prompts)
+        ? rawConfig.prompts.filter((prompt): prompt is string => typeof prompt === 'string')
+        : defaults.config.prompts,
+    },
+    history: Array.isArray(raw.history)
+      ? raw.history
+          .map((item) => normalizeIAVisibilityHistoryItem(item))
+          .filter((item): item is IAVisibilityRunResult => item !== null)
+      : defaults.history,
+  };
+};
+
 const normalizeClient = (client: Client): Client => ({
   ...client,
   vertical: normalizeClientVertical(client.vertical),
   notes: client.notes || [],
   completedTasksLog: client.completedTasksLog || [],
   customRoadmapOrder: client.customRoadmapOrder || [],
+  iaVisibility: normalizeIAVisibilityState(client.iaVisibility),
 });
 
 export class ClientRepository {
@@ -62,6 +159,7 @@ export class ClientRepository {
           notes: [],
           completedTasksLog: [],
           customRoadmapOrder: [],
+          iaVisibility: createDefaultIAVisibilityState(),
         };
         return this.migrateModules([legacyClient]);
       } catch (e) {
@@ -79,6 +177,7 @@ export class ClientRepository {
         notes: [],
         completedTasksLog: [],
         customRoadmapOrder: [],
+        iaVisibility: createDefaultIAVisibilityState(),
       },
     ];
   }

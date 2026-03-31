@@ -15,6 +15,9 @@ import {
   CompletedTask,
   Task,
   TaskStatus,
+  IAVisibilityPromptConfig,
+  IAVisibilityRunResult,
+  createDefaultIAVisibilityState,
 } from '../types';
 import { ClientRepository } from '../services/clientRepository';
 import { StrategyFactory } from '../strategies/StrategyFactory';
@@ -78,6 +81,12 @@ interface ProjectContextType {
   // AI Roadmap Actions
   updateAIRoadmap: (tasks: Task[]) => void;
   importMultipleAIRoadmapTasks: (tasks: Task[]) => void;
+
+  // IA Visibility Actions
+  updateIAVisibilityConfig: (config: Partial<IAVisibilityPromptConfig>) => void;
+  saveIAVisibilityRunResult: (result: IAVisibilityRunResult) => void;
+  clearIAVisibilityHistory: () => void;
+  filterIAVisibilityHistory: (runIdsToKeep: string[]) => void;
 
   // Data Management
   importData: (newClients: Client[], newNotes: Note[]) => void;
@@ -161,6 +170,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       notes: [],
       completedTasksLog: [],
       customRoadmapOrder: [],
+      iaVisibility: createDefaultIAVisibilityState(),
     };
     setClients((prev) => [...prev, newClient]);
     setCurrentClientId(newClient.id);
@@ -189,6 +199,25 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     (newModules: ModuleData[]) => {
       setClients((prev) =>
         prev.map((c) => (c.id === currentClientId ? { ...c, modules: newModules } : c)),
+      );
+    },
+    [currentClientId],
+  );
+
+  const updateCurrentClientIAVisibility = useCallback(
+    (updater: (state: ReturnType<typeof createDefaultIAVisibilityState>) => ReturnType<typeof createDefaultIAVisibilityState>) => {
+      setClients((prev) =>
+        prev.map((c) => {
+          if (c.id !== currentClientId) {
+            return c;
+          }
+
+          const currentIAVisibility = c.iaVisibility || createDefaultIAVisibilityState();
+          return {
+            ...c,
+            iaVisibility: updater(currentIAVisibility),
+          };
+        }),
       );
     },
     [currentClientId],
@@ -467,6 +496,47 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     [modules, updateCurrentClientModules],
   );
 
+  const updateIAVisibilityConfig = useCallback(
+    (config: Partial<IAVisibilityPromptConfig>) => {
+      updateCurrentClientIAVisibility((state) => ({
+        ...state,
+        config: {
+          ...state.config,
+          ...config,
+        },
+      }));
+    },
+    [updateCurrentClientIAVisibility],
+  );
+
+  const saveIAVisibilityRunResult = useCallback(
+    (result: IAVisibilityRunResult) => {
+      updateCurrentClientIAVisibility((state) => ({
+        ...state,
+        history: [result, ...state.history],
+      }));
+    },
+    [updateCurrentClientIAVisibility],
+  );
+
+  const clearIAVisibilityHistory = useCallback(() => {
+    updateCurrentClientIAVisibility((state) => ({
+      ...state,
+      history: [],
+    }));
+  }, [updateCurrentClientIAVisibility]);
+
+  const filterIAVisibilityHistory = useCallback(
+    (runIdsToKeep: string[]) => {
+      const allowedRunIds = new Set(runIdsToKeep);
+      updateCurrentClientIAVisibility((state) => ({
+        ...state,
+        history: state.history.filter((entry) => allowedRunIds.has(entry.id)),
+      }));
+    },
+    [updateCurrentClientIAVisibility],
+  );
+
   const handleReorderRoadmap = useCallback(
     (newOrder: string[]) => {
       setClients((prev) =>
@@ -691,7 +761,9 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     setClients((prev) => {
       const existingIds = new Set(prev.map((c) => c.id));
-      const uniqueNewClients = newClients.filter((c) => !existingIds.has(c.id));
+      const uniqueNewClients = newClients
+        .map((client) => ({ ...client, iaVisibility: client.iaVisibility || createDefaultIAVisibilityState() }))
+        .filter((c) => !existingIds.has(c.id));
       return [...prev, ...uniqueNewClients];
     });
 
@@ -709,7 +781,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Keep clients that are NOT in backup (preserves locally created clients not present in backup)
         const keptClients = prev.filter((c) => !backupIds.has(c.id));
         // Add all backup clients (overwriting matches)
-        return [...keptClients, ...backupClients];
+        const normalizedBackupClients = backupClients.map((client) => ({
+          ...client,
+          iaVisibility: client.iaVisibility || createDefaultIAVisibilityState(),
+        }));
+        return [...keptClients, ...normalizedBackupClients];
       });
 
       setGeneralNotes((prev) => {
@@ -764,6 +840,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       deleteCompletedTaskLog,
       updateAIRoadmap,
       importMultipleAIRoadmapTasks,
+      updateIAVisibilityConfig,
+      saveIAVisibilityRunResult,
+      clearIAVisibilityHistory,
+      filterIAVisibilityHistory,
       addNote,
       updateNote,
       deleteNote,
@@ -798,6 +878,10 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       deleteCompletedTaskLog,
       updateAIRoadmap,
       importMultipleAIRoadmapTasks,
+      updateIAVisibilityConfig,
+      saveIAVisibilityRunResult,
+      clearIAVisibilityHistory,
+      filterIAVisibilityHistory,
       addNote,
       updateNote,
       deleteNote,
