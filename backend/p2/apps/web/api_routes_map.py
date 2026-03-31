@@ -76,6 +76,7 @@ LEGACY_TOOL_ROUTES = [
     '/trends/start',
     '/usage/stats',
     '/utm/generate',
+    '/visibility/run',
     '/workflow/data',
     '/wpo/analyze',
 ]

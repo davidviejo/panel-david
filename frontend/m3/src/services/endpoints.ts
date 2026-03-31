@@ -22,6 +22,16 @@ export const endpoints = {
   engine: {
     capabilities: () => 'api/capabilities',
     analyze: () => 'api/analyze',
+    visibilityRun: () => 'visibility/run',
+    visibilitySchedule: (clientId: string) =>
+      `api/visibility/schedules/${encodePathParam(clientId)}`,
+    visibilityScheduleAction: (clientId: string, action: 'pause' | 'resume') =>
+      `api/visibility/schedules/${encodePathParam(clientId)}/${encodePathParam(action)}`,
+    visibilityRuns: (clientId: string, query?: URLSearchParams | string) => {
+      const queryString = typeof query === 'string' ? query : query?.toString();
+      const basePath = `api/visibility/runs/${encodePathParam(clientId)}`;
+      return queryString ? `${basePath}?${queryString}` : basePath;
+    },
     jobs: () => 'api/jobs',
     runnerHealth: () => 'api/jobs/runner/health',
     byId: (jobId: string) => `api/jobs/${encodePathParam(jobId)}`,

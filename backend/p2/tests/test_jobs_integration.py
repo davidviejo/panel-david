@@ -167,5 +167,39 @@ class TestJobsIntegration(unittest.TestCase):
                  self.assertFalse(data['advancedAllowed'])
                  self.assertIn('exceeds batch limit', data['advancedBlockedReason'])
 
+    @patch('apps.job_runner.JobRunner.start_worker')
+    def test_visibility_schedule_pause_resume(self, mock_start_worker):
+        payload = {
+            "frequency": "daily",
+            "timezone": "UTC",
+            "runHour": "08:30",
+            "status": "active",
+            "runPayload": {
+                "url": "https://example.com",
+                "kwPrincipal": "seo visibility",
+                "analysisConfig": {"mode": "quick"}
+            }
+        }
+
+        create_res = self.client.put('/api/visibility/schedules/client-1', json=payload)
+        self.assertEqual(create_res.status_code, 200)
+        create_data = create_res.get_json()
+        self.assertEqual(create_data['schedule']['client_id'], 'client-1')
+        self.assertEqual(create_data['schedule']['status'], 'active')
+        self.assertIsNotNone(create_data['schedule']['next_run_at'])
+
+        pause_res = self.client.post('/api/visibility/schedules/client-1/pause')
+        self.assertEqual(pause_res.status_code, 200)
+        self.assertEqual(pause_res.get_json()['status'], 'paused')
+
+        resume_res = self.client.post('/api/visibility/schedules/client-1/resume')
+        self.assertEqual(resume_res.status_code, 200)
+        self.assertEqual(resume_res.get_json()['status'], 'active')
+        self.assertIn('nextRunAt', resume_res.get_json())
+
+        runs_res = self.client.get('/api/visibility/runs/client-1')
+        self.assertEqual(runs_res.status_code, 200)
+        self.assertEqual(runs_res.get_json()['runs'], [])
+
 if __name__ == '__main__':
     unittest.main()

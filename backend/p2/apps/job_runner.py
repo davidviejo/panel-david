@@ -4,17 +4,23 @@ import logging
 import json
 import traceback
 import concurrent.futures
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from typing import Dict, Any, List
 
 from apps.core.database import (
     get_next_queued_job, update_job_status, get_job_items_by_status,
-    update_item_status, update_job_progress, get_job
+    update_item_status, update_job_progress, get_job,
+    get_active_visibility_schedules, create_visibility_run, finish_visibility_run,
+    set_visibility_schedule_runtime
 )
 from apps.web.blueprints.api_engine.seo_checklist_orchestrator import run_orchestrated_checklist
 from apps.core.config import Config
 
 _RUNNER_STARTED = False
 _RUNNER_THREAD = None
+_VISIBILITY_STARTED = False
+_VISIBILITY_THREAD = None
 _RUNNER_LOCK = threading.Lock()
 
 class JobRunner:
@@ -41,6 +47,20 @@ class JobRunner:
             _RUNNER_THREAD = thread
             _RUNNER_STARTED = True
             logging.info("JobRunner started.")
+            JobRunner.start_visibility_worker()
+
+    @staticmethod
+    def start_visibility_worker():
+        global _VISIBILITY_STARTED, _VISIBILITY_THREAD
+        with _RUNNER_LOCK:
+            if _VISIBILITY_STARTED and _VISIBILITY_THREAD and _VISIBILITY_THREAD.is_alive():
+                return
+
+            visibility_thread = threading.Thread(target=JobRunner._visibility_loop, daemon=True)
+            visibility_thread.start()
+            _VISIBILITY_THREAD = visibility_thread
+            _VISIBILITY_STARTED = True
+            logging.info("Visibility scheduler worker started.")
 
     @staticmethod
     def runner_health():
@@ -50,7 +70,104 @@ class JobRunner:
             "started": _RUNNER_STARTED,
             "thread_alive": bool(_RUNNER_THREAD and _RUNNER_THREAD.is_alive()),
             "thread_name": thread_name,
+            "visibility_started": _VISIBILITY_STARTED,
+            "visibility_thread_alive": bool(_VISIBILITY_THREAD and _VISIBILITY_THREAD.is_alive()),
         }
+
+    @staticmethod
+    def _visibility_loop():
+        while True:
+            try:
+                schedules = get_active_visibility_schedules()
+                for schedule in schedules:
+                    JobRunner._run_visibility_schedule_if_due(schedule)
+            except Exception as exc:
+                logging.error(f"Error in visibility scheduler loop: {exc}")
+            time.sleep(max(30, Config.JOBS_POLL_INTERVAL))
+
+    @staticmethod
+    def _run_visibility_schedule_if_due(schedule: Dict[str, Any]):
+        client_id = schedule.get('client_id')
+        if not client_id:
+            return
+
+        now_utc = datetime.now(timezone.utc)
+        next_run_at_raw = schedule.get('next_run_at')
+        parsed_next_run = None
+        if next_run_at_raw:
+            try:
+                parsed_next_run = datetime.fromisoformat(str(next_run_at_raw).replace('Z', '+00:00'))
+                if parsed_next_run.tzinfo is None:
+                    parsed_next_run = parsed_next_run.replace(tzinfo=timezone.utc)
+            except ValueError:
+                parsed_next_run = None
+
+        if parsed_next_run and parsed_next_run > now_utc:
+            return
+
+        run_id = create_visibility_run(client_id, triggered_by='scheduler')
+        payload = schedule.get('run_payload') or {}
+        try:
+            result = run_orchestrated_checklist(
+                url=payload.get('url', ''),
+                kwPrincipal=payload.get('kwPrincipal', ''),
+                pageType=payload.get('pageType', 'Otro'),
+                geoTarget=payload.get('geoTarget', ''),
+                cluster=payload.get('cluster', ''),
+                gscQueries=payload.get('gscQueries', []),
+                analyze_competitors=bool(payload.get('analyzeCompetitors', False)),
+                competitor_urls=payload.get('competitorUrls', []),
+                analysis_config=payload.get('analysisConfig', {}),
+            )
+            finish_visibility_run(run_id, 'completed', result=result)
+            next_run_iso = JobRunner._calculate_next_run(schedule, now_utc).isoformat()
+            set_visibility_schedule_runtime(client_id, now_utc.isoformat(), next_run_iso)
+        except Exception as exc:
+            error_text = str(exc)
+            retryable = JobRunner._is_recoverable_visibility_error(error_text)
+            finish_visibility_run(
+                run_id,
+                'retryable_error' if retryable else 'failed',
+                error_message=error_text,
+                retryable_error=retryable,
+            )
+            logging.warning(
+                "Visibility run failed for client=%s retryable=%s error=%s",
+                client_id,
+                retryable,
+                error_text,
+            )
+
+    @staticmethod
+    def _calculate_next_run(schedule: Dict[str, Any], from_utc: datetime) -> datetime:
+        tz_name = schedule.get('timezone') or 'UTC'
+        run_hour = schedule.get('run_hour') or '09:00'
+        frequency = (schedule.get('frequency') or 'daily').lower()
+        try:
+            tzinfo = ZoneInfo(tz_name)
+        except Exception:
+            tzinfo = timezone.utc
+
+        local_now = from_utc.astimezone(tzinfo)
+        hour, minute = 9, 0
+        try:
+            parts = run_hour.split(':')
+            hour = max(0, min(23, int(parts[0])))
+            minute = max(0, min(59, int(parts[1] if len(parts) > 1 else 0)))
+        except Exception:
+            pass
+
+        candidate = local_now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        step_days = 7 if frequency == 'weekly' else 1
+        if candidate <= local_now:
+            candidate = candidate + timedelta(days=step_days)
+        return candidate.astimezone(timezone.utc)
+
+    @staticmethod
+    def _is_recoverable_visibility_error(error_text: str) -> bool:
+        lowered = (error_text or '').lower()
+        recoverable_tokens = ('rate limit', 'timeout', 'temporarily unavailable', 'unavailable', '503', '429')
+        return any(token in lowered for token in recoverable_tokens)
 
     @staticmethod
     def _worker_loop():
