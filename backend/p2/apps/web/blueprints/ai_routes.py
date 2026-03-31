@@ -11,6 +11,7 @@ from apps.core.database import (
     insert_ai_visibility_run,
 )
 import logging
+from apps.web.portal_bp import require_role
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,35 @@ def _extract_json_content(raw_text):
         return {}
 
 
+
+
+def _is_client_authorized(client_id):
+    payload = getattr(request, 'user_payload', None) or {}
+    role = payload.get('role')
+    if role in ('operator', 'clients_area'):
+        return True
+    if role == 'project':
+        return str(payload.get('scope') or '') == str(client_id)
+    return False
+
+
+def _resolve_provider_api_key(provider_id):
+    provider = str(provider_id or '').strip().lower()
+    settings = get_user_settings('default') or {}
+
+    if provider == 'gemini':
+        return (
+            settings.get('google_key')
+            or session.get('google_key')
+            or os.getenv('GEMINI_API_KEY')
+            or os.getenv('GOOGLE_API_KEY')
+        )
+
+    if provider in ('openai', 'chatgpt'):
+        return settings.get('openai_key') or session.get('openai_key') or os.getenv('OPENAI_API_KEY')
+
+    return None
+
 def _run_visibility_with_priority(prompt, provider_priority):
     from apps.tools.llm_service import _query_google, _query_openai
 
@@ -69,10 +99,10 @@ def _run_visibility_with_priority(prompt, provider_priority):
         provider_id = str(provider).strip().lower()
         try:
             if provider_id == 'gemini':
-                gemini_key = session.get('google_key') or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+                gemini_key = _resolve_provider_api_key('gemini')
                 response_text = _query_google(prompt, model='gemini-2.0-flash', api_key=gemini_key)
             elif provider_id in ('openai', 'chatgpt'):
-                openai_key = session.get('openai_key') or os.getenv("OPENAI_API_KEY")
+                openai_key = _resolve_provider_api_key('openai')
                 response_text = _query_openai(prompt, model='gpt-4o-mini', api_key=openai_key)
             else:
                 continue
@@ -114,7 +144,7 @@ def settings_page():
     # 3. Enmascarar claves para seguridad en frontend
     # Solo mostramos los últimos 4 chars si existe la clave
     masked_settings = user_settings.copy()
-    sensitive_keys = ['openai_key', 'anthropic_key', 'dataforseo_password', 'serpapi_key']
+    sensitive_keys = ['openai_key', 'anthropic_key', 'google_key', 'dataforseo_password', 'serpapi_key']
 
     for k in sensitive_keys:
         val = masked_settings.get(k)
@@ -146,7 +176,7 @@ def update_settings_api():
 
         updates = {}
         valid_fields = [
-            'default_model', 'privacy_mode', 'openai_key', 'anthropic_key',
+            'default_model', 'privacy_mode', 'openai_key', 'anthropic_key', 'google_key',
             'dataforseo_login', 'dataforseo_password', 'serpapi_key',
             'memory_limit', 'system_prompt'
         ]
@@ -178,6 +208,7 @@ def update_settings_api():
         session['ai_high_privacy'] = bool(new_state.get('privacy_mode', 0))
         session['openai_key'] = new_state.get('openai_key')
         session['anthropic_key'] = new_state.get('anthropic_key')
+        session['google_key'] = new_state.get('google_key')
         session['dataforseo_login'] = new_state.get('dataforseo_login')
         session['dataforseo_pass'] = new_state.get('dataforseo_password')
         session['serpapi_key'] = new_state.get('serpapi_key')
@@ -301,8 +332,11 @@ def set_preference():
 
 
 @ai_bp.route('/api/ai/visibility/config/<client_id>', methods=['POST'])
+@require_role(['project', 'clients_area', 'operator'])
 def upsert_visibility_config(client_id):
     payload = request.get_json(silent=True) or {}
+    if not _is_client_authorized(client_id):
+        return jsonify({'error': 'Access denied for this client/project'}), 403
     required = ['clientId', 'brand', 'competitors', 'promptTemplate', 'sources', 'providerPriority']
     missing = [field for field in required if field not in payload]
     if missing:
@@ -327,7 +361,11 @@ def upsert_visibility_config(client_id):
 
 
 @ai_bp.route('/api/ai/visibility/history/<client_id>', methods=['GET'])
+@require_role(['project', 'clients_area', 'operator'])
 def visibility_history(client_id):
+    if not _is_client_authorized(client_id):
+        return jsonify({'error': 'Access denied for this client/project'}), 403
+
     history = get_ai_visibility_history(client_id)
     return jsonify({
         'clientId': str(client_id),
@@ -349,15 +387,22 @@ def visibility_history(client_id):
 
 
 @ai_bp.route('/api/ai/visibility/run', methods=['POST'])
+@require_role(['project', 'clients_area', 'operator'])
 def run_visibility_analysis():
     payload = request.get_json(silent=True) or {}
+    client_id = str(payload.get('clientId') or '')
+    if not client_id:
+        return jsonify({'error': 'clientId es requerido'}), 400
+
+    if not _is_client_authorized(client_id):
+        return jsonify({'error': 'Access denied for this client/project'}), 403
     required = ['clientId', 'brand', 'competitors', 'promptTemplate', 'sources', 'providerPriority']
     missing = [field for field in required if field not in payload]
     if missing:
         return jsonify({'error': f'Faltan campos requeridos: {", ".join(missing)}'}), 400
 
     if not payload.get('promptTemplate'):
-        saved = get_ai_visibility_config(str(payload.get('clientId')))
+        saved = get_ai_visibility_config(client_id)
         if saved:
             payload['promptTemplate'] = saved.get('prompt_template', '')
 
@@ -377,7 +422,7 @@ def run_visibility_analysis():
     }
 
     insert_ai_visibility_run(
-        str(payload.get('clientId')),
+        client_id,
         {
             'requestPayload': payload,
             'mentions': response['mentions'],
@@ -389,7 +434,7 @@ def run_visibility_analysis():
         }
     )
 
-    return jsonify({'clientId': str(payload.get('clientId')), **response, 'providerUsed': provider_used})
+    return jsonify({'clientId': client_id, **response, 'providerUsed': provider_used})
 
 @ai_bp.route('/ai/seo-analysis', methods=['POST'])
 def seo_analysis_endpoint():

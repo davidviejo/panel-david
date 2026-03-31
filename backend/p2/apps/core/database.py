@@ -155,6 +155,7 @@ def init_db() -> None:
             privacy_mode INTEGER DEFAULT 0,
             openai_key TEXT,
             anthropic_key TEXT,
+            google_key TEXT,
             dataforseo_login TEXT,
             dataforseo_password TEXT,
             serpapi_key TEXT,
@@ -239,6 +240,20 @@ def init_db() -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+    # Migration: ensure google_key exists in user_settings for backend-managed Gemini credentials
+    try:
+        c.execute("SELECT google_key FROM user_settings LIMIT 1")
+    except Exception:
+        try:
+            if USE_POSTGRES:
+                conn.rollback()
+            c.execute("ALTER TABLE user_settings ADD COLUMN google_key TEXT")
+            conn.commit()
+        except Exception as e:
+            logging.error(f"Error adding google_key column: {e}")
+            if USE_POSTGRES:
+                conn.rollback()
 
     # Check if item_metadata column exists (for migration of existing table)
     # This logic is slightly more complex with Postgres, keeping it simple for now
@@ -364,7 +379,7 @@ def upsert_user_settings(user_id: str, data: Dict[str, Any]) -> None:
 
         # Filter only valid columns to avoid SQL injection or errors
         valid_columns = [
-            'default_model', 'privacy_mode', 'openai_key', 'anthropic_key',
+            'default_model', 'privacy_mode', 'openai_key', 'anthropic_key', 'google_key',
             'dataforseo_login', 'dataforseo_password', 'serpapi_key',
             'memory_limit', 'system_prompt'
         ]

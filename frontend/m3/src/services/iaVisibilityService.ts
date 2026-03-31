@@ -13,6 +13,7 @@ export interface IAVisibilityRequest {
 }
 
 export interface IAVisibilityResponse {
+  id?: string | number;
   clientId: string;
   mentions: number;
   shareOfVoice: number;
@@ -20,6 +21,7 @@ export interface IAVisibilityResponse {
   competitorAppearances: Record<string, number>;
   rawEvidence: Array<Record<string, unknown>>;
   providerUsed?: string;
+  createdAt?: string;
 }
 
 export interface IAVisibilityConfigResponse {
