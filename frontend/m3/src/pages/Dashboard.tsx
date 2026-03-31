@@ -698,11 +698,9 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
             >
               <div className="flex items-center justify-between gap-3 mb-2">
                 <h4 className="font-bold text-slate-900 dark:text-white">{group.label}</h4>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full font-bold ${priorityStyles[group.topPriority]}`}
-                >
+                <Badge variant={priorityVariant[group.topPriority]} className="text-xs font-bold">
                   Prioridad {priorityLabel[group.topPriority]}
-                </span>
+                </Badge>
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400">{group.description}</p>
               <div className="mt-4 space-y-3">
