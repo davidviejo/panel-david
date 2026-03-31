@@ -1,5 +1,41 @@
-export type ChecklistStatus = 'SI' | 'NO' | 'PARCIAL' | 'NA';
+export type ChecklistStatus = 'SI' | 'SI_IA' | 'NO' | 'PARCIAL' | 'ERROR_CLARO_IA' | 'NA';
 export type ChecklistPointType = 'MANUAL' | 'AUTO' | 'MIXED';
+
+export const CHECKLIST_STATUS_OPTIONS: ChecklistStatus[] = [
+  'SI',
+  'SI_IA',
+  'NO',
+  'PARCIAL',
+  'ERROR_CLARO_IA',
+  'NA',
+];
+
+export const CHECKLIST_STATUS_LABELS: Record<ChecklistStatus, string> = {
+  SI: 'Si',
+  SI_IA: 'Si (IA)',
+  NO: 'No',
+  PARCIAL: 'Parcial',
+  ERROR_CLARO_IA: 'Error claro (IA)',
+  NA: 'N/A',
+};
+
+const LEGACY_CHECKLIST_STATUS_ALIASES: Record<string, ChecklistStatus> = {
+  SI: 'SI',
+  'SI (IA)': 'SI_IA',
+  SI_IA: 'SI_IA',
+  NO: 'NO',
+  PARCIAL: 'PARCIAL',
+  'ERROR CLARO (IA)': 'ERROR_CLARO_IA',
+  'ERROR_CLARO (IA)': 'ERROR_CLARO_IA',
+  ERROR_CLARO_IA: 'ERROR_CLARO_IA',
+  NA: 'NA',
+  'N/A': 'NA',
+};
+
+export const normalizeChecklistStatus = (value?: string): ChecklistStatus => {
+  if (!value) return 'NA';
+  return LEGACY_CHECKLIST_STATUS_ALIASES[value.toUpperCase()] || 'NA';
+};
 
 export interface ChecklistItem {
   key: ChecklistKey;

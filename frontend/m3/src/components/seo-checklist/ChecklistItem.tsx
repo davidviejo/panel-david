@@ -3,6 +3,8 @@ import {
   ChecklistItem as IChecklistItem,
   ChecklistStatus,
   CHECKLIST_POINTS,
+  CHECKLIST_STATUS_LABELS,
+  CHECKLIST_STATUS_OPTIONS,
 } from '../../types/seoChecklist';
 import {
   ChevronRight,
@@ -33,12 +35,13 @@ interface Props {
 
 const STATUS_COLORS: Record<ChecklistStatus, string> = {
   SI: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800',
+  SI_IA: 'text-cyan-700 bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800',
   NO: 'text-red-600 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
   PARCIAL: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800',
+  ERROR_CLARO_IA:
+    'text-fuchsia-700 bg-fuchsia-50 dark:bg-fuchsia-900/20 border-fuchsia-200 dark:border-fuchsia-800',
   NA: 'text-slate-400 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700',
 };
-
-const STATUS_OPTIONS: ChecklistStatus[] = ['SI', 'NO', 'PARCIAL', 'NA'];
 
 // Helper for JSON viewer
 const JsonViewer = ({ data, title }: { data: any; title?: string }) => {
@@ -692,9 +695,9 @@ export const ChecklistItem: React.FC<Props> = ({ item, onChange }) => {
               STATUS_COLORS[item.status_manual]
             }`}
           >
-            {STATUS_OPTIONS.map((opt) => (
+            {CHECKLIST_STATUS_OPTIONS.map((opt) => (
               <option key={opt} value={opt}>
-                {opt}
+                {CHECKLIST_STATUS_LABELS[opt]}
               </option>
             ))}
           </select>

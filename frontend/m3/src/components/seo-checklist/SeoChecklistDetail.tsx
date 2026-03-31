@@ -128,11 +128,14 @@ export const SeoChecklistDetail: React.FC<Props> = ({
     }
   };
 
-  const calculateProgress = () => {
+  const calculateStatusMetrics = () => {
     const items = Object.values(page.checklist) as IChecklistItem[];
     const siCount = items.filter((i) => i.status_manual === 'SI').length;
-    return Math.round((siCount / items.length) * 100);
+    const siIaCount = items.filter((i) => i.status_manual === 'SI_IA').length;
+    const progress = Math.round((siCount / items.length) * 100);
+    return { progress, siIaCount };
   };
+  const statusMetrics = calculateStatusMetrics();
 
   return (
     <div className="space-y-6">
@@ -274,7 +277,9 @@ export const SeoChecklistDetail: React.FC<Props> = ({
               </h1>
               <div className="flex items-center gap-3 text-sm text-slate-500 mt-1 flex-wrap">
                 <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-xs font-bold">
-                  {page.isBrandKeyword ? 'KW de marca' : page.kwPrincipal || 'Sin keyword principal'}
+                  {page.isBrandKeyword
+                    ? 'KW de marca'
+                    : page.kwPrincipal || 'Sin keyword principal'}
                 </span>
                 <span>{page.pageType}</span>
                 {page.cluster && <span>• {page.cluster}</span>}
@@ -299,7 +304,10 @@ export const SeoChecklistDetail: React.FC<Props> = ({
               Progreso
             </div>
             <div className="font-mono font-bold text-lg text-slate-700 dark:text-slate-200">
-              {calculateProgress()}%
+              {statusMetrics.progress}%
+            </div>
+            <div className="text-[11px] text-cyan-600 dark:text-cyan-400 font-semibold">
+              SI (IA): {statusMetrics.siIaCount}
             </div>
           </div>
 
