@@ -211,6 +211,35 @@ def init_db() -> None:
         )
     ''')
 
+    # AI Visibility Config Table
+    c.execute(f'''
+        CREATE TABLE IF NOT EXISTS ai_visibility_configs (
+            client_id {text_pk},
+            brand TEXT NOT NULL,
+            competitors TEXT,
+            prompt_template TEXT,
+            sources TEXT,
+            provider_priority TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # AI Visibility Runs Table
+    c.execute(f'''
+        CREATE TABLE IF NOT EXISTS ai_visibility_runs (
+            id {auto_inc_type},
+            client_id TEXT NOT NULL,
+            request_payload TEXT,
+            mentions REAL DEFAULT 0,
+            share_of_voice REAL DEFAULT 0,
+            sentiment REAL DEFAULT 0,
+            competitor_appearances TEXT,
+            raw_evidence TEXT,
+            provider_used TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
     # Check if item_metadata column exists (for migration of existing table)
     # This logic is slightly more complex with Postgres, keeping it simple for now
     try:
@@ -375,6 +404,161 @@ def upsert_user_settings(user_id: str, data: Dict[str, Any]) -> None:
         raise e
     finally:
         conn.close()
+
+
+def upsert_ai_visibility_config(client_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    """Create or update recurrent AI visibility config for one client."""
+    conn = get_db_connection()
+    c = conn.cursor()
+    now_utc = datetime.datetime.utcnow().isoformat()
+
+    payload = {
+        'client_id': str(client_id),
+        'brand': str(data.get('brand') or ''),
+        'competitors': json.dumps(data.get('competitors') or []),
+        'prompt_template': str(data.get('promptTemplate') or ''),
+        'sources': json.dumps(data.get('sources') or []),
+        'provider_priority': json.dumps(data.get('providerPriority') or ['gemini', 'openai']),
+        'updated_at': now_utc,
+    }
+
+    try:
+        c.execute("SELECT 1 FROM ai_visibility_configs WHERE client_id = ?", (payload['client_id'],))
+        exists = c.fetchone()
+
+        if exists:
+            c.execute(
+                '''
+                UPDATE ai_visibility_configs
+                SET brand=?, competitors=?, prompt_template=?, sources=?, provider_priority=?, updated_at=?
+                WHERE client_id=?
+                ''',
+                (
+                    payload['brand'],
+                    payload['competitors'],
+                    payload['prompt_template'],
+                    payload['sources'],
+                    payload['provider_priority'],
+                    payload['updated_at'],
+                    payload['client_id'],
+                )
+            )
+        else:
+            c.execute(
+                '''
+                INSERT INTO ai_visibility_configs (
+                    client_id, brand, competitors, prompt_template, sources, provider_priority, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    payload['client_id'],
+                    payload['brand'],
+                    payload['competitors'],
+                    payload['prompt_template'],
+                    payload['sources'],
+                    payload['provider_priority'],
+                    payload['updated_at'],
+                )
+            )
+
+        conn.commit()
+        return get_ai_visibility_config(payload['client_id'])
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
+
+def get_ai_visibility_config(client_id: str) -> Dict[str, Any]:
+    """Get recurrent AI visibility config by client_id."""
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM ai_visibility_configs WHERE client_id = ?", (str(client_id),))
+        row = c.fetchone()
+        if not row:
+            return {}
+
+        config = dict(row)
+        for key in ('competitors', 'sources', 'provider_priority'):
+            raw = config.get(key)
+            if isinstance(raw, str):
+                try:
+                    config[key] = json.loads(raw)
+                except Exception:
+                    config[key] = []
+        return config
+    finally:
+        conn.close()
+
+
+def insert_ai_visibility_run(client_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    """Persist one AI visibility execution result."""
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    try:
+        c.execute(
+            '''
+            INSERT INTO ai_visibility_runs (
+                client_id, request_payload, mentions, share_of_voice, sentiment,
+                competitor_appearances, raw_evidence, provider_used
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''',
+            (
+                str(client_id),
+                json.dumps(data.get('requestPayload') or {}),
+                float(data.get('mentions') or 0),
+                float(data.get('shareOfVoice') or 0),
+                float(data.get('sentiment') or 0),
+                json.dumps(data.get('competitorAppearances') or {}),
+                json.dumps(data.get('rawEvidence') or []),
+                str(data.get('providerUsed') or ''),
+            )
+        )
+        run_id = c.lastrowid
+        conn.commit()
+        c.execute("SELECT * FROM ai_visibility_runs WHERE id = ?", (run_id,))
+        row = c.fetchone()
+        return _normalize_ai_visibility_row(dict(row)) if row else {}
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
+
+def get_ai_visibility_history(client_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    """Fetch latest AI visibility runs for one client."""
+    safe_limit = max(1, min(int(limit), 100))
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute(
+            '''
+            SELECT * FROM ai_visibility_runs
+            WHERE client_id = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT ?
+            ''',
+            (str(client_id), safe_limit)
+        )
+        rows = c.fetchall()
+        return [_normalize_ai_visibility_row(dict(row)) for row in rows]
+    finally:
+        conn.close()
+
+
+def _normalize_ai_visibility_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    for key in ('request_payload', 'competitor_appearances', 'raw_evidence'):
+        raw = row.get(key)
+        if isinstance(raw, str):
+            try:
+                row[key] = json.loads(raw)
+            except Exception:
+                row[key] = {} if key != 'raw_evidence' else []
+    return row
 
 
 def get_all_projects() -> List[Dict[str, Any]]:
