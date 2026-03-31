@@ -145,6 +145,7 @@ export const SeoChecklistDetail: React.FC<Props> = ({
         onUpdateChecklistItem(page.id, item.key, {
           status_manual: item.status,
           notes_manual: item.notes,
+          evaluationMeta: item.evaluationMeta,
         });
       });
       setAiSummary(summary);

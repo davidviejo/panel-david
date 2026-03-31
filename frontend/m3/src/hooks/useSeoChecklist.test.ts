@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { enforceUniquePrimaryKeywords } from './useSeoChecklist';
+import { enforceUniquePrimaryKeywords, mergeChecklistItemWithBusinessRules } from './useSeoChecklist';
 import {
   SeoPage,
   CHECKLIST_POINTS,
@@ -143,5 +143,55 @@ describe('enforceUniquePrimaryKeywords', () => {
     expect(result.find((page) => page.id === 'page-brand')?.kwPrincipal).toBe('');
     expect(result.find((page) => page.id === 'page-brand')?.isBrandKeyword).toBe(true);
     expect(result.find((page) => page.id === 'page-non-brand')?.kwPrincipal).toBe('kw compartida');
+  });
+
+  it('never overwrites manual SI when an AI status update arrives and keeps evaluation metadata', () => {
+    const currentItem: ChecklistItem = {
+      key: 'CONTENIDOS',
+      label: '4. Contenidos',
+      status_manual: 'SI',
+      notes_manual: 'Confirmado manualmente',
+    };
+
+    const updated = mergeChecklistItemWithBusinessRules(currentItem, {
+      status_manual: 'SI_IA',
+      notes_manual: 'IA detectó cobertura',
+      evaluationMeta: {
+        evaluatedBy: 'ai',
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        evaluatedAt: 1760000000000,
+        reason: 'Cobertura completa del tema principal',
+      },
+    });
+
+    expect(updated.status_manual).toBe('SI');
+    expect(updated.notes_manual).toBe('Confirmado manualmente');
+    expect(updated.evaluationMeta?.reason).toBe('Cobertura completa del tema principal');
+  });
+
+  it('persists AI metadata together with status when item is not manual SI', () => {
+    const currentItem: ChecklistItem = {
+      key: 'SNIPPETS',
+      label: '5. Snippets',
+      status_manual: 'NO',
+      notes_manual: '',
+    };
+
+    const updated = mergeChecklistItemWithBusinessRules(currentItem, {
+      status_manual: 'SI_IA',
+      notes_manual: 'Snippet optimizado',
+      evaluationMeta: {
+        evaluatedBy: 'ai',
+        provider: 'gemini',
+        model: 'gemini-1.5-pro',
+        evaluatedAt: 1760000001000,
+        reason: 'Cumple buenas prácticas de snippet',
+      },
+    });
+
+    expect(updated.status_manual).toBe('SI_IA');
+    expect(updated.notes_manual).toBe('Snippet optimizado');
+    expect(updated.evaluationMeta?.provider).toBe('gemini');
   });
 });

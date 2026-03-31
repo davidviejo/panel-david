@@ -133,4 +133,26 @@ describe('ChecklistItem', () => {
 
     expect(onChange).toHaveBeenCalledWith({ status_manual: 'SI_IA' });
   });
+
+  it('shows AI decision reason and timestamp when evaluation metadata is present', () => {
+    const item: IChecklistItem = {
+      key: 'SNIPPETS',
+      label: '5. Snippets',
+      status_manual: 'SI_IA',
+      notes_manual: '',
+      evaluationMeta: {
+        evaluatedBy: 'ai',
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        evaluatedAt: new Date('2026-01-10T14:30:00Z').getTime(),
+        reason: 'Title y description cumplen longitud y relevancia.',
+      },
+    };
+
+    render(<ChecklistItem item={item} onChange={vi.fn()} />);
+    fireEvent.click(screen.getByText('5. Snippets'));
+
+    expect(screen.getByText('Última decisión IA')).toBeDefined();
+    expect(screen.getByText('Title y description cumplen longitud y relevancia.')).toBeDefined();
+  });
 });

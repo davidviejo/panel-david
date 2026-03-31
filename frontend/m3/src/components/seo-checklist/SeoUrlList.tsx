@@ -434,6 +434,7 @@ export const SeoUrlList: React.FC<Props> = ({
               ...pageChecklist[item.key],
               status_manual: item.status,
               notes_manual: item.notes,
+              evaluationMeta: item.evaluationMeta,
             };
           });
           onBulkUpdate([{ id: page.id, changes: { checklist: pageChecklist, lastAnalyzedAt: Date.now() } }]);

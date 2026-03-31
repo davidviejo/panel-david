@@ -4,6 +4,7 @@ import {
   SeoPage,
   ChecklistKey,
   ChecklistItem,
+  ChecklistStatus,
   CHECKLIST_POINTS,
   normalizeChecklistStatus,
 } from '../types/seoChecklist';
@@ -88,6 +89,44 @@ const normalizeSeoPage = (page: SeoPage): SeoPage => ({
 });
 
 const normalizeSeoPages = (pages: SeoPage[]) => pages.map(normalizeSeoPage);
+
+const AI_DRIVEN_STATUSES = new Set<ChecklistStatus>(['SI_IA', 'ERROR_CLARO_IA']);
+
+const isProtectedManualSiOverwrite = (
+  currentStatus: ChecklistItem['status_manual'],
+  nextStatus?: ChecklistItem['status_manual'],
+) => currentStatus === 'SI' && Boolean(nextStatus) && AI_DRIVEN_STATUSES.has(nextStatus!);
+
+export const mergeChecklistItemWithBusinessRules = (
+  currentItem: ChecklistItem,
+  incomingUpdates: Partial<ChecklistItem>,
+): ChecklistItem => {
+  if (!isProtectedManualSiOverwrite(currentItem.status_manual, incomingUpdates.status_manual)) {
+    return { ...currentItem, ...incomingUpdates };
+  }
+
+  const { status_manual: _statusManual, notes_manual: _notesManual, ...rest } = incomingUpdates;
+  return { ...currentItem, ...rest };
+};
+
+const mergeChecklistWithBusinessRules = (
+  currentChecklist: Record<ChecklistKey, ChecklistItem>,
+  incomingChecklist?: Partial<Record<ChecklistKey, ChecklistItem>>,
+) => {
+  if (!incomingChecklist) return currentChecklist;
+
+  return CHECKLIST_POINTS.reduce(
+    (acc, point) => {
+      const currentItem = currentChecklist[point.key] || buildFallbackChecklistItem(point.key);
+      const incomingItem = incomingChecklist[point.key];
+      acc[point.key] = incomingItem
+        ? mergeChecklistItemWithBusinessRules(currentItem, incomingItem)
+        : currentItem;
+      return acc;
+    },
+    {} as Record<ChecklistKey, ChecklistItem>,
+  );
+};
 
 export const enforceUniquePrimaryKeywords = (pages: SeoPage[], brandTerms: string[] = []) => {
   const winners = new Map<string, string>();
@@ -212,7 +251,11 @@ export const useSeoChecklist = () => {
           normalizeSeoPages(
             prev.map((p) => {
               const update = updates.find((u) => u.id === p.id);
-              return update ? { ...p, ...update.changes } : p;
+              if (!update) return p;
+              const mergedChecklist = update.changes.checklist
+                ? mergeChecklistWithBusinessRules(p.checklist, update.changes.checklist)
+                : p.checklist;
+              return { ...p, ...update.changes, checklist: mergedChecklist };
             }),
           ),
           activeBrandTerms,
@@ -234,7 +277,10 @@ export const useSeoChecklist = () => {
             ...p,
             checklist: {
               ...p.checklist,
-              [key]: { ...(currentItem || buildFallbackChecklistItem(key)), ...updates },
+              [key]: mergeChecklistItemWithBusinessRules(
+                currentItem || buildFallbackChecklistItem(key),
+                updates,
+              ),
             },
           };
         });

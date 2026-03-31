@@ -1,12 +1,22 @@
-import { ChecklistKey, ChecklistStatus, SeoPage } from '../types/seoChecklist';
+import { ChecklistItem, ChecklistKey, ChecklistStatus, SeoPage } from '../types/seoChecklist';
 import { SettingsRepository } from './settingsRepository';
 import { buildPendingChecks } from '../utils/seoChecklistAiValidation';
 import { runChecklistHeuristics } from '../utils/checklistAiHeuristics';
 import { analyzeChecklistWithAI, ChecklistAiDecision, ChecklistAiEvaluateResponse } from './checklistAiClient';
 
 export interface SeoChecklistAiSummary {
-  updatedChecks: Array<{ key: ChecklistKey; status: ChecklistStatus; notes: string }>;
-  heuristicResolvedChecks: Array<{ key: ChecklistKey; status: ChecklistStatus; notes: string }>;
+  updatedChecks: Array<{
+    key: ChecklistKey;
+    status: ChecklistStatus;
+    notes: string;
+    evaluationMeta: NonNullable<ChecklistItem['evaluationMeta']>;
+  }>;
+  heuristicResolvedChecks: Array<{
+    key: ChecklistKey;
+    status: ChecklistStatus;
+    notes: string;
+    evaluationMeta: NonNullable<ChecklistItem['evaluationMeta']>;
+  }>;
   pendingForAiChecks: ChecklistKey[];
   detectedErrors: string[];
   skippedSiChecks: ChecklistKey[];
@@ -46,12 +56,20 @@ export const validateChecklistWithAI = async (page: SeoPage): Promise<SeoCheckli
     throw new Error('No hay API key de IA configurada (OpenAI, Gemini o Mistral).');
   }
 
+  const evaluatedAt = Date.now();
   const { pending, skippedSi } = buildPendingChecks(page);
   const heuristicRun = runChecklistHeuristics(page, pending);
   const heuristicResolvedChecks = heuristicRun.resolvedByHeuristics.map(({ key, status, notes }) => ({
     key,
     status,
     notes,
+    evaluationMeta: {
+      evaluatedBy: 'heuristic',
+      provider: provider.provider,
+      model: provider.model,
+      evaluatedAt,
+      reason: notes,
+    },
   }));
 
   if (heuristicRun.pendingForAI.length === 0) {
@@ -103,7 +121,18 @@ export const validateChecklistWithAI = async (page: SeoPage): Promise<SeoCheckli
       error: (item.error || '').trim(),
     }))
     .filter((item) => item.status && item.notes.length > 0)
-    .map(({ key, status, notes }) => ({ key, status: status as ChecklistStatus, notes }));
+    .map(({ key, status, notes }) => ({
+      key,
+      status: status as ChecklistStatus,
+      notes,
+      evaluationMeta: {
+        evaluatedBy: 'ai',
+        provider: provider.provider,
+        model: provider.model,
+        evaluatedAt,
+        reason: notes,
+      },
+    }));
 
   const detectedErrors = [
     ...(parsed.globalErrors || []),

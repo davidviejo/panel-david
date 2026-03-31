@@ -42,6 +42,13 @@ export interface ChecklistItem {
   label: string;
   status_manual: ChecklistStatus;
   notes_manual: string;
+  evaluationMeta?: {
+    evaluatedBy: string;
+    provider?: string;
+    model?: string;
+    evaluatedAt: number;
+    reason: string;
+  };
   autoData?: any; // JSON Object
   recommendation?: string;
   suggested_status?: ChecklistStatus;

@@ -129,6 +129,11 @@ export const ChecklistItem: React.FC<Props> = ({ item, onChange }) => {
       : typeLabel === 'MIXED'
         ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
         : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+  const latestAiDecision = item.evaluationMeta;
+  const latestAiDecisionTime =
+    latestAiDecision?.evaluatedAt && Number.isFinite(latestAiDecision.evaluatedAt)
+      ? new Date(latestAiDecision.evaluatedAt).toLocaleString('es-ES')
+      : null;
 
   const renderAdvancedWarning = () => {
     if (
@@ -740,6 +745,20 @@ export const ChecklistItem: React.FC<Props> = ({ item, onChange }) => {
               placeholder="Añadir observaciones..."
             />
           </div>
+
+          {latestAiDecision && (
+            <div className="bg-cyan-50 dark:bg-cyan-900/10 rounded-lg p-3 border border-cyan-100 dark:border-cyan-900/30">
+              <div className="text-xs font-bold text-cyan-700 dark:text-cyan-300 uppercase mb-1">
+                Última decisión IA
+              </div>
+              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                {latestAiDecision.reason}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                {latestAiDecisionTime || 'Fecha no disponible'}
+              </p>
+            </div>
+          )}
 
           {(item.autoData || item.recommendation) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
