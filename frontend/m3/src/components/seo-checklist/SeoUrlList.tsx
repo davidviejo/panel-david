@@ -28,6 +28,7 @@ import { SeoChecklistSettingsModal } from './SeoChecklistSettingsModal';
 import { BatchAnalysisConfirmationModal } from './BatchAnalysisConfirmationModal';
 import { runBatchWithConcurrency, BatchProgress } from '../../utils/batchProcessor';
 import { useProject } from '../../context/ProjectContext';
+import { validateChecklistWithAI } from '../../services/seoChecklistAIValidator';
 
 interface Props {
   pages: SeoPage[];
@@ -60,6 +61,13 @@ export const SeoUrlList: React.FC<Props> = ({
   const [analysisMode, setAnalysisMode] = useState<'basic' | 'advanced'>('basic');
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
+  const [bulkAiState, setBulkAiState] = useState<'idle' | 'analyzing' | 'completed' | 'error'>('idle');
+  const [bulkAiMessage, setBulkAiMessage] = useState<string | null>(null);
+  const [bulkAiSummary, setBulkAiSummary] = useState<{
+    updated: number;
+    omittedSi: number;
+    errors: string[];
+  } | null>(null);
   const { currentClient } = useProject();
 
   // Pagination
@@ -399,6 +407,48 @@ export const SeoUrlList: React.FC<Props> = ({
     setSelectedIds(new Set());
   };
 
+  const handleBulkValidateWithAI = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkAiState('analyzing');
+    setBulkAiMessage('Analizando…');
+    setBulkAiSummary(null);
+
+    let updated = 0;
+    let omittedSi = 0;
+    const errors: string[] = [];
+
+    try {
+      const selectedPages = pages.filter((page) => selectedIds.has(page.id));
+      for (const page of selectedPages) {
+        const summary = await validateChecklistWithAI(page);
+        omittedSi += summary.omittedBySi;
+        updated += summary.updatedChecks.length;
+        if (summary.detectedErrors.length > 0) {
+          errors.push(...summary.detectedErrors.map((msg) => `${page.url}: ${msg}`));
+        }
+
+        if (summary.updatedChecks.length > 0) {
+          const pageChecklist = { ...page.checklist };
+          summary.updatedChecks.forEach((item) => {
+            pageChecklist[item.key] = {
+              ...pageChecklist[item.key],
+              status_manual: item.status,
+              notes_manual: item.notes,
+            };
+          });
+          onBulkUpdate([{ id: page.id, changes: { checklist: pageChecklist, lastAnalyzedAt: Date.now() } }]);
+        }
+      }
+
+      setBulkAiSummary({ updated, omittedSi, errors });
+      setBulkAiState('completed');
+      setBulkAiMessage(`Completado: ${updated} checks actualizados.`);
+    } catch (error: any) {
+      setBulkAiState('error');
+      setBulkAiMessage(error?.message || 'Error en validación masiva con IA.');
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
@@ -489,6 +539,36 @@ export const SeoUrlList: React.FC<Props> = ({
         </div>
       )}
 
+      {bulkAiMessage && (
+        <div
+          className={`border px-4 py-3 rounded-xl text-sm font-medium ${
+            bulkAiState === 'error'
+              ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-300'
+              : bulkAiState === 'completed'
+                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                : 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300'
+          }`}
+        >
+          {bulkAiMessage}
+        </div>
+      )}
+
+      {bulkAiSummary && (
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm">
+          <div>
+            Checks actualizados: <strong>{bulkAiSummary.updated}</strong> · Omitidos por SI:{' '}
+            <strong>{bulkAiSummary.omittedSi}</strong>
+          </div>
+          {bulkAiSummary.errors.length > 0 && (
+            <ul className="list-disc pl-5 mt-2 text-red-600 dark:text-red-300">
+              {bulkAiSummary.errors.map((message, index) => (
+                <li key={`${message}-${index}`}>{message}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {selectedIds.size > 0 && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-3 rounded-xl flex flex-wrap items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
           <div className="text-sm text-blue-800 dark:text-blue-200 font-medium">
@@ -546,6 +626,19 @@ export const SeoUrlList: React.FC<Props> = ({
                 Enviar al servidor (BatchJobMonitor)
               </button>
             )}
+
+            <button
+              onClick={handleBulkValidateWithAI}
+              disabled={isAnalyzing || bulkAiState === 'analyzing'}
+              className="flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+            >
+              {bulkAiState === 'analyzing' ? (
+                <Loader2 className="animate-spin" size={14} />
+              ) : (
+                <Zap size={14} />
+              )}
+              Validar con IA
+            </button>
 
             <button
               onClick={handleBulkCluster}

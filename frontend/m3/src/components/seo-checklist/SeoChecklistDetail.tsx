@@ -10,6 +10,7 @@ import { runPageAnalysis } from '../../utils/seoUtils';
 import { normalizeSeoUrl } from '../../utils/seoUrlNormalizer';
 import { isBrandTermMatch } from '../../utils/brandTerms';
 import { useSeoChecklistSettings } from '../../hooks/useSeoChecklistSettings';
+import { validateChecklistWithAI, SeoChecklistAiSummary } from '../../services/seoChecklistAIValidator';
 import {
   Play,
   Loader2,
@@ -42,7 +43,11 @@ export const SeoChecklistDetail: React.FC<Props> = ({
 }) => {
   const { settings } = useSeoChecklistSettings();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAiValidating, setIsAiValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiStatus, setAiStatus] = useState<'idle' | 'analyzing' | 'completed' | 'error'>('idle');
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+  const [aiSummary, setAiSummary] = useState<SeoChecklistAiSummary | null>(null);
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
@@ -125,6 +130,31 @@ export const SeoChecklistDetail: React.FC<Props> = ({
       setError(err.message || 'Error de conexión con el motor de análisis.');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleValidateWithAI = async () => {
+    setIsAiValidating(true);
+    setAiStatus('analyzing');
+    setAiFeedback('Analizando…');
+    setAiSummary(null);
+
+    try {
+      const summary = await validateChecklistWithAI(page);
+      summary.updatedChecks.forEach((item) => {
+        onUpdateChecklistItem(page.id, item.key, {
+          status_manual: item.status,
+          notes_manual: item.notes,
+        });
+      });
+      setAiSummary(summary);
+      setAiStatus('completed');
+      setAiFeedback(`Completado: ${summary.updatedChecks.length} checks actualizados.`);
+    } catch (err: any) {
+      setAiStatus('error');
+      setAiFeedback(err.message || 'Error validando con IA.');
+    } finally {
+      setIsAiValidating(false);
     }
   };
 
@@ -319,12 +349,51 @@ export const SeoChecklistDetail: React.FC<Props> = ({
             {isAnalyzing ? <Loader2 className="animate-spin" size={20} /> : <Play size={20} />}
             <span className="hidden sm:inline">Analizar con Motor</span>
           </button>
+          <button
+            onClick={handleValidateWithAI}
+            disabled={isAiValidating}
+            className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 rounded-xl font-bold shadow-lg shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {isAiValidating ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}
+            <span className="hidden sm:inline">Validar con IA</span>
+          </button>
         </div>
       </div>
+
+      {aiFeedback && (
+        <div
+          className={`px-4 py-3 rounded-xl text-sm font-medium ${
+            aiStatus === 'error'
+              ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300'
+              : aiStatus === 'completed'
+                ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                : 'bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300'
+          }`}
+        >
+          {aiFeedback}
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 px-4 py-3 rounded-xl text-sm font-medium">
           {error}
+        </div>
+      )}
+
+      {aiSummary && (
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 text-sm space-y-2">
+          <div className="font-bold text-slate-700 dark:text-slate-200">Resumen validación IA</div>
+          <div className="text-slate-600 dark:text-slate-300">
+            Checks actualizados: <strong>{aiSummary.updatedChecks.length}</strong> · Omitidos por
+            estar en SI: <strong>{aiSummary.omittedBySi}</strong>
+          </div>
+          {aiSummary.detectedErrors.length > 0 && (
+            <ul className="list-disc pl-5 text-red-600 dark:text-red-300">
+              {aiSummary.detectedErrors.map((errorMessage, index) => (
+                <li key={`${errorMessage}-${index}`}>{errorMessage}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
