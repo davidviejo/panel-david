@@ -21,8 +21,10 @@ import {
   Zap,
   AlertTriangle,
   Server,
+  BrainCircuit,
 } from 'lucide-react';
 import { runPageAnalysis } from '../../utils/seoUtils';
+import { buildPendingChecksPlan } from '../../utils/seoAiValidation';
 import { useSeoChecklistSettings } from '../../hooks/useSeoChecklistSettings';
 import { SeoChecklistSettingsModal } from './SeoChecklistSettingsModal';
 import { BatchAnalysisConfirmationModal } from './BatchAnalysisConfirmationModal';
@@ -60,6 +62,12 @@ export const SeoUrlList: React.FC<Props> = ({
   const [analysisMode, setAnalysisMode] = useState<'basic' | 'advanced'>('basic');
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
+  const [bulkAiStatus, setBulkAiStatus] = useState<'idle' | 'analyzing' | 'completed' | 'error'>('idle');
+  const [bulkAiSummary, setBulkAiSummary] = useState<{
+    updatedChecks: number;
+    omittedChecks: number;
+    errors: string[];
+  } | null>(null);
   const { currentClient } = useProject();
 
   // Pagination
@@ -397,6 +405,40 @@ export const SeoUrlList: React.FC<Props> = ({
     setSelectedIds(new Set());
   };
 
+  const handleBulkValidateWithAi = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkAiStatus('analyzing');
+    setBulkAiSummary(null);
+
+    const pagesToValidate = pages.filter((p) => selectedIds.has(p.id));
+    const analysisConfig = buildAnalysisConfig();
+    let updatedChecks = 0;
+    let omittedChecks = 0;
+    const errors: string[] = [];
+
+    for (const page of pagesToValidate) {
+      const { orderedPendingChecks, omittedChecks: omittedBySi } = buildPendingChecksPlan(page);
+      omittedChecks += omittedBySi.length;
+
+      if (orderedPendingChecks.length === 0) {
+        continue;
+      }
+
+      try {
+        const update = await runPageAnalysis(page, analysisConfig, settings, {
+          checklistKeys: orderedPendingChecks,
+        });
+        onBulkUpdate([{ id: page.id, changes: update }]);
+        updatedChecks += orderedPendingChecks.filter((key) => Boolean(update.checklist?.[key])).length;
+      } catch (err: any) {
+        errors.push(`${page.url}: ${err.message || 'Error al validar con IA'}`);
+      }
+    }
+
+    setBulkAiSummary({ updatedChecks, omittedChecks, errors });
+    setBulkAiStatus(errors.length > 0 ? 'error' : 'completed');
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
@@ -516,6 +558,19 @@ export const SeoUrlList: React.FC<Props> = ({
             )}
 
             <button
+              onClick={handleBulkValidateWithAi}
+              disabled={isAnalyzing || bulkAiStatus === 'analyzing'}
+              className="flex items-center gap-2 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+            >
+              {bulkAiStatus === 'analyzing' ? (
+                <Loader2 className="animate-spin" size={14} />
+              ) : (
+                <BrainCircuit size={14} />
+              )}
+              Validar con IA
+            </button>
+
+            <button
               onClick={handleBulkAnalyze}
               disabled={isAnalyzing}
               className={`flex items-center gap-2 px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${
@@ -562,6 +617,39 @@ export const SeoUrlList: React.FC<Props> = ({
               Eliminar
             </button>
           </div>
+        </div>
+      )}
+
+      {bulkAiStatus !== 'idle' && (
+        <div
+          className={`px-4 py-3 rounded-xl text-sm font-medium border ${
+            bulkAiStatus === 'analyzing'
+              ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300'
+              : bulkAiStatus === 'completed'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300'
+                : 'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300'
+          }`}
+        >
+          {bulkAiStatus === 'analyzing' && 'Analizando…'}
+          {bulkAiStatus === 'completed' && 'Completado'}
+          {bulkAiStatus === 'error' && 'Error'}
+        </div>
+      )}
+
+      {bulkAiSummary && bulkAiStatus !== 'analyzing' && (
+        <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm space-y-2">
+          <div className="font-semibold text-slate-800 dark:text-slate-100">Resumen validación IA masiva</div>
+          <div className="text-slate-600 dark:text-slate-300">
+            Checks actualizados: {bulkAiSummary.updatedChecks}
+          </div>
+          <div className="text-slate-600 dark:text-slate-300">
+            Checks omitidos por estar en SI: {bulkAiSummary.omittedChecks}
+          </div>
+          {bulkAiSummary.errors.length > 0 && (
+            <div className="text-red-600 dark:text-red-300">
+              Errores detectados: {bulkAiSummary.errors.join(' | ')}
+            </div>
+          )}
         </div>
       )}
 

@@ -18,6 +18,9 @@ vi.mock('lucide-react', () => ({
   ExternalLink: () => <span>External</span>,
   Plus: () => <span data-testid="plus-icon">Add</span>,
   Trash2: () => <span data-testid="trash-icon">Delete</span>,
+  BrainCircuit: () => <span data-testid="brain-icon">Brain</span>,
+  Server: () => <span data-testid="server-icon">Server</span>,
+  AlertTriangle: () => <span data-testid="alert-triangle-icon">AlertTriangle</span>,
 }));
 
 // Mock ChecklistItem component to avoid deep rendering

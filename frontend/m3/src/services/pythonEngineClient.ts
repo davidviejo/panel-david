@@ -17,6 +17,7 @@ export interface AnalysisPayload {
   analysisConfig?: AnalysisConfigPayload;
   analyzeCompetitors?: boolean;
   competitorUrls?: string[];
+  checklistKeys?: ChecklistKey[];
 }
 
 export interface AnalysisResponse {
