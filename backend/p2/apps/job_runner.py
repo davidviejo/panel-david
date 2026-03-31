@@ -192,6 +192,8 @@ class JobRunner:
             p_type = meta.get('pageType', 'Otro')
             geo = meta.get('geoTarget', '')
             cluster = meta.get('cluster', '')
+            analyze_competitors = bool(meta.get('analyzeCompetitors', False))
+            competitor_urls = meta.get('competitorUrls', [])
 
             # Get GSC queries for this URL.
             # Precedence:
@@ -208,6 +210,8 @@ class JobRunner:
                 geoTarget=geo,
                 cluster=cluster,
                 gscQueries=gsc_queries,
+                analyze_competitors=analyze_competitors,
+                competitor_urls=competitor_urls,
                 analysis_config=config
             )
 

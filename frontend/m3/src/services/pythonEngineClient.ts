@@ -15,6 +15,8 @@ export interface AnalysisPayload {
   pageId: string;
   gscQueries?: any[];
   analysisConfig?: AnalysisConfigPayload;
+  analyzeCompetitors?: boolean;
+  competitorUrls?: string[];
 }
 
 export interface AnalysisResponse {

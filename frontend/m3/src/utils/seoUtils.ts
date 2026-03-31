@@ -271,6 +271,13 @@ export const runPageAnalysis = async (
       : [],
     allowKwPrincipalUpdate: resolvedProjectSettings?.allowKwPrincipalUpdate !== false,
   };
+  const manualCompetitorUrls = (normalizedPage.competitors || [])
+    .map((url) => (typeof url === 'string' ? url.trim() : ''))
+    .filter((url) => Boolean(url));
+  const shouldAnalyzeCompetitors =
+    resolvedAnalysisConfig.mode === 'advanced' &&
+    resolvedAnalysisConfig.serp?.confirmed &&
+    resolvedProjectSettings?.competitorsMode !== 'off';
   let gscQueries: any[] = [];
   let gscMetrics: SeoPage['gscMetrics'] | undefined = page.gscMetrics;
 
@@ -324,6 +331,8 @@ export const runPageAnalysis = async (
       pageId: normalizedPage.id,
       gscQueries,
       analysisConfig: resolvedAnalysisConfig,
+      analyzeCompetitors: shouldAnalyzeCompetitors,
+      competitorUrls: manualCompetitorUrls,
     },
     { timeoutMs: ENGINE_ANALYZE_TIMEOUT_MS },
   );
