@@ -16,7 +16,6 @@ export enum ClusterCategory {
 }
 
 export interface AppSettings {
-  geminiApiKey: string;
   serpApiKey: string;
   searchQueries: string[];
   targetSources: string[];

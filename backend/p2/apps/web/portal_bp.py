@@ -1,7 +1,11 @@
 from flask import Blueprint, request, jsonify, make_response, session, redirect, url_for
 from apps.auth_utils import verify_token
 from apps.web.clients_store import get_safe_clients
+from apps.core.database import get_user_settings
+from apps.tools.llm_service import _query_google, _query_openai
 from functools import wraps
+import os
+import json
 
 portal_bp = Blueprint('portal_bp', __name__)
 
@@ -130,3 +134,117 @@ def run_tool(tool):
         "message": f"Tool {tool} execution queued (dummy)",
         "tool": tool
     })
+
+
+@portal_bp.route('/api/ai/visibility/analyze', methods=['POST'])
+@require_role(['project', 'clients_area', 'operator'])
+def ai_visibility_analyze():
+    payload = request.user_payload
+    data = request.get_json(silent=True) or {}
+
+    provider = (data.get('provider') or 'gemini').strip().lower()
+    scope = (data.get('scope') or '').strip()
+    clusters = data.get('clusters') or []
+
+    if not isinstance(clusters, list) or not clusters:
+        return jsonify({'error': 'clusters es requerido y debe ser una lista no vacía'}), 400
+
+    # Evitar acceso cruzado: el rol "project" solo puede consultar su propio scope.
+    if payload.get('role') == 'project':
+        token_scope = (payload.get('scope') or '').strip()
+        if not token_scope:
+            return jsonify({'error': 'Missing project scope in token'}), 403
+        if scope and scope != token_scope:
+            return jsonify({'error': 'Access denied for this project scope'}), 403
+        scope = token_scope
+
+    trimmed_clusters = clusters[:50]
+    items_to_analyze = []
+    for cluster in trimmed_clusters:
+        if not isinstance(cluster, dict):
+            continue
+        articles = cluster.get('articles') or []
+        snippet = ''
+        if isinstance(articles, list) and articles and isinstance(articles[0], dict):
+            snippet = articles[0].get('snippet') or ''
+        items_to_analyze.append({
+            'id': cluster.get('cluster_id'),
+            'title': cluster.get('title'),
+            'source': cluster.get('top_source'),
+            'technical_score': cluster.get('score'),
+            'articles_count': cluster.get('coverage_count'),
+            'snippet': snippet,
+        })
+
+    if not items_to_analyze:
+        return jsonify({'error': 'No hay clusters válidos para analizar'}), 400
+
+    system_instruction = (
+        "Analiza clusters de noticias y responde SIEMPRE con JSON array válido. "
+        "Cada objeto debe incluir: id, suggestedTitle, summary, priority (P1|P2|P3|DISCARD), "
+        "category (Turismo|Empresa|Innovación|Eventos|Movilidad|Economía|Otros), reasoning."
+    )
+    prompt = (
+        f"{system_instruction}\n\n"
+        f"Scope permitido: {scope or 'global'}\n"
+        f"Clusters:\n{json.dumps(items_to_analyze, ensure_ascii=False)}"
+    )
+
+    settings = get_user_settings('default')
+    openai_key = settings.get('openai_key') or session.get('openai_key') or os.getenv('OPENAI_API_KEY')
+    gemini_key = session.get('google_key') or os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
+
+    if provider == 'openai':
+        raw_result = _query_openai(prompt, model='gpt-4o-mini', api_key=openai_key)
+    else:
+        raw_result = _query_google(prompt, model='gemini-2.0-flash', api_key=gemini_key)
+
+    try:
+        ai_results = json.loads(raw_result)
+        if not isinstance(ai_results, list):
+            raise ValueError('invalid result')
+    except Exception:
+        ai_results = []
+
+    ai_by_id = {
+        item.get('id'): item
+        for item in ai_results
+        if isinstance(item, dict) and item.get('id')
+    }
+
+    merged = []
+    for cluster in trimmed_clusters:
+        cluster_id = cluster.get('cluster_id')
+        ai_result = ai_by_id.get(cluster_id)
+        if ai_result:
+            cluster['ai_analysis'] = {
+                'suggestedTitle': ai_result.get('suggestedTitle') or cluster.get('title') or '',
+                'summary': ai_result.get('summary') or '',
+                'priority': ai_result.get('priority') or 'DISCARD',
+                'category': ai_result.get('category') or 'Otros',
+                'reasoning': ai_result.get('reasoning') or 'Sin razonamiento disponible.',
+            }
+        else:
+            articles = cluster.get('articles') or []
+            fallback_summary = ''
+            if isinstance(articles, list) and articles and isinstance(articles[0], dict):
+                fallback_summary = articles[0].get('snippet') or 'Sin análisis de IA disponible.'
+            cluster['ai_analysis'] = {
+                'suggestedTitle': cluster.get('title') or '',
+                'summary': fallback_summary or 'Sin análisis de IA disponible.',
+                'priority': 'DISCARD',
+                'category': 'Otros',
+                'reasoning': 'Ítem crudo (no analizado por IA o fuera de límite).',
+            }
+        merged.append(cluster)
+
+    def _priority_weight(item):
+        priority = ((item.get('ai_analysis') or {}).get('priority') or '').upper()
+        if priority == 'P1':
+            return 2000
+        if priority == 'P2':
+            return 1000
+        return 0
+
+    merged.sort(key=lambda item: _priority_weight(item) + (item.get('score') or 0), reverse=True)
+    return jsonify({'results': merged, 'count': len(merged)})

@@ -4,7 +4,7 @@ import { DashboardStats } from '../features/trends-media/components/DashboardSta
 import { BriefGenerator, PipelineStatus } from '../features/trends-media/components/BriefGenerator';
 import { Settings } from '../features/trends-media/components/Settings';
 import { MOCK_TRENDS } from '../features/trends-media/constants';
-import { analyzeNewsWithGemini } from '../features/trends-media/services/gemini';
+import { analyzeNewsWithAiVisibility } from '../features/trends-media/services/aiVisibilityService';
 import { processNews } from '../features/trends-media/services/newsProcessor';
 import { fetchSerpResults } from '../features/trends-media/services/serp';
 import { getSettings } from '../features/trends-media/services/storage';
@@ -48,8 +48,8 @@ const TrendsMediaPage: React.FC = () => {
       const processedClusters = processNews(rawArticles);
 
       setPipelineStatus('analyzing');
-      setStatusMessage(`Analizando ${processedClusters.length} temas con Gemini AI...`);
-      const analyzedClusters = await analyzeNewsWithGemini(processedClusters, settings.geminiApiKey);
+      setStatusMessage(`Analizando ${processedClusters.length} temas con IA Visibility...`);
+      const analyzedClusters = await analyzeNewsWithAiVisibility(processedClusters);
 
       setNewsClusters(analyzedClusters);
       setPipelineStatus('done');

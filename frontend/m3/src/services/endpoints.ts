@@ -18,6 +18,7 @@ export const endpoints = {
     seoAnalysis: () => 'api/ai/seo-analysis',
     headlineChallenge: () => 'api/ai/headline-challenge',
     checklistEvaluate: () => 'api/ai/checklist-evaluate',
+    visibilityAnalyze: () => 'api/ai/visibility/analyze',
   },
   engine: {
     capabilities: () => 'api/capabilities',
