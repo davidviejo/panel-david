@@ -85,7 +85,9 @@ export const listSites = async (accessToken: string) => {
     if (!response.ok) throw new Error('Error fetching sites');
 
     const data = await response.json();
-    return data.siteEntry || [];
+    return (data.siteEntry || []).filter(
+      (site: { siteUrl?: unknown }) => typeof site.siteUrl === 'string' && site.siteUrl.length > 0,
+    );
   } catch (error) {
     console.error('GSC API Error:', error);
     throw error;

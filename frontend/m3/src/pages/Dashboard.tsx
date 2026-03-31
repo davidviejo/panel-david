@@ -785,7 +785,7 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
                             )}
                             {filteredGscSites.map((site) => (
                               <option key={site.siteUrl} value={site.siteUrl}>
-                                {site.siteUrl.replace('sc-domain:', '')}
+                                {(site.siteUrl || '').replace('sc-domain:', '') || 'Propiedad sin URL'}
                               </option>
                             ))}
                           </>
