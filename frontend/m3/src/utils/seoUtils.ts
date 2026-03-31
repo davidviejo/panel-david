@@ -261,6 +261,7 @@ export const runPageAnalysis = async (
   page: SeoPage,
   analysisConfig?: AnalysisConfigPayload,
   projectSettings?: SeoChecklistSettings | null,
+  options?: { checklistKeys?: ChecklistKey[] },
 ): Promise<Partial<SeoPage>> => {
   const normalizedPage = normalizeSeoPageInput(page);
   const resolvedProjectSettings = projectSettings || getStoredSeoChecklistSettings();
@@ -333,6 +334,7 @@ export const runPageAnalysis = async (
       analysisConfig: resolvedAnalysisConfig,
       analyzeCompetitors: shouldAnalyzeCompetitors,
       competitorUrls: manualCompetitorUrls,
+      checklistKeys: options?.checklistKeys,
     },
     { timeoutMs: ENGINE_ANALYZE_TIMEOUT_MS },
   );

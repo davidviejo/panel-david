@@ -10,6 +10,7 @@ import { runPageAnalysis } from '../../utils/seoUtils';
 import { normalizeSeoUrl } from '../../utils/seoUrlNormalizer';
 import { isBrandTermMatch } from '../../utils/brandTerms';
 import { useSeoChecklistSettings } from '../../hooks/useSeoChecklistSettings';
+import { buildPendingChecksPlan } from '../../utils/seoAiValidation';
 import {
   Play,
   Loader2,
@@ -21,6 +22,7 @@ import {
   Trash2,
   Server,
   AlertTriangle,
+  BrainCircuit,
 } from 'lucide-react';
 
 interface Props {
@@ -43,6 +45,14 @@ export const SeoChecklistDetail: React.FC<Props> = ({
   const { settings } = useSeoChecklistSettings();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiValidationStatus, setAiValidationStatus] = useState<
+    'idle' | 'analyzing' | 'completed' | 'error'
+  >('idle');
+  const [aiValidationSummary, setAiValidationSummary] = useState<{
+    updatedChecks: ChecklistKey[];
+    omittedChecks: ChecklistKey[];
+    errors: string[];
+  } | null>(null);
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
@@ -125,6 +135,59 @@ export const SeoChecklistDetail: React.FC<Props> = ({
       setError(err.message || 'Error de conexión con el motor de análisis.');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleValidateWithAi = async () => {
+    setError(null);
+    setAiValidationStatus('analyzing');
+
+    const { orderedPendingChecks, omittedChecks } = buildPendingChecksPlan(page);
+    if (orderedPendingChecks.length === 0) {
+      setAiValidationStatus('completed');
+      setAiValidationSummary({
+        updatedChecks: [],
+        omittedChecks,
+        errors: [],
+      });
+      return;
+    }
+
+    try {
+      const analysisConfig = {
+        mode: settings.serp.enabled ? 'advanced' : 'basic',
+        serp: {
+          ...settings.serp,
+          confirmed: settings.serp.enabled,
+        },
+        budgets: settings.budgets,
+      };
+
+      const updates = await runPageAnalysis(page, analysisConfig, settings, {
+        checklistKeys: orderedPendingChecks,
+      });
+      onUpdatePage(page.id, updates);
+
+      const updatedChecks = orderedPendingChecks.filter((key) => Boolean(updates.checklist?.[key]));
+      const errors =
+        updatedChecks.length === 0
+          ? ['La IA no devolvió actualizaciones para los checks pendientes.']
+          : [];
+
+      setAiValidationSummary({
+        updatedChecks,
+        omittedChecks,
+        errors,
+      });
+      setAiValidationStatus(errors.length > 0 ? 'error' : 'completed');
+    } catch (err: any) {
+      const message = err.message || 'Error al validar con IA.';
+      setAiValidationSummary({
+        updatedChecks: [],
+        omittedChecks,
+        errors: [message],
+      });
+      setAiValidationStatus('error');
     }
   };
 
@@ -304,6 +367,19 @@ export const SeoChecklistDetail: React.FC<Props> = ({
           </div>
 
           <button
+            onClick={handleValidateWithAi}
+            disabled={aiValidationStatus === 'analyzing'}
+            className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 rounded-xl font-bold shadow-lg shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {aiValidationStatus === 'analyzing' ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
+              <BrainCircuit size={20} />
+            )}
+            <span className="hidden sm:inline">Validar con IA</span>
+          </button>
+
+          <button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -317,6 +393,43 @@ export const SeoChecklistDetail: React.FC<Props> = ({
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 px-4 py-3 rounded-xl text-sm font-medium">
           {error}
+        </div>
+      )}
+
+      {aiValidationStatus !== 'idle' && (
+        <div
+          className={`px-4 py-3 rounded-xl text-sm font-medium border ${
+            aiValidationStatus === 'analyzing'
+              ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300'
+              : aiValidationStatus === 'completed'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300'
+                : 'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300'
+          }`}
+        >
+          {aiValidationStatus === 'analyzing' && 'Analizando…'}
+          {aiValidationStatus === 'completed' && 'Completado'}
+          {aiValidationStatus === 'error' && 'Error'}
+        </div>
+      )}
+
+      {aiValidationSummary && aiValidationStatus !== 'analyzing' && (
+        <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm space-y-2">
+          <div className="font-semibold text-slate-800 dark:text-slate-100">Resumen de validación IA</div>
+          <div className="text-slate-600 dark:text-slate-300">
+            Checks actualizados: {aiValidationSummary.updatedChecks.length}
+            {aiValidationSummary.updatedChecks.length > 0 &&
+              ` (${aiValidationSummary.updatedChecks.join(', ')})`}
+          </div>
+          <div className="text-slate-600 dark:text-slate-300">
+            Checks omitidos por estar en SI: {aiValidationSummary.omittedChecks.length}
+            {aiValidationSummary.omittedChecks.length > 0 &&
+              ` (${aiValidationSummary.omittedChecks.join(', ')})`}
+          </div>
+          {aiValidationSummary.errors.length > 0 && (
+            <div className="text-red-600 dark:text-red-300">
+              Errores detectados: {aiValidationSummary.errors.join(' | ')}
+            </div>
+          )}
         </div>
       )}
 
