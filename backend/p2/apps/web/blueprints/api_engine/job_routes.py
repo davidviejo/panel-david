@@ -117,6 +117,10 @@ def create_analysis_job():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@api_engine_bp.route('/api/jobs/runner/health', methods=['GET'])
+def get_runner_health():
+    return jsonify(JobRunner.runner_health())
+
 @api_engine_bp.route('/api/jobs/<job_id>', methods=['GET'])
 def get_job_status(job_id):
     job = get_job(job_id)

@@ -14,22 +14,43 @@ from apps.web.blueprints.api_engine.seo_checklist_orchestrator import run_orches
 from apps.core.config import Config
 
 _RUNNER_STARTED = False
+_RUNNER_THREAD = None
 _RUNNER_LOCK = threading.Lock()
 
 class JobRunner:
     @staticmethod
     def start_worker():
         """Starts the background worker thread if not already running."""
-        global _RUNNER_STARTED
+        global _RUNNER_STARTED, _RUNNER_THREAD
         with _RUNNER_LOCK:
             if _RUNNER_STARTED:
-                logging.info("JobRunner already active.")
-                return
+                if _RUNNER_THREAD and _RUNNER_THREAD.is_alive():
+                    logging.info("JobRunner already active.")
+                    return
+
+                restart_reason = "missing_thread_reference"
+                if _RUNNER_THREAD and not _RUNNER_THREAD.is_alive():
+                    restart_reason = "thread_not_alive"
+
+                logging.warning(
+                    f"JobRunner worker restarted; reason={restart_reason}"
+                )
 
             thread = threading.Thread(target=JobRunner._worker_loop, daemon=True)
             thread.start()
+            _RUNNER_THREAD = thread
             _RUNNER_STARTED = True
             logging.info("JobRunner started.")
+
+    @staticmethod
+    def runner_health():
+        """Returns basic health info for the in-process runner."""
+        thread_name = _RUNNER_THREAD.name if _RUNNER_THREAD else None
+        return {
+            "started": _RUNNER_STARTED,
+            "thread_alive": bool(_RUNNER_THREAD and _RUNNER_THREAD.is_alive()),
+            "thread_name": thread_name,
+        }
 
     @staticmethod
     def _worker_loop():

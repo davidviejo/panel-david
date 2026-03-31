@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Play,
@@ -20,7 +20,9 @@ import {
   getBatchJobItems,
   updateBatchJob,
   getBatchJobItemResult,
+  getRunnerHealth,
   AnalysisResponse,
+  RunnerHealth,
 } from '../../services/pythonEngineClient';
 import { useToast } from '../ui/ToastContext';
 import { useTranslation } from 'react-i18next';
@@ -43,6 +45,7 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [applyingIds, setApplyingIds] = useState<Set<string>>(new Set());
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [runnerHealth, setRunnerHealth] = useState<RunnerHealth | null>(null);
 
   const selectedJob = jobs.find((j) => j.id === selectedJobId);
 
@@ -90,6 +93,21 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
 
     fetchItems();
   }, [selectedJobId, activeTab, itemsPage]);
+
+  useEffect(() => {
+    const fetchHealth = async () => {
+      try {
+        const health = await getRunnerHealth();
+        setRunnerHealth(health);
+      } catch (e) {
+        console.error('Failed to fetch runner health', e);
+      }
+    };
+
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleAction = async (action: 'pause' | 'resume' | 'cancel') => {
     if (!selectedJobId) return;
@@ -144,6 +162,15 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
               <RefreshCw size={20} />
               Batch Jobs Monitor
             </h2>
+            <div className="text-xs px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+              Runner:{' '}
+              <span
+                className={runnerHealth?.thread_alive ? 'text-emerald-600' : 'text-amber-600'}
+                title={runnerHealth?.thread_name || ''}
+              >
+                {runnerHealth?.thread_alive ? 'alive' : 'down'}
+              </span>
+            </div>
             <button
               onClick={onClose}
               className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg"
@@ -233,6 +260,16 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
                 </span>
               </h2>
               <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span
+                  className={`px-1.5 py-0.5 rounded border ${
+                    runnerHealth?.thread_alive
+                      ? 'bg-emerald-100 border-emerald-200 text-emerald-700'
+                      : 'bg-amber-100 border-amber-200 text-amber-700'
+                  }`}
+                  title={runnerHealth?.thread_name || ''}
+                >
+                  runner {runnerHealth?.thread_alive ? 'alive' : 'down'}
+                </span>
                 <span
                   className={`px-1.5 py-0.5 rounded border ${
                     selectedJob?.status === 'done'

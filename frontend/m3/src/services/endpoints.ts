@@ -22,6 +22,7 @@ export const endpoints = {
     capabilities: () => 'api/capabilities',
     analyze: () => 'api/analyze',
     jobs: () => 'api/jobs',
+    runnerHealth: () => 'api/jobs/runner/health',
     byId: (jobId: string) => `api/jobs/${encodePathParam(jobId)}`,
     jobAction: (jobId: string, action: 'pause' | 'resume' | 'cancel') =>
       `api/jobs/${encodePathParam(jobId)}/${encodePathParam(action)}`,
