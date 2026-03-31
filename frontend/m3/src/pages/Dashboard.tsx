@@ -85,6 +85,16 @@ const heroToneStyles: Record<HeroMetricProps['tone'], string> = {
   warning: 'bg-warning text-on-primary',
 };
 
+const formatNumberSafe = (value: unknown, fallback = '—') => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue.toLocaleString() : fallback;
+};
+
+const formatPositionSafe = (value: unknown, fallback = '—') => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue.toFixed(1) : fallback;
+};
+
 const HeroMetric: React.FC<HeroMetricProps> = ({ title, value, description, tone }) => (
   <Card className={`rounded-2xl p-5 shadow-brand ${heroToneStyles[tone]}`}>
     <div className="text-xs font-bold uppercase tracking-[0.2em] opacity-80">{title}</div>
@@ -260,6 +270,17 @@ const Dashboard: React.FC<DashboardProps> = ({ modules, globalScore }) => {
   const actionableTopRisks = useMemo(
     () => actionableInsights.filter((insight) => insight.category === 'risk').slice(0, 3),
     [actionableInsights],
+  );
+
+  const topQueriesNormalized = useMemo(
+    () =>
+      topQueries?.items.slice(0, 5).map((item) => ({
+        ...item,
+        position: Number(item.position),
+        clicks: Number(item.clicks),
+        impressions: Number(item.impressions),
+      })) ?? [],
+    [topQueries],
   );
 
   const filteredInsights = useMemo(
@@ -1003,7 +1024,7 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
         </div>
 
         <div className="space-y-6">
-          {topQueries && topQueries.items.length > 0 ? (
+          {topQueriesNormalized.length > 0 ? (
             <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
               <h3 className="font-bold mb-4 flex items-center gap-2">
                 <Flame className="text-orange-500" size={20} /> Top Consultas
@@ -1012,24 +1033,31 @@ auditoria seo local,https://dominio.com/seo-local`}</pre>
                 </span>
               </h3>
               <div className="space-y-3">
-                {topQueries.items.slice(0, 5).map((t, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer group"
-                  >
-                    <div>
-                      <div className="text-sm font-semibold group-hover:text-blue-500 line-clamp-1">
-                        {t.keys[0]}
+                {topQueriesNormalized.map((t, i) => {
+                  const queryLabel =
+                    typeof t.keys?.[0] === 'string' && t.keys[0].trim().length > 0
+                      ? t.keys[0]
+                      : 'Consulta sin término';
+
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer group"
+                    >
+                      <div>
+                        <div className="text-sm font-semibold group-hover:text-blue-500 line-clamp-1">
+                          {queryLabel}
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          Posición: {formatPositionSafe(t.position)}
+                        </div>
                       </div>
-                      <div className="text-xs text-slate-400">
-                        Posición: {t.position.toFixed(1)}
+                      <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {formatNumberSafe(t.clicks, '0')} clics
                       </div>
                     </div>
-                    <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      {t.clicks.toLocaleString()} clics
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : (
