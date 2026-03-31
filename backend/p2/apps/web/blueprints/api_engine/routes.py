@@ -184,6 +184,15 @@ def analyze():
     return jsonify(response)
 
 
+@api_engine_bp.route('/visibility/run', methods=['POST'])
+def visibility_run():
+    """
+    Dedicated endpoint for IA Visibility execution.
+    This reuses the same orchestration infrastructure used by /api/analyze.
+    """
+    return analyze()
+
+
 @api_engine_bp.route('/api/ai/checklist-evaluate', methods=['POST'])
 def checklist_evaluate():
     data = safe_get_json()

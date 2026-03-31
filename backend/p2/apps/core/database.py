@@ -211,6 +211,38 @@ def init_db() -> None:
         )
     ''')
 
+    # Visibility schedule per client (recurrent execution control)
+    c.execute(f'''
+        CREATE TABLE IF NOT EXISTS visibility_schedules (
+            client_id {text_pk},
+            frequency TEXT DEFAULT 'daily',
+            timezone TEXT DEFAULT 'UTC',
+            run_hour TEXT DEFAULT '09:00',
+            status TEXT DEFAULT 'paused',
+            run_payload TEXT,
+            last_run_at TIMESTAMP,
+            next_run_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Versioned visibility execution results
+    c.execute(f'''
+        CREATE TABLE IF NOT EXISTS visibility_runs (
+            run_id {text_pk},
+            client_id TEXT NOT NULL,
+            triggered_by TEXT DEFAULT 'scheduler',
+            status TEXT DEFAULT 'running',
+            started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            finished_at TIMESTAMP,
+            result_json TEXT,
+            error_message TEXT,
+            retryable_error INTEGER DEFAULT 0,
+            FOREIGN KEY (client_id) REFERENCES visibility_schedules (client_id) ON DELETE CASCADE
+        )
+    ''')
+
     # Check if item_metadata column exists (for migration of existing table)
     # This logic is slightly more complex with Postgres, keeping it simple for now
     try:
@@ -873,6 +905,172 @@ def update_job_progress(job_id: str, success_inc: int = 0, error_inc: int = 0, p
             WHERE job_id = ?
         ''', (success_inc, error_inc, processed_inc, job_id))
         conn.commit()
+    finally:
+        conn.close()
+
+
+# --- Visibility Scheduler Operations ---
+
+def upsert_visibility_schedule(
+    client_id: str,
+    frequency: str,
+    timezone: str,
+    run_hour: str,
+    status: str,
+    run_payload: Optional[Dict[str, Any]] = None,
+    next_run_at: Optional[str] = None,
+) -> None:
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute(
+            '''
+            INSERT INTO visibility_schedules (
+                client_id, frequency, timezone, run_hour, status, run_payload, next_run_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(client_id) DO UPDATE SET
+                frequency = excluded.frequency,
+                timezone = excluded.timezone,
+                run_hour = excluded.run_hour,
+                status = excluded.status,
+                run_payload = excluded.run_payload,
+                next_run_at = excluded.next_run_at,
+                updated_at = CURRENT_TIMESTAMP
+            ''',
+            (
+                client_id,
+                frequency,
+                timezone,
+                run_hour,
+                status,
+                json.dumps(run_payload or {}),
+                next_run_at,
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_visibility_schedule(client_id: str) -> Optional[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM visibility_schedules WHERE client_id = ?", (client_id,))
+        row = c.fetchone()
+        if not row:
+            return None
+        schedule = dict(row)
+        if schedule.get('run_payload'):
+            schedule['run_payload'] = json.loads(schedule['run_payload'])
+        return schedule
+    finally:
+        conn.close()
+
+
+def get_active_visibility_schedules() -> List[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM visibility_schedules WHERE status = 'active'")
+        rows = c.fetchall()
+        schedules = []
+        for row in rows:
+            schedule = dict(row)
+            if schedule.get('run_payload'):
+                schedule['run_payload'] = json.loads(schedule['run_payload'])
+            schedules.append(schedule)
+        return schedules
+    finally:
+        conn.close()
+
+
+def update_visibility_schedule_status(client_id: str, status: str, next_run_at: Optional[str] = None) -> None:
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "UPDATE visibility_schedules SET status = ?, next_run_at = ?, updated_at = CURRENT_TIMESTAMP WHERE client_id = ?",
+            (status, next_run_at, client_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def set_visibility_schedule_runtime(client_id: str, last_run_at: str, next_run_at: Optional[str]) -> None:
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute(
+            '''
+            UPDATE visibility_schedules
+            SET last_run_at = ?, next_run_at = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE client_id = ?
+            ''',
+            (last_run_at, next_run_at, client_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def create_visibility_run(client_id: str, triggered_by: str = 'scheduler') -> str:
+    conn = get_db_connection()
+    run_id = str(uuid.uuid4())
+    try:
+        c = conn.cursor()
+        c.execute(
+            '''
+            INSERT INTO visibility_runs (run_id, client_id, triggered_by, status)
+            VALUES (?, ?, ?, 'running')
+            ''',
+            (run_id, client_id, triggered_by),
+        )
+        conn.commit()
+        return run_id
+    finally:
+        conn.close()
+
+
+def finish_visibility_run(
+    run_id: str,
+    status: str,
+    result: Optional[Dict[str, Any]] = None,
+    error_message: Optional[str] = None,
+    retryable_error: bool = False,
+) -> None:
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute(
+            '''
+            UPDATE visibility_runs
+            SET status = ?, finished_at = CURRENT_TIMESTAMP, result_json = ?, error_message = ?, retryable_error = ?
+            WHERE run_id = ?
+            ''',
+            (status, json.dumps(result or {}), error_message, 1 if retryable_error else 0, run_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_visibility_runs(client_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute(
+            '''
+            SELECT run_id, client_id, triggered_by, status, started_at, finished_at, error_message, retryable_error
+            FROM visibility_runs
+            WHERE client_id = ?
+            ORDER BY started_at DESC
+            LIMIT ?
+            ''',
+            (client_id, limit),
+        )
+        return [dict(row) for row in c.fetchall()]
     finally:
         conn.close()
 

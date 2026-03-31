@@ -1,10 +1,14 @@
 import os
 import json
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from flask import jsonify, request, Blueprint
 from apps.tools.utils import safe_get_json
 from apps.core.database import (
     create_job, get_job, get_job_items, get_job_item_result,
-    update_job_status, get_user_settings
+    update_job_status, get_user_settings,
+    upsert_visibility_schedule, get_visibility_schedule,
+    update_visibility_schedule_status, get_visibility_runs
 )
 from apps.job_runner import JobRunner
 from . import api_engine_bp
@@ -214,3 +218,91 @@ def cancel_job(job_id):
         return jsonify({'status': 'cancelled'})
 
     return jsonify({'error': f"Cannot cancel job in '{job['status']}' state"}), 400
+
+
+def _compute_next_run_utc(frequency: str, timezone_name: str, run_hour: str) -> str:
+    try:
+        tzinfo = ZoneInfo(timezone_name)
+    except Exception:
+        tzinfo = timezone.utc
+
+    now_local = datetime.now(timezone.utc).astimezone(tzinfo)
+    hour = 9
+    minute = 0
+    try:
+        parts = (run_hour or '09:00').split(':')
+        hour = max(0, min(23, int(parts[0])))
+        minute = max(0, min(59, int(parts[1] if len(parts) > 1 else 0)))
+    except Exception:
+        pass
+
+    candidate = now_local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    delta_days = 7 if (frequency or '').lower() == 'weekly' else 1
+    if candidate <= now_local:
+        from datetime import timedelta
+        candidate = candidate + timedelta(days=delta_days)
+    return candidate.astimezone(timezone.utc).isoformat()
+
+
+@api_engine_bp.route('/api/visibility/schedules/<client_id>', methods=['PUT'])
+def upsert_visibility_schedule_route(client_id):
+    data = safe_get_json()
+    frequency = (data.get('frequency') or 'daily').lower()
+    timezone_name = data.get('timezone') or 'UTC'
+    run_hour = data.get('runHour') or '09:00'
+    status = (data.get('status') or 'active').lower()
+    run_payload = data.get('runPayload') or {}
+
+    if frequency not in {'daily', 'weekly'}:
+        return jsonify({'error': 'frequency must be daily or weekly'}), 400
+    if status not in {'active', 'paused'}:
+        return jsonify({'error': 'status must be active or paused'}), 400
+
+    next_run_at = _compute_next_run_utc(frequency, timezone_name, run_hour) if status == 'active' else None
+    upsert_visibility_schedule(
+        client_id=client_id,
+        frequency=frequency,
+        timezone=timezone_name,
+        run_hour=run_hour,
+        status=status,
+        run_payload=run_payload,
+        next_run_at=next_run_at,
+    )
+    JobRunner.start_worker()
+    schedule = get_visibility_schedule(client_id)
+    return jsonify({'schedule': schedule}), 200
+
+
+@api_engine_bp.route('/api/visibility/schedules/<client_id>', methods=['GET'])
+def get_visibility_schedule_route(client_id):
+    schedule = get_visibility_schedule(client_id)
+    if not schedule:
+        return jsonify({'error': 'Schedule not found'}), 404
+    return jsonify({'schedule': schedule})
+
+
+@api_engine_bp.route('/api/visibility/schedules/<client_id>/pause', methods=['POST'])
+def pause_visibility_schedule_route(client_id):
+    schedule = get_visibility_schedule(client_id)
+    if not schedule:
+        return jsonify({'error': 'Schedule not found'}), 404
+    update_visibility_schedule_status(client_id, 'paused', None)
+    return jsonify({'status': 'paused'})
+
+
+@api_engine_bp.route('/api/visibility/schedules/<client_id>/resume', methods=['POST'])
+def resume_visibility_schedule_route(client_id):
+    schedule = get_visibility_schedule(client_id)
+    if not schedule:
+        return jsonify({'error': 'Schedule not found'}), 404
+    next_run_at = _compute_next_run_utc(schedule.get('frequency', 'daily'), schedule.get('timezone', 'UTC'), schedule.get('run_hour', '09:00'))
+    update_visibility_schedule_status(client_id, 'active', next_run_at)
+    JobRunner.start_worker()
+    return jsonify({'status': 'active', 'nextRunAt': next_run_at})
+
+
+@api_engine_bp.route('/api/visibility/runs/<client_id>', methods=['GET'])
+def get_visibility_runs_route(client_id):
+    limit = int(request.args.get('limit', 20))
+    runs = get_visibility_runs(client_id, max(1, min(limit, 100)))
+    return jsonify({'runs': runs})
