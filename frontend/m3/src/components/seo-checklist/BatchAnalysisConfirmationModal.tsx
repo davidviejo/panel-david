@@ -9,6 +9,7 @@ interface Props {
   selectedCount: number;
   settings: SeoChecklistSettings;
   capabilities: Capabilities | null;
+  analysisMode: 'basic' | 'advanced';
 }
 
 const COST_PER_PROVIDER_FALLBACK: Record<string, number> = {
@@ -24,10 +25,11 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
   selectedCount,
   settings,
   capabilities,
+  analysisMode,
 }) => {
   const [confirmed, setConfirmed] = useState(false);
   const { serp, budgets } = settings;
-  const isBasicMode = !serp.enabled;
+  const isAdvancedMode = analysisMode === 'advanced';
 
   useEffect(() => {
     const resetTimer = window.setTimeout(() => {
@@ -43,7 +45,7 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
   let costPerKeyword = 0;
   let providerAvailable = true;
 
-  if (serp.enabled) {
+  if (isAdvancedMode) {
     if (capabilities) {
       if (!capabilities.serpProviders[serp.provider]) {
         providerAvailable = false;
@@ -60,11 +62,11 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
   }
 
   const estimatedCost = estimatedKeywords * costPerKeyword;
-  const isOverBudget = !isBasicMode && estimatedCost > budgets.maxEstimatedCostPerBatch;
-  const isOverDaily = !isBasicMode && estimatedCost > budgets.dailyBudget;
-  const needsConfirmation = !isBasicMode && providerAvailable && !isOverBudget && !isOverDaily;
+  const isOverBudget = isAdvancedMode && estimatedCost > budgets.maxEstimatedCostPerBatch;
+  const isOverDaily = isAdvancedMode && estimatedCost > budgets.dailyBudget;
+  const needsConfirmation = isAdvancedMode && providerAvailable && !isOverBudget && !isOverDaily;
   const isConfirmDisabled =
-    (needsConfirmation && !confirmed) || isOverBudget || isOverDaily || (!isBasicMode && !providerAvailable);
+    (needsConfirmation && !confirmed) || isOverBudget || isOverDaily || (isAdvancedMode && !providerAvailable);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -86,7 +88,7 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
               <span>Keywords estimadas:</span>
               <span className="font-medium">{estimatedKeywords}</span>
             </div>
-            {isBasicMode ? (
+            {!isAdvancedMode ? (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-emerald-600 dark:text-emerald-400 font-medium">
                 Análisis básico sin coste SERP
               </div>
@@ -106,7 +108,7 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
             )}
           </div>
 
-          {!isBasicMode && !providerAvailable && (
+          {isAdvancedMode && !providerAvailable && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-xl text-sm flex items-start gap-3">
               <AlertTriangle size={18} className="shrink-0 mt-0.5" />
               <div>
@@ -118,7 +120,7 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
             </div>
           )}
 
-          {!isBasicMode && providerAvailable && (isOverBudget || isOverDaily) && (
+          {isAdvancedMode && providerAvailable && (isOverBudget || isOverDaily) && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-xl text-sm flex items-start gap-3">
               <AlertTriangle size={18} className="shrink-0 mt-0.5" />
               <div>

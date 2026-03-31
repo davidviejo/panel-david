@@ -254,12 +254,13 @@ export const SeoUrlList: React.FC<Props> = ({
   };
 
   // Bulk Actions
-  const executeBatch = async () => {
+  const executeBatch = async (forcedIds?: Set<string>) => {
     setIsConfirmModalOpen(false);
     setIsAnalyzing(true);
     setBatchProgress(null);
 
-    const pagesToAnalyze = pages.filter((p) => selectedIds.has(p.id));
+    const idsToAnalyze = forcedIds ?? selectedIds;
+    const pagesToAnalyze = pages.filter((p) => idsToAnalyze.has(p.id));
 
     // Default concurrency or derived from somewhere? Using 3 as safe default
     const concurrency = 3;
@@ -367,6 +368,12 @@ export const SeoUrlList: React.FC<Props> = ({
     if (filteredPages.length === 0) return;
     const allIds = new Set(filteredPages.map((p) => p.id));
     setSelectedIds(allIds);
+
+    if (analysisMode === 'basic') {
+      executeBatch(allIds);
+      return;
+    }
+
     setIsConfirmModalOpen(true);
   };
 
@@ -440,6 +447,7 @@ export const SeoUrlList: React.FC<Props> = ({
         selectedCount={selectedIds.size}
         settings={settings}
         capabilities={capabilities}
+        analysisMode={analysisMode}
       />
 
       {isAnalyzing && batchProgress && (
