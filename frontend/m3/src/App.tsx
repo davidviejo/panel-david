@@ -5,6 +5,7 @@ import { ToastProvider } from './components/ui/ToastContext';
 import { ProjectProvider, useProject } from './context/ProjectContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { Spinner } from './components/ui/Spinner';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const ModuleDetail = lazy(() => import('./pages/ModuleDetail'));
@@ -101,11 +102,16 @@ export const AppRoutes: React.FC = () => {
                 <Route
                   index
                   element={
-                    <Dashboard
-                      modules={modules}
-                      globalScore={globalScore}
-                      onReset={resetCurrentProject}
-                    />
+                    <ErrorBoundary
+                      title="No pudimos cargar el Dashboard"
+                      message="Se produjo un error al renderizar esta vista. Si persiste, revisa la integración de Search Console y vuelve a intentar."
+                    >
+                      <Dashboard
+                        modules={modules}
+                        globalScore={globalScore}
+                        onReset={resetCurrentProject}
+                      />
+                    </ErrorBoundary>
                   }
                 />
                 <Route
