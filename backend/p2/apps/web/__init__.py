@@ -83,6 +83,7 @@ from apps.web.api_routes_map import (
 from apps.web.auth_bp import auth_bp
 from apps.web.portal_bp import portal_bp
 from apps.auth_utils import hash_password
+from apps.job_runner import JobRunner
 
 def create_app(config_class=Config):
     # Inicializar base de datos
@@ -214,6 +215,7 @@ def create_app(config_class=Config):
     # Iniciar el vigilante (solo si no estamos testeando, aunque no tenemos flag de testing aun)
     if not app.config.get('TESTING'):
         start_monitor()
+        JobRunner.start_worker()
 
     return app
 

@@ -15,6 +15,7 @@ import datetime
 import re
 from typing import List, Dict, Optional, Any
 from urllib.parse import urlparse
+from zoneinfo import ZoneInfo
 
 # Database Configuration
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -229,6 +230,8 @@ def init_db() -> None:
         CREATE TABLE IF NOT EXISTS ai_visibility_runs (
             id {auto_inc_type},
             client_id TEXT NOT NULL,
+            run_version INTEGER DEFAULT 1,
+            run_trigger TEXT DEFAULT 'manual',
             request_payload TEXT,
             mentions REAL DEFAULT 0,
             share_of_voice REAL DEFAULT 0,
@@ -240,19 +243,59 @@ def init_db() -> None:
         )
     ''')
 
+    # AI Visibility Schedule Table
+    c.execute(f'''
+        CREATE TABLE IF NOT EXISTS ai_visibility_schedules (
+            client_id {text_pk},
+            frequency TEXT NOT NULL DEFAULT 'daily',
+            timezone TEXT NOT NULL DEFAULT 'UTC',
+            run_hour INTEGER NOT NULL DEFAULT 9,
+            run_minute INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'paused',
+            last_run_at TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # AI Visibility Execution Logs Table
+    c.execute(f'''
+        CREATE TABLE IF NOT EXISTS ai_visibility_execution_logs (
+            id {auto_inc_type},
+            client_id TEXT NOT NULL,
+            run_id INTEGER,
+            status TEXT NOT NULL,
+            error_type TEXT,
+            error_message TEXT,
+            recoverable INTEGER DEFAULT 0,
+            details_json TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
     # Check if item_metadata column exists (for migration of existing table)
     # This logic is slightly more complex with Postgres, keeping it simple for now
     try:
         c.execute("SELECT item_metadata FROM analysis_job_items LIMIT 1")
-    except Exception: # Catch generic exception for both sqlite and pg
+    except Exception:  # Catch generic exception for both sqlite and pg
         try:
-            # Rollback needed for Postgres if previous query failed
             if USE_POSTGRES:
                 conn.rollback()
             c.execute("ALTER TABLE analysis_job_items ADD COLUMN item_metadata TEXT")
             conn.commit()
         except Exception as e:
             logging.error(f"Error adding item_metadata column: {e}")
+            if USE_POSTGRES:
+                conn.rollback()
+
+    # Migration guards for ai_visibility_runs columns.
+    for query in (
+        "ALTER TABLE ai_visibility_runs ADD COLUMN run_version INTEGER DEFAULT 1",
+        "ALTER TABLE ai_visibility_runs ADD COLUMN run_trigger TEXT DEFAULT 'manual'",
+    ):
+        try:
+            c.execute(query)
+            conn.commit()
+        except Exception:
             if USE_POSTGRES:
                 conn.rollback()
 
@@ -499,15 +542,21 @@ def insert_ai_visibility_run(client_id: str, data: Dict[str, Any]) -> Dict[str, 
     c = conn.cursor()
 
     try:
+        c.execute("SELECT MAX(run_version) FROM ai_visibility_runs WHERE client_id = ?", (str(client_id),))
+        current_version = c.fetchone()
+        next_version = int((current_version[0] if current_version else 0) or 0) + 1
+
         c.execute(
             '''
             INSERT INTO ai_visibility_runs (
-                client_id, request_payload, mentions, share_of_voice, sentiment,
+                client_id, run_version, run_trigger, request_payload, mentions, share_of_voice, sentiment,
                 competitor_appearances, raw_evidence, provider_used
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''',
             (
                 str(client_id),
+                next_version,
+                str(data.get('runTrigger') or 'manual'),
                 json.dumps(data.get('requestPayload') or {}),
                 float(data.get('mentions') or 0),
                 float(data.get('shareOfVoice') or 0),
@@ -559,6 +608,129 @@ def _normalize_ai_visibility_row(row: Dict[str, Any]) -> Dict[str, Any]:
             except Exception:
                 row[key] = {} if key != 'raw_evidence' else []
     return row
+
+
+def upsert_ai_visibility_schedule(client_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    conn = get_db_connection()
+    c = conn.cursor()
+    now_utc = datetime.datetime.utcnow().isoformat()
+    existing = get_ai_visibility_schedule(client_id) or {}
+
+    frequency = str(data.get('frequency') or existing.get('frequency') or 'daily').lower()
+    if frequency not in ('daily', 'weekly'):
+        frequency = 'daily'
+
+    timezone = str(data.get('timezone') or existing.get('timezone') or 'UTC')
+    try:
+        ZoneInfo(timezone)
+    except Exception:
+        timezone = 'UTC'
+
+    run_hour = max(0, min(int(data.get('runHour', existing.get('run_hour', 9))), 23))
+    run_minute = max(0, min(int(data.get('runMinute', existing.get('run_minute', 0))), 59))
+    status = str(data.get('status') or existing.get('status') or 'paused').lower()
+    if status not in ('active', 'paused'):
+        status = 'paused'
+
+    try:
+        c.execute("SELECT 1 FROM ai_visibility_schedules WHERE client_id = ?", (str(client_id),))
+        exists = c.fetchone()
+        if exists:
+            c.execute(
+                '''
+                UPDATE ai_visibility_schedules
+                SET frequency=?, timezone=?, run_hour=?, run_minute=?, status=?, updated_at=?
+                WHERE client_id=?
+                ''',
+                (frequency, timezone, run_hour, run_minute, status, now_utc, str(client_id))
+            )
+        else:
+            c.execute(
+                '''
+                INSERT INTO ai_visibility_schedules (
+                    client_id, frequency, timezone, run_hour, run_minute, status, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (str(client_id), frequency, timezone, run_hour, run_minute, status, now_utc)
+            )
+        conn.commit()
+        return get_ai_visibility_schedule(client_id)
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
+
+def get_ai_visibility_schedule(client_id: str) -> Dict[str, Any]:
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM ai_visibility_schedules WHERE client_id = ?", (str(client_id),))
+        row = c.fetchone()
+        return dict(row) if row else {}
+    finally:
+        conn.close()
+
+
+def get_active_ai_visibility_schedules() -> List[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM ai_visibility_schedules WHERE status='active'")
+        return [dict(row) for row in c.fetchall()]
+    finally:
+        conn.close()
+
+
+def mark_ai_visibility_schedule_run(client_id: str, run_at: Optional[str] = None) -> None:
+    conn = get_db_connection()
+    try:
+        c = conn.cursor()
+        run_at = run_at or datetime.datetime.utcnow().isoformat()
+        c.execute(
+            '''
+            UPDATE ai_visibility_schedules
+            SET last_run_at=?, updated_at=?
+            WHERE client_id=?
+            ''',
+            (run_at, run_at, str(client_id))
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def insert_ai_visibility_execution_log(client_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    conn = get_db_connection()
+    c = conn.cursor()
+    try:
+        c.execute(
+            '''
+            INSERT INTO ai_visibility_execution_logs (
+                client_id, run_id, status, error_type, error_message, recoverable, details_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''',
+            (
+                str(client_id),
+                data.get('runId'),
+                str(data.get('status') or 'error'),
+                str(data.get('errorType') or ''),
+                str(data.get('errorMessage') or ''),
+                1 if bool(data.get('recoverable')) else 0,
+                json.dumps(data.get('details') or {}),
+            )
+        )
+        log_id = c.lastrowid
+        conn.commit()
+        c.execute("SELECT * FROM ai_visibility_execution_logs WHERE id = ?", (log_id,))
+        row = c.fetchone()
+        return dict(row) if row else {}
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
 
 
 def get_all_projects() -> List[Dict[str, Any]]:

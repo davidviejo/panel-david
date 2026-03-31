@@ -21,6 +21,9 @@ export const endpoints = {
     visibilityRun: () => 'api/ai/visibility/run',
     visibilityHistory: (clientId: string) => `api/ai/visibility/history/${encodePathParam(clientId)}`,
     visibilityConfig: (clientId: string) => `api/ai/visibility/config/${encodePathParam(clientId)}`,
+    visibilitySchedule: (clientId: string) => `api/ai/visibility/schedule/${encodePathParam(clientId)}`,
+    visibilityScheduleAction: (clientId: string, action: 'pause' | 'resume') =>
+      `api/ai/visibility/schedule/${encodePathParam(clientId)}/${action}`,
   },
   engine: {
     capabilities: () => 'api/capabilities',

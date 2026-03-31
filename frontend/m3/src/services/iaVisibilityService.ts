@@ -14,6 +14,8 @@ export interface IAVisibilityRequest {
 
 export interface IAVisibilityResponse {
   clientId: string;
+  version?: number;
+  runTrigger?: 'manual' | 'scheduled';
   mentions: number;
   shareOfVoice: number;
   sentiment: number;
@@ -34,6 +36,22 @@ export interface IAVisibilityHistoryResponse {
   runs: IAVisibilityResponse[];
 }
 
+export interface IAVisibilitySchedule {
+  frequency: 'daily' | 'weekly';
+  timezone: string;
+  runHour: number;
+  runMinute: number;
+  status: 'active' | 'paused';
+  lastRunAt?: string;
+  updatedAt?: string;
+}
+
+export interface IAVisibilityScheduleResponse {
+  status?: 'ok';
+  clientId: string;
+  schedule: IAVisibilitySchedule;
+}
+
 export const iaVisibilityService = {
   run: (payload: IAVisibilityRequest) =>
     httpClient.post<IAVisibilityResponse>(endpoints.ai.visibilityRun(), payload),
@@ -43,4 +61,13 @@ export const iaVisibilityService = {
 
   saveConfig: (clientId: string, payload: IAVisibilityRequest) =>
     httpClient.post<IAVisibilityConfigResponse>(endpoints.ai.visibilityConfig(clientId), payload),
+
+  getSchedule: (clientId: string) =>
+    httpClient.get<IAVisibilityScheduleResponse>(endpoints.ai.visibilitySchedule(clientId)),
+
+  saveSchedule: (clientId: string, payload: Partial<IAVisibilitySchedule>) =>
+    httpClient.post<IAVisibilityScheduleResponse>(endpoints.ai.visibilitySchedule(clientId), payload),
+
+  toggleSchedule: (clientId: string, action: 'pause' | 'resume') =>
+    httpClient.post<IAVisibilityScheduleResponse>(endpoints.ai.visibilityScheduleAction(clientId, action), {}),
 };
