@@ -50,6 +50,7 @@ vi.mock('./pages/CompletedTasks', () => ({ default: () => <div>completed tasks</
 vi.mock('./pages/ClientRoadmap', () => ({ default: () => <div>client roadmap</div> }));
 vi.mock('./pages/KanbanBoard', () => ({ default: () => <div>kanban</div> }));
 vi.mock('./pages/AIRoadmap', () => ({ default: () => <div>ai roadmap</div> }));
+vi.mock('./pages/IAVisibility', () => ({ default: () => <div>ia visibility</div> }));
 vi.mock('./pages/SeoChecklistPage', () => ({ default: () => <div>seo checklist</div> }));
 vi.mock('./pages/Settings', () => ({ default: () => <div>settings</div> }));
 vi.mock('./pages/admin/AdminIdeasPage', () => ({ default: () => <div>admin ideas</div> }));
@@ -69,6 +70,17 @@ describe('AppRoutes', () => {
     );
 
     expect(await screen.findByText('dashboard page')).toBeTruthy();
+    expect(screen.getByTestId('layout')).toBeTruthy();
+  });
+
+  it('renders IA Visibility route in the internal app', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/ia-visibility']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('ia visibility')).toBeTruthy();
     expect(screen.getByTestId('layout')).toBeTruthy();
   });
 });

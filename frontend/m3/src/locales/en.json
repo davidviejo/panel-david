@@ -24,7 +24,9 @@
     "notes": "Notes",
     "shortcuts": "Shortcuts",
     "emergency_index": "EMERGENCY INDEX",
-    "indexing": "INDEXING..."
+    "indexing": "INDEXING...",
+    "ia_visibility": "AI Visibility",
+    "ia_visibility_sub": "SERP & Evolution"
   },
   "global_score": "Global Score",
   "feedback": {
@@ -60,6 +62,31 @@
       "restore_backup_message": "Projects, SEO checklists, URLs, kanban, tasks, notes and settings will be restored. Current local data will be replaced.",
       "emergency_index_title": "Confirm emergency indexing",
       "emergency_index_message": "This will send a ping to the Indexing API for recent critical URLs."
+    }
+  },
+  "ia_visibility": {
+    "title": "AI Visibility",
+    "subtitle": "Track keywords, ranking changes, and historical evolution by client.",
+    "client_selector": "Current client",
+    "current_client": "Client under analysis",
+    "results_title": "Visibility results",
+    "history_title": "Analysis history",
+    "no_results": "No results match the current filters.",
+    "filters": {
+      "keyword": "Keyword or URL filter",
+      "keyword_placeholder": "Search keyword or URL...",
+      "status": "Status",
+      "all": "All",
+      "up": "Up",
+      "stable": "Stable",
+      "down": "Down"
+    },
+    "table": {
+      "keyword": "Keyword",
+      "url": "URL",
+      "position": "Position",
+      "change": "Change",
+      "status": "Status"
     }
   }
 }
