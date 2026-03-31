@@ -1,6 +1,7 @@
 import { ChecklistKey, ChecklistStatus, normalizeChecklistStatus, SeoPage } from '../types/seoChecklist';
 import { SettingsRepository } from './settingsRepository';
 import { buildPendingChecks } from '../utils/seoChecklistAiValidation';
+import { runChecklistHeuristics } from '../utils/checklistAiHeuristics';
 
 interface AiValidationResult {
   key: ChecklistKey;
@@ -16,6 +17,8 @@ interface AiValidationResponse {
 
 export interface SeoChecklistAiSummary {
   updatedChecks: Array<{ key: ChecklistKey; status: ChecklistStatus; notes: string }>;
+  heuristicResolvedChecks: Array<{ key: ChecklistKey; status: ChecklistStatus; notes: string }>;
+  pendingForAiChecks: ChecklistKey[];
   detectedErrors: string[];
   skippedSiChecks: ChecklistKey[];
   omittedBySi: number;
@@ -60,17 +63,26 @@ export const validateChecklistWithAI = async (page: SeoPage): Promise<SeoCheckli
   }
 
   const { pending, skippedSi } = buildPendingChecks(page);
-  if (pending.length === 0) {
+  const heuristicRun = runChecklistHeuristics(page, pending);
+  const heuristicResolvedChecks = heuristicRun.resolvedByHeuristics.map(({ key, status, notes }) => ({
+    key,
+    status,
+    notes,
+  }));
+
+  if (heuristicRun.pendingForAI.length === 0) {
     return {
-      updatedChecks: [],
+      updatedChecks: [...heuristicResolvedChecks],
+      heuristicResolvedChecks,
+      pendingForAiChecks: [],
       detectedErrors: [],
       skippedSiChecks: skippedSi.map((item) => item.key),
       omittedBySi: skippedSi.length,
-      attempted: 0,
+      attempted: heuristicRun.pendingForAI.length,
     };
   }
 
-  const checksPayload = pending.map((item) => ({
+  const checksPayload = heuristicRun.pendingForAI.map((item) => ({
     key: item.key,
     label: item.label,
     priority: item.priority,
@@ -144,7 +156,7 @@ Formato de salida:
     throw new Error('La respuesta de IA no pudo parsearse como JSON válido.');
   }
 
-  const pendingByKey = new Map(pending.map((item) => [item.key, item]));
+  const pendingByKey = new Map(heuristicRun.pendingForAI.map((item) => [item.key, item]));
   const updatedChecks = (parsed.results || [])
     .filter((item) => pendingByKey.has(item.key))
     .map((item) => ({
@@ -164,10 +176,12 @@ Formato de salida:
   ];
 
   return {
-    updatedChecks,
+    updatedChecks: [...heuristicResolvedChecks, ...updatedChecks],
+    heuristicResolvedChecks,
+    pendingForAiChecks: heuristicRun.pendingForAI.map((item) => item.key),
     detectedErrors,
     skippedSiChecks: skippedSi.map((item) => item.key),
     omittedBySi: skippedSi.length,
-    attempted: pending.length,
+    attempted: heuristicRun.pendingForAI.length,
   };
 };

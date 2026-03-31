@@ -149,7 +149,7 @@ export const SeoChecklistDetail: React.FC<Props> = ({
       });
       setAiSummary(summary);
       setAiStatus('completed');
-      setAiFeedback(`Completado: ${summary.updatedChecks.length} checks actualizados.`);
+      setAiFeedback(`Completado: ${summary.updatedChecks.length} checks actualizados (${summary.heuristicResolvedChecks.length} heurística, ${summary.attempted} IA).`);
     } catch (err: any) {
       setAiStatus('error');
       setAiFeedback(err.message || 'Error validando con IA.');
@@ -384,8 +384,10 @@ export const SeoChecklistDetail: React.FC<Props> = ({
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 text-sm space-y-2">
           <div className="font-bold text-slate-700 dark:text-slate-200">Resumen validación IA</div>
           <div className="text-slate-600 dark:text-slate-300">
-            Checks actualizados: <strong>{aiSummary.updatedChecks.length}</strong> · Omitidos por
-            estar en SI: <strong>{aiSummary.omittedBySi}</strong>
+            Checks actualizados: <strong>{aiSummary.updatedChecks.length}</strong> · Resueltos por
+            heurística: <strong>{aiSummary.heuristicResolvedChecks.length}</strong> · Pendientes de IA:
+            <strong>{aiSummary.pendingForAiChecks.length}</strong> · Omitidos por estar en SI:{' '}
+            <strong>{aiSummary.omittedBySi}</strong>
           </div>
           {aiSummary.detectedErrors.length > 0 && (
             <ul className="list-disc pl-5 text-red-600 dark:text-red-300">
