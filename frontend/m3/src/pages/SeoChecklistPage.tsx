@@ -4,7 +4,7 @@ import { SeoUrlList } from '../components/seo-checklist/SeoUrlList';
 import { SeoChecklistDetail } from '../components/seo-checklist/SeoChecklistDetail';
 import { ImportUrlsModal } from '../components/seo-checklist/ImportUrlsModal';
 import { BatchJobMonitor } from '../components/seo-checklist/BatchJobMonitor';
-import { Plus, ListChecks } from 'lucide-react';
+import { Plus, ListChecks, Sparkles, Table } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import {
@@ -16,6 +16,7 @@ import {
 } from '../services/pythonEngineClient';
 import { Capabilities, AnalysisConfigPayload, SeoPage } from '../types/seoChecklist';
 import { processAnalysisResult } from '../utils/seoUtils';
+import { AutoClusterizationPanel } from '../components/seo-checklist/AutoClusterizationPanel';
 
 const SeoChecklistPage: React.FC = () => {
   const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
@@ -62,6 +63,8 @@ const SeoChecklistPage: React.FC = () => {
   } = useSeoChecklist();
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [activeView, setActiveView] = useState<'official' | 'auto_cluster'>('official');
+
 
   // Batch Job State
   const [jobs, setJobs] = useState<BatchJobStatus[]>(() => {
@@ -132,45 +135,70 @@ const SeoChecklistPage: React.FC = () => {
     <div className="page-shell">
       {!selectedPage ? (
         <>
-          <Card className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="section-title">Checklist SEO (URLs)</h1>
-              <p className="section-subtitle">Gestiona y analiza el SEO On-Page de tus URLs.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              {jobs.length > 0 && (
-                <Button onClick={() => setIsMonitorOpen(true)} variant="secondary">
-                  <ListChecks size={20} />
-                  Monitor Jobs (
-                  {
-                    jobs.filter(
-                      (j) =>
-                        j.status !== 'done' && j.status !== 'cancelled' && j.status !== 'error',
-                    ).length
-                  }
-                  )
-                </Button>
+          <Card className="space-y-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h1 className="section-title">Checklist SEO (URLs)</h1>
+                <p className="section-subtitle">Gestiona y analiza el SEO On-Page de tus URLs.</p>
+              </div>
+              {activeView === 'official' && (
+                <div className="flex items-center gap-3">
+                  {jobs.length > 0 && (
+                    <Button onClick={() => setIsMonitorOpen(true)} variant="secondary">
+                      <ListChecks size={20} />
+                      Monitor Jobs (
+                      {
+                        jobs.filter(
+                          (j) =>
+                            j.status !== 'done' && j.status !== 'cancelled' && j.status !== 'error',
+                        ).length
+                      }
+                      )
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => setIsImportModalOpen(true)}
+                    variant="primary"
+                    className="font-bold"
+                  >
+                    <Plus size={20} />
+                    Importar URLs
+                  </Button>
+                </div>
               )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
               <Button
-                onClick={() => setIsImportModalOpen(true)}
-                variant="primary"
-                className="font-bold"
+                variant={activeView === 'official' ? 'primary' : 'secondary'}
+                onClick={() => setActiveView('official')}
               >
-                <Plus size={20} />
-                Importar URLs
+                <Table size={16} />
+                Análisis SEO y Clusters
+              </Button>
+              <Button
+                variant={activeView === 'auto_cluster' ? 'primary' : 'secondary'}
+                onClick={() => setActiveView('auto_cluster')}
+              >
+                <Sparkles size={16} />
+                Auto-clusterización
               </Button>
             </div>
           </Card>
 
-          <SeoUrlList
-            pages={pages}
-            onSelect={(page) => setSelectedPageId(page.id)}
-            onDelete={deletePage}
-            onBulkUpdate={bulkUpdatePages}
-            onBulkDelete={bulkDeletePages}
-            capabilities={capabilities}
-            onRunBatch={handleRunBatch}
-          />
+          {activeView === 'official' ? (
+            <SeoUrlList
+              pages={pages}
+              onSelect={(page) => setSelectedPageId(page.id)}
+              onDelete={deletePage}
+              onBulkUpdate={bulkUpdatePages}
+              onBulkDelete={bulkDeletePages}
+              capabilities={capabilities}
+              onRunBatch={handleRunBatch}
+            />
+          ) : (
+            <AutoClusterizationPanel pages={pages} onBulkUpdate={bulkUpdatePages} />
+          )}
         </>
       ) : (
         <SeoChecklistDetail
