@@ -104,4 +104,33 @@ describe('ChecklistItem', () => {
     // Since JSON.stringify formats with newlines, exact text match might be tricky, but we can check if it contains parts
     // Or just that the component rendered without error.
   });
+
+  it('renders IA labels in status selector', () => {
+    const item: IChecklistItem = {
+      key: 'CLUSTER',
+      label: '1. Cluster',
+      status_manual: 'SI_IA',
+      notes_manual: '',
+    };
+    const onChange = vi.fn();
+    render(<ChecklistItem item={item} onChange={onChange} />);
+
+    expect(screen.getByDisplayValue('Si (IA)')).toBeDefined();
+    expect(screen.getByRole('option', { name: 'Error claro (IA)' })).toBeDefined();
+  });
+
+  it('calls onChange when selecting an IA status', () => {
+    const item: IChecklistItem = {
+      key: 'CLUSTER',
+      label: '1. Cluster',
+      status_manual: 'NO',
+      notes_manual: '',
+    };
+    const onChange = vi.fn();
+    render(<ChecklistItem item={item} onChange={onChange} />);
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'SI_IA' } });
+
+    expect(onChange).toHaveBeenCalledWith({ status_manual: 'SI_IA' });
+  });
 });

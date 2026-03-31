@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { enforceUniquePrimaryKeywords } from './useSeoChecklist';
-import { SeoPage, CHECKLIST_POINTS, ChecklistItem, ChecklistKey } from '../types/seoChecklist';
+import {
+  SeoPage,
+  CHECKLIST_POINTS,
+  ChecklistItem,
+  ChecklistKey,
+  normalizeChecklistStatus,
+} from '../types/seoChecklist';
 
 const buildChecklist = () => {
   const checklist: Record<string, ChecklistItem> = {};
@@ -26,6 +32,13 @@ const buildPage = (overrides: Partial<SeoPage>): SeoPage => ({
 });
 
 describe('enforceUniquePrimaryKeywords', () => {
+  it('normalizes legacy checklist statuses for localStorage compatibility', () => {
+    expect(normalizeChecklistStatus('SI')).toBe('SI');
+    expect(normalizeChecklistStatus('Si (IA)')).toBe('SI_IA');
+    expect(normalizeChecklistStatus('error claro (ia)')).toBe('ERROR_CLARO_IA');
+    expect(normalizeChecklistStatus('N/A')).toBe('NA');
+  });
+
   it('keeps the duplicated keyword only on the highest-performing URL', () => {
     const pages = [
       buildPage({

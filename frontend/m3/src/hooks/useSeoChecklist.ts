@@ -1,6 +1,12 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useProject } from '../context/ProjectContext';
-import { SeoPage, ChecklistKey, ChecklistItem, CHECKLIST_POINTS } from '../types/seoChecklist';
+import {
+  SeoPage,
+  ChecklistKey,
+  ChecklistItem,
+  CHECKLIST_POINTS,
+  normalizeChecklistStatus,
+} from '../types/seoChecklist';
 import { isBrandTermMatch } from '../utils/brandTerms';
 import { useSeoChecklistSettings } from './useSeoChecklistSettings';
 
@@ -64,7 +70,11 @@ const normalizeChecklist = (checklist?: Partial<Record<ChecklistKey, ChecklistIt
     (acc, point) => {
       const existing = checklist?.[point.key];
       acc[point.key] = existing
-        ? { ...buildFallbackChecklistItem(point.key), ...existing }
+        ? {
+            ...buildFallbackChecklistItem(point.key),
+            ...existing,
+            status_manual: normalizeChecklistStatus(existing.status_manual),
+          }
         : buildFallbackChecklistItem(point.key);
       return acc;
     },

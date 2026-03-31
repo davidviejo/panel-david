@@ -104,10 +104,12 @@ export const SeoUrlList: React.FC<Props> = ({
     setCurrentPage(1);
   };
 
-  const calculateProgress = (page: SeoPage) => {
+  const calculateStatusMetrics = (page: SeoPage) => {
     const items = Object.values(page.checklist) as ChecklistItem[];
     const siCount = items.filter((i) => i.status_manual === 'SI').length;
-    return Math.round((siCount / items.length) * 100);
+    const siIaCount = items.filter((i) => i.status_manual === 'SI_IA').length;
+    const progress = Math.round((siCount / items.length) * 100);
+    return { progress, siIaCount };
   };
 
   const handleExport = () => {
@@ -610,99 +612,112 @@ export const SeoUrlList: React.FC<Props> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {displayedPages.map((page) => (
-                <tr
-                  key={page.id}
-                  className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group ${
-                    selectedIds.has(page.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
-                  }`}
-                >
-                  <td className="px-6 py-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(page.id)}
-                      onChange={() => toggleSelect(page.id)}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                    />
-                  </td>
-                  <td className="px-6 py-4 font-medium max-w-[300px] truncate" title={page.url}>
-                    <div className="flex items-center gap-2">
-                      <span
-                        onClick={() => onSelect(page)}
-                        className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate"
-                      >
-                        {page.url}
-                      </span>
-                      <a
-                        href={page.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <ExternalLink size={14} />
-                      </a>
-                    </div>
-                    {page.cluster && (
-                      <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                        <Layers size={10} />
-                        {page.cluster}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                    {page.kwPrincipal}
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">
-                    <span className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-xs">
-                      {page.pageType}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right text-slate-600 dark:text-slate-300 font-mono text-xs">
-                    {(page.gscMetrics?.clicks || 0).toLocaleString('es-ES')}
-                  </td>
-                  <td className="px-6 py-4 text-right text-slate-600 dark:text-slate-300 font-mono text-xs">
-                    {(page.gscMetrics?.impressions || 0).toLocaleString('es-ES')}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center gap-2 justify-center">
-                      <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-emerald-500 rounded-full"
-                          style={{ width: `${calculateProgress(page)}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-xs font-mono">{calculateProgress(page)}%</span>
-                      {page.advancedBlockedReason && (
-                        <div
-                          title={`Análisis avanzado bloqueado: ${page.advancedBlockedReason}`}
-                          className="text-amber-500 cursor-help"
+              {displayedPages.map((page) => {
+                const statusMetrics = calculateStatusMetrics(page);
+                return (
+                  <tr
+                    key={page.id}
+                    className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group ${
+                      selectedIds.has(page.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
+                    }`}
+                  >
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(page.id)}
+                        onChange={() => toggleSelect(page.id)}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                    </td>
+                    <td className="px-6 py-4 font-medium max-w-[300px] truncate" title={page.url}>
+                      <div className="flex items-center gap-2">
+                        <span
+                          onClick={() => onSelect(page)}
+                          className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate"
                         >
-                          <AlertTriangle size={14} />
+                          {page.url}
+                        </span>
+                        <a
+                          href={page.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <ExternalLink size={14} />
+                        </a>
+                      </div>
+                      {page.cluster && (
+                        <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                          <Layers size={10} />
+                          {page.cluster}
                         </div>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right text-xs text-slate-400">
-                    {page.lastAnalyzedAt ? new Date(page.lastAnalyzedAt).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => onDelete(page.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => onSelect(page)}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                      >
-                        <ChevronRight size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                      {page.kwPrincipal}
+                    </td>
+                    <td className="px-6 py-4 text-slate-500">
+                      <span className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-xs">
+                        {page.pageType}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right text-slate-600 dark:text-slate-300 font-mono text-xs">
+                      {(page.gscMetrics?.clicks || 0).toLocaleString('es-ES')}
+                    </td>
+                    <td className="px-6 py-4 text-right text-slate-600 dark:text-slate-300 font-mono text-xs">
+                      {(page.gscMetrics?.impressions || 0).toLocaleString('es-ES')}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center gap-2 justify-center">
+                        <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full"
+                            style={{ width: `${statusMetrics.progress}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs font-mono">{statusMetrics.progress}%</span>
+                        {statusMetrics.siIaCount > 0 && (
+                          <span
+                            className="text-[10px] font-semibold text-cyan-600 dark:text-cyan-400"
+                            title="Estados Si (IA) no incluidos en progreso"
+                          >
+                            IA: {statusMetrics.siIaCount}
+                          </span>
+                        )}
+                        {page.advancedBlockedReason && (
+                          <div
+                            title={`Análisis avanzado bloqueado: ${page.advancedBlockedReason}`}
+                            className="text-amber-500 cursor-help"
+                          >
+                            <AlertTriangle size={14} />
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right text-xs text-slate-400">
+                      {page.lastAnalyzedAt
+                        ? new Date(page.lastAnalyzedAt).toLocaleDateString()
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => onDelete(page.id)}
+                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => onSelect(page)}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {filteredPages.length === 0 && (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center text-slate-400">
