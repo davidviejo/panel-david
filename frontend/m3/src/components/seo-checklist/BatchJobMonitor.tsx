@@ -23,6 +23,7 @@ import {
   getRunnerHealth,
   AnalysisResponse,
   RunnerHealth,
+  JobStatus,
 } from '../../services/pythonEngineClient';
 import { useToast } from '../ui/ToastContext';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +34,10 @@ interface Props {
   onApplyResult: (result: AnalysisResponse) => void;
   onJobUpdate: (updatedJob: BatchJobStatus) => void;
 }
+
+const PAUSE_ALLOWED_STATUSES: JobStatus[] = ['processing', 'pending'];
+const CANCEL_ALLOWED_STATUSES: JobStatus[] = ['pending', 'processing', 'paused'];
+const TERMINAL_STATUSES: JobStatus[] = ['done', 'cancelled', 'error'];
 
 export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult, onJobUpdate }) => {
   const { t } = useTranslation();
@@ -58,7 +63,7 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
 
     const interval = setInterval(() => {
       const job = jobs.find((j) => j.id === selectedJobId);
-      if (job && job.status !== 'done' && job.status !== 'cancelled' && job.status !== 'error') {
+      if (job && !TERMINAL_STATUSES.includes(job.status)) {
         getBatchJob(selectedJobId).then(onJobUpdate).catch(console.error);
       }
     }, 3000);
@@ -199,7 +204,7 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
                               : job.status === 'error'
                                 ? 'bg-red-100 border-red-200 text-red-700'
                                 : job.status === 'paused'
-                                  ? 'bg-amber-100 border-amber-200 text-amber-700'
+                                  ? 'bg-violet-100 border-violet-200 text-violet-700'
                                 : job.status === 'cancelled'
                                   ? 'bg-slate-100 border-slate-200 text-slate-700'
                                   : 'bg-blue-100 border-blue-200 text-blue-700'
@@ -276,11 +281,15 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
                   className={`px-1.5 py-0.5 rounded border ${
                     selectedJob?.status === 'done'
                       ? 'bg-emerald-100 border-emerald-200 text-emerald-700'
+                      : selectedJob?.status === 'error'
+                        ? 'bg-red-100 border-red-200 text-red-700'
                       : selectedJob?.status === 'paused'
-                        ? 'bg-amber-100 border-amber-200 text-amber-700'
+                        ? 'bg-violet-100 border-violet-200 text-violet-700'
                       : selectedJob?.status === 'processing'
                         ? 'bg-blue-100 border-blue-200 text-blue-700'
-                        : 'bg-slate-100 border-slate-200 text-slate-600'
+                      : selectedJob?.status === 'cancelled'
+                        ? 'bg-slate-100 border-slate-200 text-slate-700'
+                        : 'bg-amber-100 border-amber-200 text-amber-700'
                   }`}
                 >
                   {selectedJob?.status}
@@ -293,7 +302,7 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
           </div>
 
           <div className="flex items-center gap-2">
-            {selectedJob?.status === 'processing' && (
+            {selectedJob && PAUSE_ALLOWED_STATUSES.includes(selectedJob.status) && (
               <button
                 onClick={() => handleAction('pause')}
                 className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 text-sm font-medium"
@@ -301,7 +310,7 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
                 <Pause size={16} /> Pause
               </button>
             )}
-            {selectedJob?.status === 'pending' || selectedJob?.status === 'paused' ? (
+            {selectedJob?.status === 'paused' ? (
               <button
                 onClick={() => handleAction('resume')}
                 className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 text-sm font-medium"
@@ -309,9 +318,7 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
                 <Play size={16} /> Resume
               </button>
             ) : null}
-            {(selectedJob?.status === 'processing' ||
-              selectedJob?.status === 'pending' ||
-              selectedJob?.status === 'paused') && (
+            {selectedJob && CANCEL_ALLOWED_STATUSES.includes(selectedJob.status) && (
               <button
                 onClick={() => handleAction('cancel')}
                 className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"
