@@ -169,6 +169,13 @@ const buildError = (error: unknown, fallback: string): Error => {
   return new Error((error as Error)?.message || fallback);
 };
 
+export class BatchJobNotFoundError extends Error {
+  constructor(message: string = 'Batch job not found') {
+    super(message);
+    this.name = 'BatchJobNotFoundError';
+  }
+}
+
 export const getCapabilities = async (): Promise<Capabilities | null> => {
   try {
     const data = await engineHttpClient.get<Capabilities>(endpoints.engine.capabilities());
@@ -224,6 +231,9 @@ export const getBatchJob = async (jobId: string): Promise<BatchJobStatus> => {
     const response = await engineHttpClient.get<RawBatchJobStatus>(endpoints.engine.byId(jobId));
     return normalizeBatchJob(response);
   } catch (error) {
+    if (error instanceof HttpClientError && error.status === 404) {
+      throw new BatchJobNotFoundError();
+    }
     throw buildError(error, 'Failed to get job status');
   }
 };
@@ -235,6 +245,9 @@ export const updateBatchJob = async (
   try {
     await engineHttpClient.post(endpoints.engine.jobAction(jobId, action));
   } catch (error) {
+    if (error instanceof HttpClientError && error.status === 404) {
+      throw new BatchJobNotFoundError();
+    }
     throw buildError(error, 'Failed to update job');
   }
 };

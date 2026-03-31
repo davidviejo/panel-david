@@ -24,6 +24,7 @@ import {
   AnalysisResponse,
   RunnerHealth,
   JobStatus,
+  BatchJobNotFoundError,
 } from '../../services/pythonEngineClient';
 import { useToast } from '../ui/ToastContext';
 import { useTranslation } from 'react-i18next';
@@ -33,13 +34,20 @@ interface Props {
   onClose: () => void;
   onApplyResult: (result: AnalysisResponse) => void;
   onJobUpdate: (updatedJob: BatchJobStatus) => void;
+  onRemoveJob: (jobId: string) => void;
 }
 
 const PAUSE_ALLOWED_STATUSES: JobStatus[] = ['processing', 'pending'];
 const CANCEL_ALLOWED_STATUSES: JobStatus[] = ['pending', 'processing', 'paused'];
 const TERMINAL_STATUSES: JobStatus[] = ['done', 'cancelled', 'error'];
 
-export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult, onJobUpdate }) => {
+export const BatchJobMonitor: React.FC<Props> = ({
+  jobs,
+  onClose,
+  onApplyResult,
+  onJobUpdate,
+  onRemoveJob,
+}) => {
   const { t } = useTranslation();
   const { errorAction, successAction } = useToast();
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -59,12 +67,31 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
     if (!selectedJobId) return;
 
     // Initial fetch
-    getBatchJob(selectedJobId).then(onJobUpdate).catch(console.error);
+    getBatchJob(selectedJobId)
+      .then(onJobUpdate)
+      .catch((error) => {
+        if (error instanceof BatchJobNotFoundError) {
+          onRemoveJob(selectedJobId);
+          setSelectedJobId(null);
+          successAction(t('feedback.actions.update_batch_job'));
+          return;
+        }
+        console.error(error);
+      });
 
     const interval = setInterval(() => {
       const job = jobs.find((j) => j.id === selectedJobId);
       if (job && !TERMINAL_STATUSES.includes(job.status)) {
-        getBatchJob(selectedJobId).then(onJobUpdate).catch(console.error);
+        getBatchJob(selectedJobId)
+          .then(onJobUpdate)
+          .catch((error) => {
+            if (error instanceof BatchJobNotFoundError) {
+              onRemoveJob(selectedJobId);
+              setSelectedJobId(null);
+              return;
+            }
+            console.error(error);
+          });
       }
     }, 3000);
 
@@ -122,6 +149,12 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
       const updated = await getBatchJob(selectedJobId);
       onJobUpdate(updated);
     } catch (e) {
+      if (e instanceof BatchJobNotFoundError) {
+        onRemoveJob(selectedJobId);
+        setSelectedJobId(null);
+        successAction(t('feedback.actions.update_batch_job'));
+        return;
+      }
       console.error(e);
       errorAction(t('feedback.actions.update_batch_job'));
     }

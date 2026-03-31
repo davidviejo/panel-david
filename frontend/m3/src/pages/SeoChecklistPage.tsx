@@ -170,6 +170,10 @@ const SeoChecklistPage: React.FC = () => {
     });
   };
 
+  const handleJobRemove = (jobId: string) => {
+    setJobs((prev) => prev.filter((job) => job.id !== jobId));
+  };
+
   const handleApplyResult = (result: AnalysisResponse) => {
     const page = pages.find((p) => p.id === result.pageId);
     if (!page) {
@@ -282,6 +286,7 @@ const SeoChecklistPage: React.FC = () => {
           onClose={() => setIsMonitorOpen(false)}
           onApplyResult={handleApplyResult}
           onJobUpdate={handleJobUpdate}
+          onRemoveJob={handleJobRemove}
         />
       )}
     </div>
