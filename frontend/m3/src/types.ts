@@ -57,6 +57,56 @@ export interface Note {
   updatedAt?: number;
 }
 
+export interface IAVisibilityPromptConfig {
+  tone: string;
+  objective: string;
+  language: string;
+  location: string;
+  devices: string[];
+  competitors: string[];
+  prompts: string[];
+}
+
+export interface IAVisibilityCompetitorMention {
+  competitor: string;
+  mentions: number;
+  sentiment: 'positive' | 'neutral' | 'negative';
+}
+
+export interface IAVisibilitySentimentSummary {
+  positive: number;
+  neutral: number;
+  negative: number;
+}
+
+export interface IAVisibilityRunResult {
+  id: string;
+  createdAt: number;
+  prompt: string;
+  answer: string;
+  source?: string;
+  competitorMentions: IAVisibilityCompetitorMention[];
+  sentimentSummary: IAVisibilitySentimentSummary;
+}
+
+export interface IAVisibilityState {
+  config: IAVisibilityPromptConfig;
+  history: IAVisibilityRunResult[];
+}
+
+export const createDefaultIAVisibilityState = (): IAVisibilityState => ({
+  config: {
+    tone: 'neutral',
+    objective: '',
+    language: 'es',
+    location: '',
+    devices: [],
+    competitors: [],
+    prompts: [],
+  },
+  history: [],
+});
+
 export interface Client {
   id: string;
   name: string;
@@ -68,6 +118,7 @@ export interface Client {
   customRoadmapOrder?: string[];
   aiRoadmap?: Task[];
   kanbanColumns?: KanbanColumn[];
+  iaVisibility?: IAVisibilityState;
 }
 
 export interface GeminiResponse {
