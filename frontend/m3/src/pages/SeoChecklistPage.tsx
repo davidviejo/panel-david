@@ -102,6 +102,7 @@ const SeoChecklistPage: React.FC = () => {
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [activeView, setActiveView] = useState<'official' | 'auto_cluster' | 'auto_kw'>('official');
+  const [allowKwAutoSelectInBasic, setAllowKwAutoSelectInBasic] = useState(true);
 
 
   // Batch Job State
@@ -253,6 +254,8 @@ const SeoChecklistPage: React.FC = () => {
               onBulkDelete={bulkDeletePages}
               capabilities={capabilities}
               onRunBatch={handleRunBatch}
+              allowKwAutoSelectInBasic={allowKwAutoSelectInBasic}
+              onAllowKwAutoSelectInBasicChange={setAllowKwAutoSelectInBasic}
             />
           ) : activeView === 'auto_cluster' ? (
             <AutoClusterizationPanel pages={pages} onBulkUpdate={bulkUpdatePages} />
