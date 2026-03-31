@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { AlertTriangle, DollarSign, Check, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertTriangle, DollarSign, Check } from 'lucide-react';
 import { SeoChecklistSettings, Capabilities } from '../../types/seoChecklist';
 
 interface Props {
@@ -26,10 +26,18 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
   capabilities,
 }) => {
   const [confirmed, setConfirmed] = useState(false);
+  const { serp, budgets } = settings;
+  const isBasicMode = !serp.enabled;
+
+  useEffect(() => {
+    const resetTimer = window.setTimeout(() => {
+      setConfirmed(false);
+    }, 0);
+
+    return () => window.clearTimeout(resetTimer);
+  }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const { serp, budgets } = settings;
   const estimatedKeywords = selectedCount * serp.maxKeywordsPerUrl;
 
   let costPerKeyword = 0;
@@ -52,8 +60,11 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
   }
 
   const estimatedCost = estimatedKeywords * costPerKeyword;
-  const isOverBudget = estimatedCost > budgets.maxEstimatedCostPerBatch;
-  const isOverDaily = estimatedCost > budgets.dailyBudget;
+  const isOverBudget = !isBasicMode && estimatedCost > budgets.maxEstimatedCostPerBatch;
+  const isOverDaily = !isBasicMode && estimatedCost > budgets.dailyBudget;
+  const needsConfirmation = !isBasicMode && providerAvailable && !isOverBudget && !isOverDaily;
+  const isConfirmDisabled =
+    (needsConfirmation && !confirmed) || isOverBudget || isOverDaily || (!isBasicMode && !providerAvailable);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -75,21 +86,27 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
               <span>Keywords estimadas:</span>
               <span className="font-medium">{estimatedKeywords}</span>
             </div>
-            <div className="flex justify-between text-base font-semibold pt-2 border-t border-slate-100 dark:border-slate-800">
-              <span>Coste Estimado:</span>
-              <span
-                className={
-                  estimatedCost > budgets.maxEstimatedCostPerBatch
-                    ? 'text-red-500'
-                    : 'text-emerald-500'
-                }
-              >
-                €{estimatedCost.toFixed(3)}
-              </span>
-            </div>
+            {isBasicMode ? (
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-emerald-600 dark:text-emerald-400 font-medium">
+                Análisis básico sin coste SERP
+              </div>
+            ) : (
+              <div className="flex justify-between text-base font-semibold pt-2 border-t border-slate-100 dark:border-slate-800">
+                <span>Coste Estimado:</span>
+                <span
+                  className={
+                    estimatedCost > budgets.maxEstimatedCostPerBatch
+                      ? 'text-red-500'
+                      : 'text-emerald-500'
+                  }
+                >
+                  €{estimatedCost.toFixed(3)}
+                </span>
+              </div>
+            )}
           </div>
 
-          {!providerAvailable && (
+          {!isBasicMode && !providerAvailable && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-xl text-sm flex items-start gap-3">
               <AlertTriangle size={18} className="shrink-0 mt-0.5" />
               <div>
@@ -101,7 +118,7 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
             </div>
           )}
 
-          {providerAvailable && (isOverBudget || isOverDaily) && (
+          {!isBasicMode && providerAvailable && (isOverBudget || isOverDaily) && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-xl text-sm flex items-start gap-3">
               <AlertTriangle size={18} className="shrink-0 mt-0.5" />
               <div>
@@ -118,7 +135,7 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
             </div>
           )}
 
-          {providerAvailable && !isOverBudget && !isOverDaily && (
+          {needsConfirmation && (
             <label className="flex items-start gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl cursor-pointer border border-slate-200 dark:border-slate-700">
               <input
                 type="checkbox"
@@ -134,21 +151,28 @@ export const BatchAnalysisConfirmationModal: React.FC<Props> = ({
           )}
         </div>
 
-        <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={!confirmed || isOverBudget || isOverDaily || !providerAvailable}
-            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            <Check size={18} />
-            Ejecutar
-          </button>
+        <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl">
+          {needsConfirmation && !confirmed && (
+            <p className="mb-3 text-xs text-amber-600 dark:text-amber-400 text-right">
+              Marca la confirmación para continuar
+            </p>
+          )}
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isConfirmDisabled}
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Check size={18} />
+              Ejecutar
+            </button>
+          </div>
         </div>
       </div>
     </div>
