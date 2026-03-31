@@ -135,4 +135,54 @@ describe('ProjectContext', () => {
     const restored = result.current.clients.find((c) => c.id === originalClient.id);
     expect(restored?.name).toBe('Restored Name');
   });
+
+  it('should update iaVisibility config and manage history', () => {
+    const { result } = renderHook(() => useProject(), { wrapper });
+
+    act(() => {
+      result.current.updateIAVisibilityConfig({
+        language: 'en',
+        competitors: ['competidor-1'],
+      });
+    });
+
+    expect(result.current.currentClient?.iaVisibility?.config.language).toBe('en');
+    expect(result.current.currentClient?.iaVisibility?.config.competitors).toEqual(['competidor-1']);
+
+    act(() => {
+      result.current.saveIAVisibilityRunResult({
+        id: 'run-1',
+        createdAt: 123,
+        prompt: '¿Qué marca recomiendas?',
+        answer: 'Marca A',
+        competitorMentions: [],
+        sentimentSummary: { positive: 1, neutral: 0, negative: 0 },
+      });
+      result.current.saveIAVisibilityRunResult({
+        id: 'run-2',
+        createdAt: 124,
+        prompt: '¿Qué herramienta SEO es mejor?',
+        answer: 'Herramienta B',
+        competitorMentions: [],
+        sentimentSummary: { positive: 0, neutral: 1, negative: 0 },
+      });
+    });
+
+    expect(result.current.currentClient?.iaVisibility?.history).toHaveLength(2);
+
+    act(() => {
+      result.current.filterIAVisibilityHistory(['run-2']);
+    });
+
+    expect(result.current.currentClient?.iaVisibility?.history.map((entry) => entry.id)).toEqual([
+      'run-2',
+    ]);
+
+    act(() => {
+      result.current.clearIAVisibilityHistory();
+    });
+
+    expect(result.current.currentClient?.iaVisibility?.history).toEqual([]);
+  });
+
 });

@@ -51,4 +51,59 @@ describe('ClientRepository', () => {
 
     expect(saved[0].vertical).toBe('media');
   });
+
+
+  it('initializes iaVisibility defaults for legacy clients without the field', () => {
+    localStorage.setItem(
+      'mediaflow_clients',
+      JSON.stringify([
+        {
+          id: 'legacy-client',
+          name: 'Legacy Client',
+          vertical: 'media',
+          modules: [],
+          createdAt: Date.now(),
+        },
+      ]),
+    );
+
+    const clients = ClientRepository.getClients();
+
+    expect(clients[0].iaVisibility).toBeDefined();
+    expect(clients[0].iaVisibility?.history).toEqual([]);
+    expect(clients[0].iaVisibility?.config.language).toBe('es');
+  });
+
+  it('normalizes partial iaVisibility payloads from legacy storage', () => {
+    localStorage.setItem(
+      'mediaflow_clients',
+      JSON.stringify([
+        {
+          id: 'legacy-ia-client',
+          name: 'Legacy IA Client',
+          vertical: 'media',
+          modules: [],
+          createdAt: Date.now(),
+          iaVisibility: {
+            config: {
+              language: 'en',
+              competitors: ['A', 'B'],
+            },
+            history: [{ id: 'run-1', prompt: 'test', answer: 'ok', createdAt: Date.now() }],
+          },
+        },
+      ]),
+    );
+
+    const clients = ClientRepository.getClients();
+
+    expect(clients[0].iaVisibility?.config.language).toBe('en');
+    expect(clients[0].iaVisibility?.config.tone).toBe('neutral');
+    expect(clients[0].iaVisibility?.history[0].sentimentSummary).toEqual({
+      positive: 0,
+      neutral: 0,
+      negative: 0,
+    });
+  });
+
 });
