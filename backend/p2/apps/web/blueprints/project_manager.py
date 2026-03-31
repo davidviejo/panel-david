@@ -25,6 +25,69 @@ project_bp = Blueprint('project_bp', __name__)
 
 # --- RUTAS PRINCIPALES ---
 
+_MISSING_IMPORT_MARKERS = {"", "-"}
+
+
+def _clean_cluster_attr(raw_value):
+    """
+    Normaliza atributos de importación de clústeres.
+    Devuelve None cuando el valor debe considerarse "sin cambio"
+    (vacío, NaN o marcador '-').
+    """
+    if raw_value is None or pd.isna(raw_value):
+        return None
+    value = str(raw_value).strip()
+    if value.lower() == "nan":
+        return None
+    if value in _MISSING_IMPORT_MARKERS:
+        return None
+    return value
+
+
+def merge_clusters_by_url(existing_clusters, imported_clusters):
+    """
+    Hace upsert de clusters por URL:
+    - Si la URL importada existe, actualiza sus atributos con valores nuevos.
+    - Si un atributo nuevo viene vacío o '-', mantiene el valor existente.
+    - Si la URL no existe, crea un nuevo clúster.
+    - Conserva clústeres existentes no incluidos en el archivo importado.
+    """
+    merged = [dict(cluster) for cluster in (existing_clusters or []) if isinstance(cluster, dict)]
+    index_by_url = {}
+    for idx, cluster in enumerate(merged):
+        current_url = str(cluster.get("url", "")).strip()
+        if current_url:
+            index_by_url[current_url] = idx
+
+    for imported in imported_clusters or []:
+        if not isinstance(imported, dict):
+            continue
+
+        url = _clean_cluster_attr(imported.get("url"))
+        if not url:
+            continue
+
+        name = _clean_cluster_attr(imported.get("name"))
+        target_kw = _clean_cluster_attr(imported.get("target_kw"))
+
+        if url in index_by_url:
+            pos = index_by_url[url]
+            current = merged[pos]
+            if name is not None:
+                current["name"] = name
+            if target_kw is not None:
+                current["target_kw"] = target_kw
+            current["url"] = url
+        else:
+            merged.append({
+                "name": name if name is not None else url,
+                "url": url,
+                "target_kw": target_kw if target_kw is not None else ""
+            })
+            index_by_url[url] = len(merged) - 1
+
+    return merged
+
 def get_active_project():
     """Retrieve the active project from DB."""
     p_id = session.get('active_project_id')
@@ -96,27 +159,21 @@ def upload_clusters():
 
         new_clusters = []
         for row in df.to_dict('records'):
-            raw_url = row.get(col_url)
-            if pd.isna(raw_url):
+            url = _clean_cluster_attr(row.get(col_url))
+            if not url:
                 continue
-            url = str(raw_url).strip()
-            if url == 'nan' or not url:
-                continue
-
-            raw_name = row.get(col_name) if col_name else None
-            name = str(raw_name) if not pd.isna(raw_name) else url
-
-            raw_kw = row.get(col_kw) if col_kw else None
-            kw = str(raw_kw) if not pd.isna(raw_kw) else ""
 
             new_clusters.append({
-                "name": name,
+                "name": _clean_cluster_attr(row.get(col_name)) if col_name else None,
                 "url": url,
-                "target_kw": kw
+                "target_kw": _clean_cluster_attr(row.get(col_kw)) if col_kw else None
             })
 
-        # Guardar en DB (Reemplazar clusters)
-        replace_clusters(p_id, new_clusters)
+        # Upsert por URL conservando campos existentes cuando el import trae vacío o '-'
+        project = get_project(p_id)
+        existing_clusters = project.get("clusters", []) if project else []
+        merged_clusters = merge_clusters_by_url(existing_clusters, new_clusters)
+        replace_clusters(p_id, merged_clusters)
 
         return redirect(url_for('project_bp.manager'))
 
