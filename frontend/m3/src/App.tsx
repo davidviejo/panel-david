@@ -15,6 +15,7 @@ const ClientRoadmap = lazy(() => import('./pages/ClientRoadmap'));
 const KanbanBoard = lazy(() => import('./pages/KanbanBoard'));
 const AIRoadmap = lazy(() => import('./pages/AIRoadmap'));
 const SeoChecklistPage = lazy(() => import('./pages/SeoChecklistPage'));
+const IAVisibility = lazy(() => import('./pages/IAVisibility'));
 const Settings = lazy(() => import('./pages/Settings'));
 const AdminIdeasPage = lazy(() => import('./pages/admin/AdminIdeasPage'));
 const TrendsMediaPage = lazy(() => import('./pages/TrendsMediaPage'));
@@ -151,6 +152,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="kanban" element={<KanbanBoard />} />
                 <Route path="checklist" element={<SeoChecklistPage />} />
                 <Route path="ai-roadmap" element={<AIRoadmap />} />
+                <Route path="ia-visibility" element={<IAVisibility />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="challenge" element={<SpeedChallenge />} />
                 <Route path="trends-media" element={<TrendsMediaPage />} />

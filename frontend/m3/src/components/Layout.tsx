@@ -32,6 +32,7 @@ import {
   Wrench as Tool,
   Lightbulb,
   Newspaper,
+  Eye,
 } from 'lucide-react';
 import { ModuleData, Client, ClientVertical, Note } from '../types';
 import ClientSwitcher from './ClientSwitcher';
@@ -146,6 +147,7 @@ const Layout: React.FC<LayoutProps> = ({
     if (
       path.startsWith('/app/client-roadmap') ||
       path.startsWith('/app/ai-roadmap') ||
+      path.startsWith('/app/ia-visibility') ||
       path.startsWith('/app/module')
     ) {
       return 'estrategia';
@@ -281,6 +283,13 @@ const Layout: React.FC<LayoutProps> = ({
               icon={<Sparkles size={20} />}
               label={t('nav.ai_roadmap')}
               subLabel={t('nav.ai_roadmap_sub')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <NavItem
+              to="/app/ia-visibility"
+              icon={<Eye size={20} />}
+              label={t('nav.ia_visibility')}
+              subLabel={t('nav.ia_visibility_sub')}
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <div className="my-4 border-t border-slate-100 dark:border-slate-800"></div>
