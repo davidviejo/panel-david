@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { SeoPage } from '../../types/seoChecklist';
+import { getPageMetrics, getPageQueries } from '../../services/googleSearchConsole';
 
 type KeywordSourceMode = 'all' | 'with_gsc' | 'without_kw';
 
@@ -64,6 +65,7 @@ const getBestKeywordFromPage = (page: SeoPage) => {
 export const AutoAssignKeywordsPanel: React.FC<Props> = ({ pages, onBulkUpdate }) => {
   const [sourceMode, setSourceMode] = useState<KeywordSourceMode>('without_kw');
   const [status, setStatus] = useState('');
+  const [isLoadingGsc, setIsLoadingGsc] = useState(false);
 
   const proposals = useMemo<KeywordProposal[]>(() => {
     return pages
@@ -126,9 +128,93 @@ export const AutoAssignKeywordsPanel: React.FC<Props> = ({ pages, onBulkUpdate }
           gscClicks: suggestion.clicks,
           gscImpressions: suggestion.impressions,
         };
-      })
-      .filter((proposal) => proposal.proposedKeyword);
+      });
   }, [pages, sourceMode]);
+  const actionableProposalsCount = proposals.filter((proposal) => proposal.proposedKeyword).length;
+
+  const loadGscData = async () => {
+    const token = localStorage.getItem('mediaflow_gsc_token');
+    const site = localStorage.getItem('mediaflow_gsc_selected_site');
+
+    if (!token || !site) {
+      setStatus(
+        'Primero conecta GSC y selecciona una propiedad (Dashboard) para poder cargar queries.',
+      );
+      return;
+    }
+
+    const targetPages = pages.filter((page) => {
+      if (sourceMode === 'with_gsc') return true;
+      if (sourceMode === 'without_kw') return !isUsableKeyword(page.kwPrincipal);
+      return true;
+    });
+
+    if (targetPages.length === 0) {
+      setStatus('No hay URLs para consultar GSC con el filtro actual.');
+      return;
+    }
+
+    setIsLoadingGsc(true);
+    setStatus(`Cargando datos GSC para ${targetPages.length} URL(s)...`);
+    const end = new Date().toISOString().split('T')[0];
+    const start = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    let okCount = 0;
+    const updates: { id: string; changes: Partial<SeoPage> }[] = [];
+
+    for (const page of targetPages) {
+      try {
+        const [pageMetricsRow, pageQueries] = await Promise.all([
+          getPageMetrics(token, site, page.url, start, end),
+          getPageQueries(token, site, page.url, start, end, 50),
+        ]);
+        const normalizedQueries = Array.isArray(pageQueries)
+          ? pageQueries.map(normalizeQueryRow).filter((query) => isUsableKeyword(query.query))
+          : [];
+
+        if (normalizedQueries.length === 0 && !pageMetricsRow) {
+          continue;
+        }
+
+        okCount += 1;
+        updates.push({
+          id: page.id,
+          changes: {
+            gscMetrics: pageMetricsRow
+              ? {
+                  clicks: Number(pageMetricsRow.clicks || 0),
+                  impressions: Number(pageMetricsRow.impressions || 0),
+                  ctr: Number(pageMetricsRow.ctr || 0),
+                  position: Number(pageMetricsRow.position || 0) || undefined,
+                  queryCount: normalizedQueries.length,
+                  source: 'page',
+                  updatedAt: Date.now(),
+                }
+              : page.gscMetrics,
+            checklist: {
+              ...page.checklist,
+              OPORTUNIDADES: {
+                ...page.checklist.OPORTUNIDADES,
+                autoData: {
+                  ...(page.checklist.OPORTUNIDADES?.autoData || {}),
+                  gscQueries: normalizedQueries,
+                },
+              },
+            },
+          },
+        });
+      } catch (error) {
+        console.warn('No se pudieron cargar queries GSC para URL', page.url, error);
+      }
+    }
+
+    if (updates.length > 0) {
+      onBulkUpdate(updates);
+    }
+
+    setStatus(`Carga GSC finalizada: ${okCount} URL(s) con datos actualizados.`);
+    setIsLoadingGsc(false);
+  };
 
   const applyKeywordAssignments = () => {
     const updates = proposals
@@ -179,7 +265,14 @@ export const AutoAssignKeywordsPanel: React.FC<Props> = ({ pages, onBulkUpdate }
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={applyKeywordAssignments} disabled={proposals.length === 0}>
+        <Button variant="secondary" onClick={loadGscData} disabled={isLoadingGsc}>
+          {isLoadingGsc ? 'Cargando datos GSC...' : 'Cargar URLs/queries desde GSC'}
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={applyKeywordAssignments}
+          disabled={actionableProposalsCount === 0}
+        >
           Aprobar y pasar a Análisis SEO y Clusters
         </Button>
       </div>

@@ -37,6 +37,8 @@ interface Props {
   onBulkDelete: (ids: string[]) => void;
   capabilities: Capabilities | null;
   onRunBatch?: (pages: SeoPage[], config: AnalysisConfigPayload) => void;
+  allowKwAutoSelectInBasic: boolean;
+  onAllowKwAutoSelectInBasicChange: (enabled: boolean) => void;
 }
 
 export const SeoUrlList: React.FC<Props> = ({
@@ -47,6 +49,8 @@ export const SeoUrlList: React.FC<Props> = ({
   onBulkDelete,
   capabilities,
   onRunBatch,
+  allowKwAutoSelectInBasic,
+  onAllowKwAutoSelectInBasicChange,
 }) => {
   const [filter, setFilter] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -294,7 +298,11 @@ export const SeoUrlList: React.FC<Props> = ({
       await runBatchWithConcurrency(
         pagesToAnalyze,
         async (page) => {
-          const update = await runPageAnalysis(page, analysisConfig, settings);
+          const effectiveSettings =
+            analysisMode === 'basic'
+              ? { ...settings, allowKwPrincipalUpdate: allowKwAutoSelectInBasic }
+              : settings;
+          const update = await runPageAnalysis(page, analysisConfig, effectiveSettings);
           onBulkUpdate([{ id: page.id, changes: update }]);
           return update;
         },
@@ -494,6 +502,18 @@ export const SeoUrlList: React.FC<Props> = ({
               <option value="basic">Modo Básico (Rápido)</option>
               <option value="advanced">Modo Avanzado (SERP + IA)</option>
             </select>
+
+            {analysisMode === 'basic' && (
+              <label className="flex items-center gap-2 px-2 py-1 text-xs text-blue-900 dark:text-blue-200 bg-white/70 dark:bg-slate-900/60 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <input
+                  type="checkbox"
+                  checked={allowKwAutoSelectInBasic}
+                  onChange={(event) => onAllowKwAutoSelectInBasicChange(event.target.checked)}
+                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                Autoasignar KW principal si GSC sugiere una mejor
+              </label>
+            )}
 
             <button
               onClick={handleBulkAnalyze}
