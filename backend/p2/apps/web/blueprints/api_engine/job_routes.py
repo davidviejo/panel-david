@@ -139,7 +139,8 @@ def get_job_status(job_id):
 
 @api_engine_bp.route('/api/jobs/<job_id>/items', methods=['GET'])
 def get_job_items_route(job_id):
-    status = request.args.get('status')
+    status_values = request.args.getlist('status')
+    status = ",".join(status_values) if status_values else None
     page = int(request.args.get('page', 1))
     page_size = int(request.args.get('pageSize', 50))
 

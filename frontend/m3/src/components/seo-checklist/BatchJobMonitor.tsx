@@ -73,16 +73,10 @@ export const BatchJobMonitor: React.FC<Props> = ({ jobs, onClose, onApplyResult,
         const statusMap = {
           done: 'done',
           errors: 'error',
-          queued: 'pending,processing', // API might need to support comma or we send multiple requests?
-          // Assuming API supports single status. If 'queued', we might just fetch 'pending'.
-          // Let's assume 'pending' for queued. 'processing' is also active.
+          queued: 'queued,running',
         };
 
-        // For 'queued', we might want pending AND processing.
-        // If API only supports one status, we might need to adjust.
-        // Let's assume the API filters by status string.
-        let status = statusMap[activeTab];
-        if (activeTab === 'queued') status = 'pending'; // Simplify to pending for now
+        const status = statusMap[activeTab];
 
         const res = await getBatchJobItems(selectedJobId, status, itemsPage, 50);
         setItems(res.items);
