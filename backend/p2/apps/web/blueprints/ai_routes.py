@@ -1,6 +1,6 @@
 import json
 import os
-from flask import Blueprint, request, jsonify, session, render_template
+from flask import Blueprint, request, jsonify, session, render_template, has_request_context
 from apps.tools.ai_hub import AI_MODELS, execute_ai_task, generate_ai_image
 from apps.core.database import (
     get_user_settings,
@@ -9,6 +9,8 @@ from apps.core.database import (
     get_ai_visibility_history,
     get_ai_visibility_config,
     insert_ai_visibility_run,
+    upsert_ai_visibility_schedule,
+    get_ai_visibility_schedule,
 )
 import logging
 
@@ -59,20 +61,27 @@ def _extract_json_content(raw_text):
         return {}
 
 
-def _run_visibility_with_priority(prompt, provider_priority):
+def _run_visibility_with_priority(prompt, provider_priority, credentials=None):
     from apps.tools.llm_service import _query_google, _query_openai
 
     priority = provider_priority or ['gemini', 'openai']
+    credentials = credentials or {}
     last_error = None
 
     for provider in priority:
         provider_id = str(provider).strip().lower()
         try:
             if provider_id == 'gemini':
-                gemini_key = session.get('google_key') or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+                gemini_key = credentials.get('google_key')
+                if not gemini_key and has_request_context():
+                    gemini_key = session.get('google_key')
+                gemini_key = gemini_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
                 response_text = _query_google(prompt, model='gemini-2.0-flash', api_key=gemini_key)
             elif provider_id in ('openai', 'chatgpt'):
-                openai_key = session.get('openai_key') or os.getenv("OPENAI_API_KEY")
+                openai_key = credentials.get('openai_key')
+                if not openai_key and has_request_context():
+                    openai_key = session.get('openai_key')
+                openai_key = openai_key or os.getenv("OPENAI_API_KEY")
                 response_text = _query_openai(prompt, model='gpt-4o-mini', api_key=openai_key)
             else:
                 continue
@@ -89,6 +98,21 @@ def _run_visibility_with_priority(prompt, provider_priority):
             last_error = str(exc)
 
     raise RuntimeError(last_error or 'No AI provider available')
+
+
+def execute_visibility_analysis(payload, credentials=None):
+    prompt = _build_visibility_prompt(payload)
+    provider_used, ai_result = _run_visibility_with_priority(
+        prompt, payload.get('providerPriority'), credentials=credentials
+    )
+    return {
+        'mentions': float(ai_result.get('mentions', 0)),
+        'shareOfVoice': float(ai_result.get('shareOfVoice', 0)),
+        'sentiment': float(ai_result.get('sentiment', 0)),
+        'competitorAppearances': ai_result.get('competitorAppearances', {}),
+        'rawEvidence': ai_result.get('rawEvidence', []),
+        'providerUsed': provider_used,
+    }
 
 @ai_bp.route('/settings', methods=['GET'])
 def settings_page():
@@ -335,6 +359,8 @@ def visibility_history(client_id):
             {
                 'id': row.get('id'),
                 'clientId': row.get('client_id'),
+                'version': row.get('run_version', 1),
+                'runTrigger': row.get('run_trigger', 'manual'),
                 'mentions': row.get('mentions', 0),
                 'shareOfVoice': row.get('share_of_voice', 0),
                 'sentiment': row.get('sentiment', 0),
@@ -361,35 +387,107 @@ def run_visibility_analysis():
         if saved:
             payload['promptTemplate'] = saved.get('prompt_template', '')
 
-    prompt = _build_visibility_prompt(payload)
-
     try:
-        provider_used, ai_result = _run_visibility_with_priority(prompt, payload.get('providerPriority'))
+        response = execute_visibility_analysis(payload)
     except Exception as exc:
         return jsonify({'error': f'No fue posible ejecutar el análisis de visibilidad: {exc}'}), 502
-
-    response = {
-        'mentions': float(ai_result.get('mentions', 0)),
-        'shareOfVoice': float(ai_result.get('shareOfVoice', 0)),
-        'sentiment': float(ai_result.get('sentiment', 0)),
-        'competitorAppearances': ai_result.get('competitorAppearances', {}),
-        'rawEvidence': ai_result.get('rawEvidence', []),
-    }
 
     insert_ai_visibility_run(
         str(payload.get('clientId')),
         {
+            'runTrigger': 'manual',
             'requestPayload': payload,
             'mentions': response['mentions'],
             'shareOfVoice': response['shareOfVoice'],
             'sentiment': response['sentiment'],
             'competitorAppearances': response['competitorAppearances'],
             'rawEvidence': response['rawEvidence'],
-            'providerUsed': provider_used,
+            'providerUsed': response['providerUsed'],
         }
     )
 
-    return jsonify({'clientId': str(payload.get('clientId')), **response, 'providerUsed': provider_used})
+    return jsonify({'clientId': str(payload.get('clientId')), **response})
+
+
+@ai_bp.route('/api/ai/visibility/schedule/<client_id>', methods=['GET'])
+def get_visibility_schedule(client_id):
+    schedule = get_ai_visibility_schedule(client_id)
+    if not schedule:
+        schedule = {
+            'client_id': str(client_id),
+            'frequency': 'daily',
+            'timezone': 'UTC',
+            'run_hour': 9,
+            'run_minute': 0,
+            'status': 'paused',
+        }
+    return jsonify({
+        'clientId': str(client_id),
+        'schedule': {
+            'frequency': schedule.get('frequency', 'daily'),
+            'timezone': schedule.get('timezone', 'UTC'),
+            'runHour': schedule.get('run_hour', 9),
+            'runMinute': schedule.get('run_minute', 0),
+            'status': schedule.get('status', 'paused'),
+            'lastRunAt': schedule.get('last_run_at'),
+            'updatedAt': schedule.get('updated_at'),
+        }
+    })
+
+
+@ai_bp.route('/api/ai/visibility/schedule/<client_id>', methods=['POST'])
+def upsert_visibility_schedule(client_id):
+    payload = request.get_json(silent=True) or {}
+    schedule = upsert_ai_visibility_schedule(client_id, payload)
+    return jsonify({
+        'status': 'ok',
+        'clientId': str(client_id),
+        'schedule': {
+            'frequency': schedule.get('frequency', 'daily'),
+            'timezone': schedule.get('timezone', 'UTC'),
+            'runHour': schedule.get('run_hour', 9),
+            'runMinute': schedule.get('run_minute', 0),
+            'status': schedule.get('status', 'paused'),
+            'lastRunAt': schedule.get('last_run_at'),
+            'updatedAt': schedule.get('updated_at'),
+        }
+    })
+
+
+@ai_bp.route('/api/ai/visibility/schedule/<client_id>/pause', methods=['POST'])
+def pause_visibility_schedule(client_id):
+    schedule = upsert_ai_visibility_schedule(client_id, {'status': 'paused'})
+    return jsonify({
+        'status': 'ok',
+        'clientId': str(client_id),
+        'schedule': {
+            'frequency': schedule.get('frequency', 'daily'),
+            'timezone': schedule.get('timezone', 'UTC'),
+            'runHour': schedule.get('run_hour', 9),
+            'runMinute': schedule.get('run_minute', 0),
+            'status': schedule.get('status', 'paused'),
+            'lastRunAt': schedule.get('last_run_at'),
+            'updatedAt': schedule.get('updated_at'),
+        }
+    })
+
+
+@ai_bp.route('/api/ai/visibility/schedule/<client_id>/resume', methods=['POST'])
+def resume_visibility_schedule(client_id):
+    schedule = upsert_ai_visibility_schedule(client_id, {'status': 'active'})
+    return jsonify({
+        'status': 'ok',
+        'clientId': str(client_id),
+        'schedule': {
+            'frequency': schedule.get('frequency', 'daily'),
+            'timezone': schedule.get('timezone', 'UTC'),
+            'runHour': schedule.get('run_hour', 9),
+            'runMinute': schedule.get('run_minute', 0),
+            'status': schedule.get('status', 'paused'),
+            'lastRunAt': schedule.get('last_run_at'),
+            'updatedAt': schedule.get('updated_at'),
+        }
+    })
 
 @ai_bp.route('/ai/seo-analysis', methods=['POST'])
 def seo_analysis_endpoint():

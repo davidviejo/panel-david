@@ -12,6 +12,7 @@ from apps.core.database import (
 )
 from apps.web.blueprints.api_engine.seo_checklist_orchestrator import run_orchestrated_checklist
 from apps.core.config import Config
+from apps.ai_visibility_runner import process_ai_visibility_schedules
 
 _RUNNER_STARTED = False
 _RUNNER_THREAD = None
@@ -62,6 +63,7 @@ class JobRunner:
                 if job:
                     JobRunner.process_job(job)
                 else:
+                    process_ai_visibility_schedules()
                     time.sleep(Config.JOBS_POLL_INTERVAL)
             except Exception as e:
                 logging.error(f"Error in JobRunner loop: {e}")
