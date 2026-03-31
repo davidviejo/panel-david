@@ -20,19 +20,15 @@ def test_fetch_url_hybrid_requests_success(mock_get):
     assert b'Content' in result['content']
 
 @patch('apps.tools.scraper_core.requests.get')
-@patch('apps.tools.scraper_core.get_browser')
-def test_fetch_url_hybrid_playwright_fallback(mock_get_browser, mock_get):
+@patch('apps.tools.scraper_core._run_async_playwright')
+def test_fetch_url_hybrid_playwright_fallback(mock_run_async_playwright, mock_get):
     # Mock requests failure
     mock_response = MagicMock()
     mock_response.status_code = 403
     mock_get.return_value = mock_response
 
-    # Mock Playwright
-    mock_browser = MagicMock()
-    mock_page = MagicMock()
-    mock_get_browser.return_value = mock_browser
-    mock_browser.new_page.return_value = mock_page
-    mock_page.content.return_value = '<html>Playwright Content</html>'
+    # Mock Playwright async wrapper
+    mock_run_async_playwright.return_value = '<html>Playwright Content</html>'
 
     result = fetch_url_hybrid('http://example.com', delay=0)
 
