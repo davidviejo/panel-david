@@ -97,4 +97,29 @@ describe('pythonEngineClient', () => {
       total: 1,
     });
   });
+
+  it('sends multi-status filters in a single backend request', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [],
+        total: 0,
+        page: 1,
+        pageSize: 50,
+      }),
+    });
+
+    await getBatchJobItems('job-2', 'pending,processing', 1, 50);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(
+        endpoints.engine.jobItems(
+          'job-2',
+          new URLSearchParams({ page: '1', pageSize: '50', status: 'queued,running' }),
+        ),
+      ),
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
 });

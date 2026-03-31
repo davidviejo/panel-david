@@ -750,8 +750,14 @@ def get_job_items(job_id: str, status: str = None, page: int = 1, page_size: int
         params = [job_id]
 
         if status:
-            query += " AND status = ?"
-            params.append(status)
+            statuses = [s.strip() for s in status.split(',') if s.strip()]
+            if len(statuses) == 1:
+                query += " AND status = ?"
+                params.append(statuses[0])
+            elif len(statuses) > 1:
+                placeholders = ", ".join(["?"] * len(statuses))
+                query += f" AND status IN ({placeholders})"
+                params.extend(statuses)
 
         # Count total for pagination
         count_query = query.replace("item_id, url, status, finished_at, error_message, item_metadata", "COUNT(*)")
