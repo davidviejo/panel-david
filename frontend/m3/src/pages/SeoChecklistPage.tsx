@@ -20,6 +20,43 @@ import { AutoClusterizationPanel } from '../components/seo-checklist/AutoCluster
 import { AutoAssignKeywordsPanel } from '../components/seo-checklist/AutoAssignKeywordsPanel';
 
 const SeoChecklistPage: React.FC = () => {
+  const normalizeStoredJob = (raw: any): BatchJobStatus | null => {
+    const id = raw?.id || raw?.jobId;
+    if (!id) {
+      return null;
+    }
+
+    const rawStatus = raw?.status;
+    const status: BatchJobStatus['status'] =
+      rawStatus === 'queued' || rawStatus === 'pending'
+        ? 'pending'
+        : rawStatus === 'running' || rawStatus === 'processing'
+          ? 'processing'
+          : rawStatus === 'completed' || rawStatus === 'done'
+            ? 'done'
+            : rawStatus === 'failed' || rawStatus === 'error'
+              ? 'error'
+              : rawStatus === 'paused'
+                ? 'paused'
+                : rawStatus === 'cancelled'
+                  ? 'cancelled'
+                  : 'pending';
+
+    return {
+      id,
+      status,
+      progress: {
+        total: raw?.progress?.total ?? raw?.total ?? 0,
+        processed: raw?.progress?.processed ?? raw?.processed ?? 0,
+        succeeded: raw?.progress?.succeeded ?? raw?.success ?? raw?.succeeded ?? 0,
+        failed: raw?.progress?.failed ?? raw?.errors ?? raw?.failed ?? 0,
+      },
+      created_at: raw?.created_at || raw?.createdAt || new Date().toISOString(),
+      completed_at: raw?.completed_at || raw?.completedAt || undefined,
+      error: raw?.error || raw?.lastError || undefined,
+    };
+  };
+
   const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
 
   useEffect(() => {
@@ -72,7 +109,14 @@ const SeoChecklistPage: React.FC = () => {
     const savedJobs = localStorage.getItem('mediaflow_batch_jobs');
     if (!savedJobs) return [];
     try {
-      return JSON.parse(savedJobs);
+      const parsed = JSON.parse(savedJobs);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed
+        .map(normalizeStoredJob)
+        .filter((job): job is BatchJobStatus => Boolean(job));
     } catch (e) {
       console.error('Failed to parse saved jobs', e);
       return [];
@@ -117,7 +161,13 @@ const SeoChecklistPage: React.FC = () => {
   };
 
   const handleJobUpdate = (updatedJob: BatchJobStatus) => {
-    setJobs((prev) => prev.map((j) => (j.id === updatedJob.id ? updatedJob : j)));
+    setJobs((prev) => {
+      const existing = prev.find((j) => j.id === updatedJob.id);
+      if (existing) {
+        return prev.map((j) => (j.id === updatedJob.id ? updatedJob : j));
+      }
+      return [updatedJob, ...prev];
+    });
   };
 
   const handleApplyResult = (result: AnalysisResponse) => {
