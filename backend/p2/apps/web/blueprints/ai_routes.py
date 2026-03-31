@@ -1,11 +1,94 @@
+import json
+import os
 from flask import Blueprint, request, jsonify, session, render_template
 from apps.tools.ai_hub import AI_MODELS, execute_ai_task, generate_ai_image
-from apps.core.database import get_user_settings, upsert_user_settings
+from apps.core.database import (
+    get_user_settings,
+    upsert_user_settings,
+    upsert_ai_visibility_config,
+    get_ai_visibility_history,
+    get_ai_visibility_config,
+    insert_ai_visibility_run,
+)
 import logging
 
 logger = logging.getLogger(__name__)
 
 ai_bp = Blueprint('ai_tools', __name__)
+
+
+def _build_visibility_prompt(payload):
+    brand = payload.get('brand')
+    competitors = payload.get('competitors', [])
+    prompt_template = payload.get('promptTemplate')
+    sources = payload.get('sources', [])
+
+    return (
+        f"{prompt_template}\n\n"
+        "Devuelve JSON estricto con este formato:\n"
+        "{\n"
+        '  "mentions": number,\n'
+        '  "shareOfVoice": number,\n'
+        '  "sentiment": number,\n'
+        '  "competitorAppearances": { "competitor": number },\n'
+        '  "rawEvidence": [\n'
+        '    {"source": "string", "summary": "string", "score": number}\n'
+        "  ]\n"
+        "}\n\n"
+        f"clientId: {payload.get('clientId')}\n"
+        f"brand: {brand}\n"
+        f"competitors: {json.dumps(competitors, ensure_ascii=False)}\n"
+        f"sources: {json.dumps(sources, ensure_ascii=False)}\n"
+    )
+
+
+def _extract_json_content(raw_text):
+    if not isinstance(raw_text, str):
+        return {}
+    cleaned = raw_text.strip().replace('```json', '').replace('```', '').strip()
+    try:
+        return json.loads(cleaned)
+    except Exception:
+        start = cleaned.find('{')
+        end = cleaned.rfind('}')
+        if start >= 0 and end > start:
+            try:
+                return json.loads(cleaned[start:end + 1])
+            except Exception:
+                return {}
+        return {}
+
+
+def _run_visibility_with_priority(prompt, provider_priority):
+    from apps.tools.llm_service import _query_google, _query_openai
+
+    priority = provider_priority or ['gemini', 'openai']
+    last_error = None
+
+    for provider in priority:
+        provider_id = str(provider).strip().lower()
+        try:
+            if provider_id == 'gemini':
+                gemini_key = session.get('google_key') or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+                response_text = _query_google(prompt, model='gemini-2.0-flash', api_key=gemini_key)
+            elif provider_id in ('openai', 'chatgpt'):
+                openai_key = session.get('openai_key') or os.getenv("OPENAI_API_KEY")
+                response_text = _query_openai(prompt, model='gpt-4o-mini', api_key=openai_key)
+            else:
+                continue
+
+            if not response_text or str(response_text).lower().startswith('error al conectar'):
+                raise RuntimeError(response_text or f'No response from {provider_id}')
+
+            parsed = _extract_json_content(response_text)
+            if parsed:
+                return provider_id, parsed
+            raise RuntimeError(f'Invalid JSON response from {provider_id}')
+        except Exception as exc:
+            logger.warning("Visibility provider failed: %s (%s)", provider_id, exc)
+            last_error = str(exc)
+
+    raise RuntimeError(last_error or 'No AI provider available')
 
 @ai_bp.route('/settings', methods=['GET'])
 def settings_page():
@@ -215,6 +298,98 @@ def set_preference():
             session[key] = data[key]
 
     return jsonify({'status': 'ok', 'message': 'Configuración actualizada correctamente'})
+
+
+@ai_bp.route('/api/ai/visibility/config/<client_id>', methods=['POST'])
+def upsert_visibility_config(client_id):
+    payload = request.get_json(silent=True) or {}
+    required = ['clientId', 'brand', 'competitors', 'promptTemplate', 'sources', 'providerPriority']
+    missing = [field for field in required if field not in payload]
+    if missing:
+        return jsonify({'error': f'Faltan campos requeridos: {", ".join(missing)}'}), 400
+
+    if str(payload.get('clientId')) != str(client_id):
+        return jsonify({'error': 'clientId del payload debe coincidir con el parámetro de ruta'}), 400
+
+    config = upsert_ai_visibility_config(client_id, payload)
+    return jsonify({
+        'status': 'ok',
+        'config': {
+            'clientId': config.get('client_id'),
+            'brand': config.get('brand'),
+            'competitors': config.get('competitors', []),
+            'promptTemplate': config.get('prompt_template', ''),
+            'sources': config.get('sources', []),
+            'providerPriority': config.get('provider_priority', []),
+            'updatedAt': config.get('updated_at'),
+        }
+    })
+
+
+@ai_bp.route('/api/ai/visibility/history/<client_id>', methods=['GET'])
+def visibility_history(client_id):
+    history = get_ai_visibility_history(client_id)
+    return jsonify({
+        'clientId': str(client_id),
+        'runs': [
+            {
+                'id': row.get('id'),
+                'clientId': row.get('client_id'),
+                'mentions': row.get('mentions', 0),
+                'shareOfVoice': row.get('share_of_voice', 0),
+                'sentiment': row.get('sentiment', 0),
+                'competitorAppearances': row.get('competitor_appearances', {}),
+                'rawEvidence': row.get('raw_evidence', []),
+                'providerUsed': row.get('provider_used'),
+                'createdAt': row.get('created_at'),
+            }
+            for row in history
+        ],
+    })
+
+
+@ai_bp.route('/api/ai/visibility/run', methods=['POST'])
+def run_visibility_analysis():
+    payload = request.get_json(silent=True) or {}
+    required = ['clientId', 'brand', 'competitors', 'promptTemplate', 'sources', 'providerPriority']
+    missing = [field for field in required if field not in payload]
+    if missing:
+        return jsonify({'error': f'Faltan campos requeridos: {", ".join(missing)}'}), 400
+
+    if not payload.get('promptTemplate'):
+        saved = get_ai_visibility_config(str(payload.get('clientId')))
+        if saved:
+            payload['promptTemplate'] = saved.get('prompt_template', '')
+
+    prompt = _build_visibility_prompt(payload)
+
+    try:
+        provider_used, ai_result = _run_visibility_with_priority(prompt, payload.get('providerPriority'))
+    except Exception as exc:
+        return jsonify({'error': f'No fue posible ejecutar el análisis de visibilidad: {exc}'}), 502
+
+    response = {
+        'mentions': float(ai_result.get('mentions', 0)),
+        'shareOfVoice': float(ai_result.get('shareOfVoice', 0)),
+        'sentiment': float(ai_result.get('sentiment', 0)),
+        'competitorAppearances': ai_result.get('competitorAppearances', {}),
+        'rawEvidence': ai_result.get('rawEvidence', []),
+    }
+
+    insert_ai_visibility_run(
+        str(payload.get('clientId')),
+        {
+            'requestPayload': payload,
+            'mentions': response['mentions'],
+            'shareOfVoice': response['shareOfVoice'],
+            'sentiment': response['sentiment'],
+            'competitorAppearances': response['competitorAppearances'],
+            'rawEvidence': response['rawEvidence'],
+            'providerUsed': provider_used,
+        }
+    )
+
+    return jsonify({'clientId': str(payload.get('clientId')), **response, 'providerUsed': provider_used})
 
 @ai_bp.route('/ai/seo-analysis', methods=['POST'])
 def seo_analysis_endpoint():
