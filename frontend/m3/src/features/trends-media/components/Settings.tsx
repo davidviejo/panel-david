@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, Key, Save, Search } from 'lucide-react';
+import { Database, Save, Search, Settings2 } from 'lucide-react';
 import { getSettings, saveSettings } from '../services/storage';
 import { AppSettings } from '../types';
 
@@ -21,18 +21,15 @@ export const Settings: React.FC<SettingsProps> = ({ onSettingsChanged }) => {
   return (
     <div className="mx-auto max-w-4xl space-y-8 pb-20">
       <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="mb-6 flex items-center text-xl font-bold text-slate-800"><Key className="mr-2 h-5 w-5 text-blue-600" />Credenciales API</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Google Gemini API Key <span className="font-normal text-slate-400">(Opcional)</span></label>
-            <input type="password" className="w-full rounded-lg border border-slate-300 p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Dejar vacío para usar VITE_GEMINI_API_KEY" value={settings.geminiApiKey} onChange={(event) => setSettings({ ...settings, geminiApiKey: event.target.value })} />
-            <p className="mt-1 text-xs text-slate-500">Si no se especifica, el sistema intentará usar la variable de entorno VITE_GEMINI_API_KEY.</p>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">SerpApi Key (Scraping Real)</label>
-            <input type="password" className="w-full rounded-lg border border-slate-300 p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter SerpApi Key..." value={settings.serpApiKey} onChange={(event) => setSettings({ ...settings, serpApiKey: event.target.value })} />
-            <p className="mt-1 text-xs text-slate-500">Necesaria para obtener resultados reales de Google News. Si falla por CORS, el módulo usa mocks para no romper la experiencia.</p>
-          </div>
+        <h2 className="mb-4 flex items-center text-xl font-bold text-slate-800"><Settings2 className="mr-2 h-5 w-5 text-blue-600" />Credenciales SERP centralizadas</h2>
+        <p className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700">
+          Las credenciales (DataForSEO/SerpApi) ahora se gestionan de forma global en{' '}
+          <strong>Ajustes del sistema</strong>. Este módulo solo guarda queries y fuentes.
+        </p>
+        <div className="mt-3 text-sm">
+          <a href="/app/settings" className="font-semibold text-blue-600 hover:underline">
+            Ir a Ajustes para configurar credenciales SERP →
+          </a>
         </div>
       </div>
 

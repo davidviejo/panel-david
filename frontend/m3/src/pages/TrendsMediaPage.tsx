@@ -9,6 +9,7 @@ import { processNews } from '../features/trends-media/services/newsProcessor';
 import { fetchSerpResults } from '../features/trends-media/services/serp';
 import { getSettings } from '../features/trends-media/services/storage';
 import { AppSettings, DashboardStats as StatsType, NewsCluster, NewsPriority } from '../features/trends-media/types';
+import { useSettings } from '../context/SettingsContext';
 
 const viewOptions = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -19,6 +20,7 @@ const viewOptions = [
 type ViewId = (typeof viewOptions)[number]['id'];
 
 const TrendsMediaPage: React.FC = () => {
+  const { settings: appSettings } = useSettings();
   const [currentView, setCurrentView] = useState<ViewId>('dashboard');
   const [settings, setSettings] = useState<AppSettings>(getSettings());
   const [newsClusters, setNewsClusters] = useState<NewsCluster[]>([]);
@@ -49,7 +51,10 @@ const TrendsMediaPage: React.FC = () => {
 
       setPipelineStatus('analyzing');
       setStatusMessage(`Analizando ${processedClusters.length} temas con Gemini AI...`);
-      const analyzedClusters = await analyzeNewsWithGemini(processedClusters, settings.geminiApiKey);
+      const analyzedClusters = await analyzeNewsWithGemini(
+        processedClusters,
+        appSettings.geminiApiKey || '',
+      );
 
       setNewsClusters(analyzedClusters);
       setPipelineStatus('done');
@@ -149,7 +154,15 @@ const TrendsMediaPage: React.FC = () => {
       )}
 
       {currentView === 'brief' && (
-        <BriefGenerator items={newsClusters} pipelineStatus={pipelineStatus} statusMessage={statusMessage} onRunPipeline={runPipeline} onNavigateToSettings={() => setCurrentView('settings')} />
+        <BriefGenerator
+          items={newsClusters}
+          pipelineStatus={pipelineStatus}
+          statusMessage={statusMessage}
+          onRunPipeline={runPipeline}
+          onNavigateToSettings={() => {
+            window.location.href = '/app/settings';
+          }}
+        />
       )}
 
       {currentView === 'settings' && <Settings onSettingsChanged={setSettings} />}
