@@ -123,6 +123,7 @@ export interface SeoChecklistSettings {
     maxCompetitorsPerKeyword: number;
     dataforseoLogin?: string;
     dataforseoPassword?: string;
+    useGlobalDataforseo?: boolean;
   };
   budgets: {
     maxUrlsPerBatch: number;

@@ -174,6 +174,27 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
 
                 {formData.serp.provider === 'dataforseo' && (
                   <div className="space-y-4 p-4 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-950/20">
+                    <div className="flex items-center justify-between bg-white/70 dark:bg-slate-900/40 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                      <div>
+                        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                          Usar credenciales globales
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Hereda login/password desde Ajustes globales
+                        </p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.serp.useGlobalDataforseo !== false}
+                          onChange={(e) =>
+                            handleChange('serp', 'useGlobalDataforseo', e.target.checked)
+                          }
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
                     <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
                       <AlertTriangle size={14} className="mt-0.5 text-blue-500 shrink-0" />
                       <span>
@@ -191,7 +212,8 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                         onChange={(e) =>
                           handleChange('serp', 'dataforseoLogin', e.target.value.trim())
                         }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                        disabled={formData.serp.useGlobalDataforseo !== false}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                         placeholder="email / login"
                       />
                     </div>
@@ -205,10 +227,16 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                         onChange={(e) =>
                           handleChange('serp', 'dataforseoPassword', e.target.value)
                         }
-                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                        disabled={formData.serp.useGlobalDataforseo !== false}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                         placeholder="password"
                       />
                     </div>
+                    {formData.serp.useGlobalDataforseo !== false && (
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        Este proyecto usa las credenciales globales actuales.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
