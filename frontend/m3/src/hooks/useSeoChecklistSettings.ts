@@ -1,44 +1,49 @@
 import { useState, useCallback } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { SeoChecklistSettings } from '../types/seoChecklist';
+import { SettingsRepository } from '../services/settingsRepository';
 
-const DEFAULT_SETTINGS: SeoChecklistSettings = {
-  brandTerms: [],
-  allowKwPrincipalUpdate: true,
-  serp: {
-    enabled: false,
-    provider: 'dataforseo',
-    maxKeywordsPerUrl: 10,
-    maxCompetitorsPerKeyword: 3,
-    dataforseoLogin: '',
-    dataforseoPassword: '',
-  },
-  budgets: {
-    maxUrlsPerBatch: 50,
-    dailyBudget: 10,
-    maxEstimatedCostPerBatch: 5,
-  },
-  competitorsMode: 'autoFromSerp',
+const getDefaultSettings = (): SeoChecklistSettings => {
+  const appSettings = SettingsRepository.getSettings();
+  return {
+    brandTerms: [],
+    allowKwPrincipalUpdate: true,
+    serp: {
+      enabled: false,
+      provider: 'dataforseo',
+      maxKeywordsPerUrl: 10,
+      maxCompetitorsPerKeyword: 3,
+      dataforseoLogin: appSettings.dataforseoLogin || '',
+      dataforseoPassword: appSettings.dataforseoPassword || '',
+    },
+    budgets: {
+      maxUrlsPerBatch: 50,
+      dailyBudget: 10,
+      maxEstimatedCostPerBatch: 5,
+    },
+    competitorsMode: 'autoFromSerp',
+  };
 };
 
 export const useSeoChecklistSettings = () => {
   const { currentClientId } = useProject();
   const storageKey = currentClientId ? `mediaflow_seo_settings_${currentClientId}` : null;
   const [settings, setSettings] = useState<SeoChecklistSettings>(() => {
-    if (!storageKey) return DEFAULT_SETTINGS;
+    const defaultSettings = getDefaultSettings();
+    if (!storageKey) return defaultSettings;
     try {
       const saved = localStorage.getItem(storageKey);
-      if (!saved) return DEFAULT_SETTINGS;
+      if (!saved) return defaultSettings;
       const parsed = JSON.parse(saved);
       return {
-        ...DEFAULT_SETTINGS,
+        ...defaultSettings,
         ...parsed,
-        serp: { ...DEFAULT_SETTINGS.serp, ...parsed.serp },
-        budgets: { ...DEFAULT_SETTINGS.budgets, ...parsed.budgets },
+        serp: { ...defaultSettings.serp, ...parsed.serp },
+        budgets: { ...defaultSettings.budgets, ...parsed.budgets },
       };
     } catch (e) {
       console.error('Failed to parse SEO settings', e);
-      return DEFAULT_SETTINGS;
+      return defaultSettings;
     }
   });
 
