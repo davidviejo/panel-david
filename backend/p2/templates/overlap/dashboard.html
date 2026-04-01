@@ -12,7 +12,7 @@
                 <select id="mode" class="form-select mb-2">
                     <option value="dataforseo" selected>DataForSEO</option>
                     <option value="ddg">DuckDuckGo</option>
-                    <option value="google_api_official">Google API</option>
+                    <option value="google_official">Google API</option>
                     <option value="serpapi">SerpApi</option>
                     <option value="google_scraping">Google Scraping</option>
                     <option value="google_nuclear">Google Nuclear</option>
@@ -40,9 +40,9 @@
 <script>
 const m = document.getElementById('mode');
 m.addEventListener('change', ()=>{
-    document.getElementById('apiBox').style.display = (m.value==='google_api_official' || m.value==='serpapi')?'block':'none';
+    document.getElementById('apiBox').style.display = (m.value==='google_official' || m.value==='serpapi')?'block':'none';
     document.getElementById('cookBox').style.display = m.value==='google_nuclear'?'block':'none';
-    document.getElementById('cx').style.display = m.value==='google_api_official'?'block':'none';
+    document.getElementById('cx').style.display = m.value==='google_official'?'block':'none';
 });
 function run(){
     fetch('/api/v1/overlap/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({

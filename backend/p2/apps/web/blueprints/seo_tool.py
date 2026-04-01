@@ -536,12 +536,12 @@ def start():
         'cookie': request.form.get('cookie'),
 
         # API Oficial params
-        'cse_key': request.form.get('cse_key'),
-        'cse_cx': request.form.get('cse_cx'),
+        'google_cse_key': request.form.get('google_cse_key') or request.form.get('cse_key'),
+        'google_cse_cx': request.form.get('google_cse_cx') or request.form.get('cse_cx'),
 
         # DataForSEO params (opcional, si no está en settings global)
-        'dfs_login': request.form.get('dfs_login'),
-        'dfs_pass': request.form.get('dfs_pass'),
+        'dataforseo_login': request.form.get('dataforseo_login') or request.form.get('dfs_login'),
+        'dataforseo_password': request.form.get('dataforseo_password') or request.form.get('dfs_pass'),
 
         'delay': float(request.form.get('delay', 3)),
         'tos': int(request.form.get('tos', 15)),
@@ -554,13 +554,13 @@ def start():
 
     if cfg.get('mode') == 'dataforseo':
         dfs_credentials = resolve_dataforseo_credentials({
-            'dfs_login': request.form.get('dfs_login'),
-            'dfs_pass': request.form.get('dfs_pass')
+            'dataforseo_login': request.form.get('dataforseo_login') or request.form.get('dfs_login'),
+            'dataforseo_password': request.form.get('dataforseo_password') or request.form.get('dfs_pass')
         })
         if not dfs_credentials.get('login') or not dfs_credentials.get('password'):
             return jsonify({'status': 'error', 'message': MISSING_DFS_CREDENTIALS_MESSAGE}), 400
-        cfg['dfs_login'] = dfs_credentials['login']
-        cfg['dfs_pass'] = dfs_credentials['password']
+        cfg['dataforseo_login'] = dfs_credentials['login']
+        cfg['dataforseo_password'] = dfs_credentials['password']
 
     kws = request.form.get('keywords', '').split('\n')
     f = request.files.get('history_file')

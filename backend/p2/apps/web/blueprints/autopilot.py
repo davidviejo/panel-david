@@ -302,21 +302,21 @@ def start():
     config = {
         'mode': data.get('mode', 'ddg'),
         'cookie': data.get('cookie'),
-        'cse_key': data.get('cse_key'),
-        'cse_cx': data.get('cse_cx'),
-        'dfs_login': data.get('dfs_login'),
-        'dfs_pass': data.get('dfs_pass')
+        'google_cse_key': data.get('google_cse_key') or data.get('cse_key'),
+        'google_cse_cx': data.get('google_cse_cx') or data.get('cse_cx'),
+        'dataforseo_login': data.get('dataforseo_login') or data.get('dfs_login'),
+        'dataforseo_password': data.get('dataforseo_password') or data.get('dfs_pass')
     }
 
     if config.get('mode') == 'dataforseo':
         dfs_credentials = resolve_dataforseo_credentials({
-            'dfs_login': data.get('dfs_login'),
-            'dfs_pass': data.get('dfs_pass')
+            'dataforseo_login': data.get('dataforseo_login') or data.get('dfs_login'),
+            'dataforseo_password': data.get('dataforseo_password') or data.get('dfs_pass')
         })
         if not dfs_credentials.get('login') or not dfs_credentials.get('password'):
             return jsonify({"status": "error", "message": MISSING_DFS_CREDENTIALS_MESSAGE}), 400
-        config['dfs_login'] = dfs_credentials['login']
-        config['dfs_pass'] = dfs_credentials['password']
+        config['dataforseo_login'] = dfs_credentials['login']
+        config['dataforseo_password'] = dfs_credentials['password']
 
     threading.Thread(target=worker_elite_process, args=(project, config)).start()
     return jsonify({"status":"started"})

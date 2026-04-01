@@ -15,8 +15,14 @@ def resolve_dataforseo_credentials(override: Optional[Dict[str, Any]] = None, us
     request override opcional > session > user_settings > env.
     """
     override = override or {}
-    login_override = (override.get("login") or override.get("dfs_login") or "").strip()
-    pass_override = (override.get("password") or override.get("dfs_pass") or "").strip()
+    login_override = (override.get("login") or override.get("dataforseo_login") or override.get("dfs_login") or "").strip()
+    pass_override = (
+        override.get("password")
+        or override.get("dataforseo_password")
+        or override.get("dataforseo_pass")
+        or override.get("dfs_pass")
+        or ""
+    ).strip()
 
     login = login_override
     password = pass_override
@@ -25,7 +31,7 @@ def resolve_dataforseo_credentials(override: Optional[Dict[str, Any]] = None, us
         if not login:
             login = (session.get("dataforseo_login") or "").strip()
         if not password:
-            password = (session.get("dataforseo_pass") or "").strip()
+            password = (session.get("dataforseo_password") or session.get("dataforseo_pass") or "").strip()
 
     settings = get_user_settings(user_id) or {}
     if not login:
@@ -39,4 +45,3 @@ def resolve_dataforseo_credentials(override: Optional[Dict[str, Any]] = None, us
         password = (os.getenv("DATAFORSEO_PASSWORD") or "").strip()
 
     return {"login": login, "password": password}
-

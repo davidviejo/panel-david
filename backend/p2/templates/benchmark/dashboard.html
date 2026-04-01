@@ -15,7 +15,7 @@
                 <label class="fw-bold small">Motor:</label>
                 <select id="mode" class="form-select mb-2">
                     <option value="ddg">DuckDuckGo</option>
-                    <option value="google_api_official">Google API Oficial</option>
+                    <option value="google_official">Google API Oficial</option>
                     <option value="google_scraping">Google Scraping</option>
                     <option value="google_nuclear">Google Nuclear (Cookie)</option>
                 </select>
@@ -52,7 +52,7 @@
 <script>
 const modeSel = document.getElementById('mode');
 modeSel.addEventListener('change', () => {
-    document.getElementById('optsCSE').style.display = modeSel.value === 'google_api_official' ? 'block' : 'none';
+    document.getElementById('optsCSE').style.display = modeSel.value === 'google_official' ? 'block' : 'none';
     document.getElementById('optsCookie').style.display = modeSel.value === 'google_nuclear' ? 'block' : 'none';
 });
 

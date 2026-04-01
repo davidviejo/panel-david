@@ -204,6 +204,7 @@ def update_settings_api():
         session['openai_key'] = new_state.get('openai_key')
         session['anthropic_key'] = new_state.get('anthropic_key')
         session['dataforseo_login'] = new_state.get('dataforseo_login')
+        session['dataforseo_password'] = new_state.get('dataforseo_password')
         session['dataforseo_pass'] = new_state.get('dataforseo_password')
         session['serpapi_key'] = new_state.get('serpapi_key')
         session['serp_provider'] = new_state.get('serp_provider', 'dataforseo')
@@ -251,7 +252,7 @@ def dashboard():
         'anthropic_key': session.get('anthropic_key', ''),
         'google_key': session.get('google_key', ''),
         'dataforseo_login': session.get('dataforseo_login', ''),
-        'dataforseo_pass': session.get('dataforseo_pass', ''),
+        'dataforseo_password': session.get('dataforseo_password', session.get('dataforseo_pass', '')),
         'google_cse_key': session.get('google_cse_key', ''),
         'google_cse_cx': session.get('google_cse_cx', ''),
         'scraping_cookie': session.get('scraping_cookie', ''),
@@ -316,7 +317,7 @@ def set_preference():
     # Global Keys
     global_keys = [
         'openai_key', 'anthropic_key', 'google_key',
-        'dataforseo_login', 'dataforseo_pass',
+        'dataforseo_login', 'dataforseo_password', 'dataforseo_pass',
         'google_cse_key', 'google_cse_cx',
         'scraping_cookie', 'memory_context_window',
         'serp_provider', 'serpapi_key'
