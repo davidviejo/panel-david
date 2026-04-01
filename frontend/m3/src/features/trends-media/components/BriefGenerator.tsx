@@ -1,6 +1,5 @@
 import React from 'react';
 import { AlertCircle, BarChart2, ExternalLink, FileText, Loader2, Play, RefreshCw, Send, Settings } from 'lucide-react';
-import { getSettings } from '../services/storage';
 import { ClusterCategory, NewsCluster, NewsPriority } from '../types';
 
 export type PipelineStatus = 'idle' | 'fetching' | 'analyzing' | 'done' | 'error';
@@ -11,6 +10,7 @@ interface BriefGeneratorProps {
   statusMessage: string;
   onRunPipeline: () => void;
   onNavigateToSettings: () => void;
+  hasSerpApiKey: boolean;
 }
 
 const PriorityBadge: React.FC<{ priority: NewsPriority }> = ({ priority }) => {
@@ -28,9 +28,7 @@ const ClusterBadge: React.FC<{ category: ClusterCategory }> = ({ category }) => 
   <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">{category}</span>
 );
 
-export const BriefGenerator: React.FC<BriefGeneratorProps> = ({ items, pipelineStatus, statusMessage, onRunPipeline, onNavigateToSettings }) => {
-  const settings = getSettings();
-
+export const BriefGenerator: React.FC<BriefGeneratorProps> = ({ items, pipelineStatus, statusMessage, onRunPipeline, onNavigateToSettings, hasSerpApiKey }) => {
   if (pipelineStatus === 'fetching' || pipelineStatus === 'analyzing') {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center space-y-6">
@@ -61,7 +59,7 @@ export const BriefGenerator: React.FC<BriefGeneratorProps> = ({ items, pipelineS
             <Play className="h-5 w-5" />
             <span>Iniciar Pipeline</span>
           </button>
-          {!settings.serpApiKey && (
+          {!hasSerpApiKey && (
             <button type="button" onClick={onNavigateToSettings} className="mt-4 flex w-full items-center justify-center rounded bg-red-50 p-2 text-xs text-red-500 hover:bg-red-100">
               <Settings className="mr-1 h-3 w-3" />
               Falta SerpApi Key. (Usando mocks)

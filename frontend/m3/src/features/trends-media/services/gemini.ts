@@ -1,9 +1,10 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { SYSTEM_INSTRUCTION } from '../constants';
 import { ClusterCategory, NewsCluster, NewsPriority } from '../types';
+import { SettingsRepository } from '../../../services/settingsRepository';
 
 const resolveGeminiApiKey = (userProvidedKey?: string) =>
-  userProvidedKey || import.meta.env.VITE_GEMINI_API_KEY || '';
+  userProvidedKey || SettingsRepository.getApiKey('gemini') || import.meta.env.VITE_GEMINI_API_KEY || '';
 
 export const analyzeNewsWithGemini = async (
   clusters: NewsCluster[],

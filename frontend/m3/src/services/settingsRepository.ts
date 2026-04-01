@@ -5,6 +5,9 @@ export interface AppSettings {
   geminiModel?: string;
   mistralApiKey?: string;
   mistralModel?: string;
+  serpApiKey?: string;
+  dataforseoLogin?: string;
+  dataforseoPassword?: string;
   gscClientId?: string;
   brandTerms?: string[];
 }

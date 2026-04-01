@@ -15,6 +15,9 @@ const Settings: React.FC = () => {
   const [openaiKey, setOpenaiKey] = useState(settings.openaiApiKey || '');
   const [geminiKey, setGeminiKey] = useState(settings.geminiApiKey || '');
   const [mistralKey, setMistralKey] = useState(settings.mistralApiKey || '');
+  const [serpApiKey, setSerpApiKey] = useState(settings.serpApiKey || '');
+  const [dataforseoLogin, setDataforseoLogin] = useState(settings.dataforseoLogin || '');
+  const [dataforseoPassword, setDataforseoPassword] = useState(settings.dataforseoPassword || '');
 
   const [openaiModel, setOpenaiModel] = useState(settings.openaiModel || 'gpt-4o');
   const [geminiModel, setGeminiModel] = useState(settings.geminiModel || 'gemini-1.5-pro');
@@ -30,6 +33,9 @@ const Settings: React.FC = () => {
       openaiApiKey: openaiKey,
       geminiApiKey: geminiKey,
       mistralApiKey: mistralKey,
+      serpApiKey,
+      dataforseoLogin,
+      dataforseoPassword,
       openaiModel,
       geminiModel,
       mistralModel,
@@ -115,6 +121,57 @@ const Settings: React.FC = () => {
                 </select>
               </div>
             </div>
+          </div>
+
+          <div className="border-t border-border" />
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold text-foreground">SerpApi</label>
+              <span className="text-xs text-muted">SERP global</span>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted">API Key</label>
+              <Input
+                type="password"
+                value={serpApiKey}
+                onChange={(e) => setSerpApiKey(e.target.value)}
+                placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-border" />
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold text-foreground">DataForSEO</label>
+              <span className="text-xs text-muted">SERP global</span>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-xs text-muted">Login</label>
+                <Input
+                  type="text"
+                  value={dataforseoLogin}
+                  onChange={(e) => setDataforseoLogin(e.target.value.trim())}
+                  placeholder="email@login.com"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted">Password</label>
+                <Input
+                  type="password"
+                  value={dataforseoPassword}
+                  onChange={(e) => setDataforseoPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted">
+              Estas credenciales se usarán como valor predeterminado en módulos que consumen
+              DataForSEO.
+            </p>
           </div>
 
           <div className="border-t border-border" />

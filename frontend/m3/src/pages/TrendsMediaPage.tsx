@@ -9,6 +9,7 @@ import { processNews } from '../features/trends-media/services/newsProcessor';
 import { fetchSerpResults } from '../features/trends-media/services/serp';
 import { getSettings } from '../features/trends-media/services/storage';
 import { AppSettings, DashboardStats as StatsType, NewsCluster, NewsPriority } from '../features/trends-media/types';
+import { useSettings } from '../context/SettingsContext';
 
 const viewOptions = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -19,6 +20,7 @@ const viewOptions = [
 type ViewId = (typeof viewOptions)[number]['id'];
 
 const TrendsMediaPage: React.FC = () => {
+  const { settings: globalSettings } = useSettings();
   const [currentView, setCurrentView] = useState<ViewId>('dashboard');
   const [settings, setSettings] = useState<AppSettings>(getSettings());
   const [newsClusters, setNewsClusters] = useState<NewsCluster[]>([]);
@@ -37,19 +39,28 @@ const TrendsMediaPage: React.FC = () => {
     return 'Panel de Control';
   }, [currentView]);
 
+  const effectiveSettings = useMemo(
+    () => ({
+      ...settings,
+      geminiApiKey: settings.geminiApiKey || globalSettings.geminiApiKey || '',
+      serpApiKey: settings.serpApiKey || globalSettings.serpApiKey || '',
+    }),
+    [settings, globalSettings.geminiApiKey, globalSettings.serpApiKey],
+  );
+
   const runPipeline = async () => {
     try {
       setPipelineStatus('fetching');
-      setStatusMessage(`Escaneando Google News (${settings.searchQueries.length} queries)...`);
+      setStatusMessage(`Escaneando Google News (${effectiveSettings.searchQueries.length} queries)...`);
       if (currentView === 'dashboard') setCurrentView('brief');
 
-      const rawArticles = await fetchSerpResults(settings);
+      const rawArticles = await fetchSerpResults(effectiveSettings);
       setStatusMessage('Procesando: deduplicando y calculando scores...');
       const processedClusters = processNews(rawArticles);
 
       setPipelineStatus('analyzing');
       setStatusMessage(`Analizando ${processedClusters.length} temas con Gemini AI...`);
-      const analyzedClusters = await analyzeNewsWithGemini(processedClusters, settings.geminiApiKey);
+      const analyzedClusters = await analyzeNewsWithGemini(processedClusters, effectiveSettings.geminiApiKey);
 
       setNewsClusters(analyzedClusters);
       setPipelineStatus('done');
@@ -149,7 +160,14 @@ const TrendsMediaPage: React.FC = () => {
       )}
 
       {currentView === 'brief' && (
-        <BriefGenerator items={newsClusters} pipelineStatus={pipelineStatus} statusMessage={statusMessage} onRunPipeline={runPipeline} onNavigateToSettings={() => setCurrentView('settings')} />
+        <BriefGenerator
+          items={newsClusters}
+          pipelineStatus={pipelineStatus}
+          statusMessage={statusMessage}
+          onRunPipeline={runPipeline}
+          onNavigateToSettings={() => setCurrentView('settings')}
+          hasSerpApiKey={Boolean(effectiveSettings.serpApiKey)}
+        />
       )}
 
       {currentView === 'settings' && <Settings onSettingsChanged={setSettings} />}

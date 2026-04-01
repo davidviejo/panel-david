@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, Key, Save, Search } from 'lucide-react';
+import { Database, Save, Search } from 'lucide-react';
 import { getSettings, saveSettings } from '../services/storage';
 import { AppSettings } from '../types';
 
@@ -21,19 +21,11 @@ export const Settings: React.FC<SettingsProps> = ({ onSettingsChanged }) => {
   return (
     <div className="mx-auto max-w-4xl space-y-8 pb-20">
       <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="mb-6 flex items-center text-xl font-bold text-slate-800"><Key className="mr-2 h-5 w-5 text-blue-600" />Credenciales API</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Google Gemini API Key <span className="font-normal text-slate-400">(Opcional)</span></label>
-            <input type="password" className="w-full rounded-lg border border-slate-300 p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Dejar vacío para usar VITE_GEMINI_API_KEY" value={settings.geminiApiKey} onChange={(event) => setSettings({ ...settings, geminiApiKey: event.target.value })} />
-            <p className="mt-1 text-xs text-slate-500">Si no se especifica, el sistema intentará usar la variable de entorno VITE_GEMINI_API_KEY.</p>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">SerpApi Key (Scraping Real)</label>
-            <input type="password" className="w-full rounded-lg border border-slate-300 p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter SerpApi Key..." value={settings.serpApiKey} onChange={(event) => setSettings({ ...settings, serpApiKey: event.target.value })} />
-            <p className="mt-1 text-xs text-slate-500">Necesaria para obtener resultados reales de Google News. Si falla por CORS, el módulo usa mocks para no romper la experiencia.</p>
-          </div>
-        </div>
+        <h2 className="mb-3 text-xl font-bold text-slate-800">Credenciales API centralizadas</h2>
+        <p className="text-sm text-slate-600">
+          Las claves de Gemini, SerpApi y DataForSEO ahora se gestionan desde
+          <strong> Ajustes del Sistema</strong> para compartirlas en todas las apps.
+        </p>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
