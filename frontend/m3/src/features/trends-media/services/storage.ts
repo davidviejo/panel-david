@@ -3,8 +3,6 @@ import { AppSettings } from '../types';
 const SETTINGS_KEY = 'mediaflow_trends_media_settings';
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  geminiApiKey: '',
-  serpApiKey: '',
   searchQueries: [
     'valencia noticias economía',
     'valencia empresas inversión',

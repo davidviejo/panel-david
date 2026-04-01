@@ -17,6 +17,10 @@ const Settings: React.FC = () => {
   const [mistralKey, setMistralKey] = useState(settings.mistralApiKey || '');
   const [dataforseoLogin, setDataforseoLogin] = useState(settings.dataforseoLogin || '');
   const [dataforseoPassword, setDataforseoPassword] = useState(settings.dataforseoPassword || '');
+  const [serpApiKey, setSerpApiKey] = useState(settings.serpApiKey || '');
+  const [defaultSerpProvider, setDefaultSerpProvider] = useState<
+    'dataforseo' | 'serpapi'
+  >(settings.defaultSerpProvider || 'dataforseo');
 
   const [openaiModel, setOpenaiModel] = useState(settings.openaiModel || 'gpt-4o');
   const [geminiModel, setGeminiModel] = useState(settings.geminiModel || 'gemini-1.5-pro');
@@ -34,6 +38,8 @@ const Settings: React.FC = () => {
       mistralApiKey: mistralKey,
       dataforseoLogin,
       dataforseoPassword,
+      serpApiKey,
+      defaultSerpProvider,
       openaiModel,
       geminiModel,
       mistralModel,
@@ -152,6 +158,37 @@ const Settings: React.FC = () => {
               Estas credenciales se usarán como valor predeterminado en módulos que consumen
               DataForSEO.
             </p>
+          </div>
+
+          <div className="space-y-4">
+            <label className="text-sm font-bold text-foreground">Proveedor SERP por defecto</label>
+            <select
+              value={defaultSerpProvider}
+              onChange={(e) => setDefaultSerpProvider(e.target.value as 'dataforseo' | 'serpapi')}
+              className="form-control"
+            >
+              <option value="dataforseo">DataForSEO</option>
+              <option value="serpapi">SerpApi</option>
+            </select>
+            <p className="text-xs text-muted">
+              Los módulos usarán este proveedor por defecto para obtener datos SERP.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold text-foreground">SerpApi</label>
+              <span className="text-xs text-muted">Alternativo</span>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted">API Key</label>
+              <Input
+                type="password"
+                value={serpApiKey}
+                onChange={(e) => setSerpApiKey(e.target.value)}
+                placeholder="xxxxxxxxxxxxxxxx"
+              />
+            </div>
           </div>
 
           <div className="border-t border-border" />

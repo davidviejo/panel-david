@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertCircle, BarChart2, ExternalLink, FileText, Loader2, Play, RefreshCw, Send, Settings } from 'lucide-react';
-import { getSettings } from '../services/storage';
 import { ClusterCategory, NewsCluster, NewsPriority } from '../types';
+import { useSettings } from '../../../context/SettingsContext';
 
 export type PipelineStatus = 'idle' | 'fetching' | 'analyzing' | 'done' | 'error';
 
@@ -29,7 +29,12 @@ const ClusterBadge: React.FC<{ category: ClusterCategory }> = ({ category }) => 
 );
 
 export const BriefGenerator: React.FC<BriefGeneratorProps> = ({ items, pipelineStatus, statusMessage, onRunPipeline, onNavigateToSettings }) => {
-  const settings = getSettings();
+  const { settings } = useSettings();
+  const defaultSerpProvider = settings.defaultSerpProvider || 'dataforseo';
+  const hasGlobalSerpCredentials =
+    defaultSerpProvider === 'serpapi'
+      ? Boolean(settings.serpApiKey?.trim())
+      : Boolean(settings.dataforseoLogin?.trim() && settings.dataforseoPassword?.trim());
 
   if (pipelineStatus === 'fetching' || pipelineStatus === 'analyzing') {
     return (
@@ -61,10 +66,10 @@ export const BriefGenerator: React.FC<BriefGeneratorProps> = ({ items, pipelineS
             <Play className="h-5 w-5" />
             <span>Iniciar Pipeline</span>
           </button>
-          {!settings.serpApiKey && (
+          {!hasGlobalSerpCredentials && (
             <button type="button" onClick={onNavigateToSettings} className="mt-4 flex w-full items-center justify-center rounded bg-red-50 p-2 text-xs text-red-500 hover:bg-red-100">
               <Settings className="mr-1 h-3 w-3" />
-              Falta SerpApi Key. (Usando mocks)
+              Configurar credenciales en Ajustes
             </button>
           )}
         </div>

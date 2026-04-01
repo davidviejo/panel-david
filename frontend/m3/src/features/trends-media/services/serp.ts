@@ -1,4 +1,5 @@
 import { AppSettings, NewsArticle } from '../types';
+import { SettingsRepository } from '../../../services/settingsRepository';
 
 const SERP_API_BASE = 'https://serpapi.com/search.json';
 
@@ -40,8 +41,17 @@ const normalizeSerpResponse = (data: any, keyword: string): NewsArticle[] => {
 };
 
 export const fetchSerpResults = async (settings: AppSettings): Promise<NewsArticle[]> => {
-  if (!settings.serpApiKey) {
-    console.warn('No SerpApi Key provided. Returning expanded mock data.');
+  const appSettings = SettingsRepository.getSettings();
+  const serpProvider = appSettings.defaultSerpProvider || 'dataforseo';
+  const serpApiKey = appSettings.serpApiKey;
+
+  if (serpProvider !== 'serpapi') {
+    console.warn('Default SERP provider is not SerpApi. Returning expanded mock data for trends-media.');
+    return MOCK_GOOGLE_NEWS_RESPONSE;
+  }
+
+  if (!serpApiKey) {
+    console.warn('No global SerpApi Key provided. Returning expanded mock data.');
     return MOCK_GOOGLE_NEWS_RESPONSE;
   }
 
@@ -52,7 +62,7 @@ export const fetchSerpResults = async (settings: AppSettings): Promise<NewsArtic
     const url = new URL(SERP_API_BASE);
     url.searchParams.append('engine', 'google_news');
     url.searchParams.append('q', query);
-    url.searchParams.append('api_key', settings.serpApiKey);
+    url.searchParams.append('api_key', serpApiKey);
     url.searchParams.append('gl', 'es');
     url.searchParams.append('hl', 'es');
     url.searchParams.append('num', '100');
