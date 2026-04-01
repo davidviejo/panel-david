@@ -85,7 +85,27 @@ LEGACY_TO_V1_ROUTES = {
     for route in LEGACY_TOOL_ROUTES
 }
 
+LEGACY_PREFIX_MAPPINGS = (
+    ('/api/seo/tfidf/projects', f'{API_V1_PREFIX}/seo/tfidf/projects'),
+    ('/api/seo/tfidf/projects/', f'{API_V1_PREFIX}/seo/tfidf/projects/'),
+    ('/api/seo/tfidf/runs/', f'{API_V1_PREFIX}/seo/tfidf/runs/'),
+)
+
 
 def should_redirect_legacy_path(path: str) -> bool:
     """Return True when a legacy tool endpoint should redirect to `/api/v1`."""
-    return path in LEGACY_TO_V1_ROUTES
+    if path in LEGACY_TO_V1_ROUTES:
+        return True
+    return any(path.startswith(prefix) for prefix, _ in LEGACY_PREFIX_MAPPINGS)
+
+
+def map_legacy_path_to_v1(path: str) -> str:
+    """Map a legacy route path to its `/api/v1` equivalent."""
+    if path in LEGACY_TO_V1_ROUTES:
+        return LEGACY_TO_V1_ROUTES[path]
+
+    for legacy_prefix, v1_prefix in LEGACY_PREFIX_MAPPINGS:
+        if path.startswith(legacy_prefix):
+            return path.replace(legacy_prefix, v1_prefix, 1)
+
+    return path
