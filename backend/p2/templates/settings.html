@@ -125,6 +125,35 @@
                     <input type="password" id="input_serpapi_key" value="{{ settings.serpapi_key or '' }}" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-orange-500 transition-colors" placeholder="Pegar SerpApi Key aquí...">
                 </div>
             </div>
+
+            <!-- Motor SERP por defecto -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 md:col-span-2">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Proveedor SERP por defecto</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Proveedor</label>
+                        <select id="input_serp_provider" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition-colors">
+                            <option value="dataforseo" {% if settings.serp_provider == 'dataforseo' %}selected{% endif %}>DataForSEO</option>
+                            <option value="auto" {% if settings.serp_provider == 'auto' %}selected{% endif %}>Auto</option>
+                            <option value="serpapi" {% if settings.serp_provider == 'serpapi' %}selected{% endif %}>SerpApi</option>
+                            <option value="google_official" {% if settings.serp_provider == 'google_official' %}selected{% endif %}>Google official</option>
+                            <option value="google_scraping" {% if settings.serp_provider == 'google_scraping' %}selected{% endif %}>Scraping</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Google CSE API Key</label>
+                        <input type="password" id="input_google_cse_key" value="{{ settings.google_cse_key or '' }}" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition-colors" placeholder="AIza...">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Google CSE CX</label>
+                        <input type="text" id="input_google_cse_cx" value="{{ settings.google_cse_cx or '' }}" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition-colors" placeholder="Custom Search Engine ID">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Cookie para scraping</label>
+                        <input type="password" id="input_scraping_cookie" value="{{ settings.scraping_cookie or '' }}" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition-colors" placeholder="CONSENT=...">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -197,6 +226,10 @@
             dataforseo_login: document.getElementById('input_dfs_login').value,
             dataforseo_password: document.getElementById('input_dfs_pass').value,
             serpapi_key: document.getElementById('input_serpapi_key').value,
+            serp_provider: document.getElementById('input_serp_provider').value,
+            google_cse_key: document.getElementById('input_google_cse_key').value,
+            google_cse_cx: document.getElementById('input_google_cse_cx').value,
+            scraping_cookie: document.getElementById('input_scraping_cookie').value,
             memory_limit: document.getElementById('input_memory_limit').value,
             system_prompt: document.getElementById('input_system_prompt').value
         };

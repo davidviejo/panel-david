@@ -339,26 +339,38 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     Returns:
         List[Dict]: Lista de resultados estandarizada [{'url':..., 'title':..., 'snippet':...}]
     """
-    cfg = config or {}
+    cfg = dict(config or {})
 
-    # Inject session defaults if available
+    # Fallback chain único: config explícita -> sesión -> DB
     if has_request_context():
-        if not cfg.get('dfs_login'): cfg['dfs_login'] = session.get('dataforseo_login')
-        if not cfg.get('dfs_pass'): cfg['dfs_pass'] = session.get('dataforseo_pass')
-        if not cfg.get('cse_key'): cfg['cse_key'] = session.get('google_cse_key')
-        if not cfg.get('cse_cx'): cfg['cse_cx'] = session.get('google_cse_cx')
-        if not cfg.get('cookie'): cfg['cookie'] = session.get('scraping_cookie')
-        # Nuevas configuraciones
-        if not cfg.get('serpapi_key'): cfg['serpapi_key'] = session.get('serpapi_key')
-        if not cfg.get('serp_provider'): cfg['serp_provider'] = session.get('serp_provider')
+        fallback_from_session = {
+            'dfs_login': session.get('dataforseo_login'),
+            'dfs_pass': session.get('dataforseo_pass'),
+            'cse_key': session.get('google_cse_key'),
+            'cse_cx': session.get('google_cse_cx'),
+            'cookie': session.get('scraping_cookie'),
+            'serpapi_key': session.get('serpapi_key'),
+            'serp_provider': session.get('serp_provider'),
+        }
+        for key, value in fallback_from_session.items():
+            if not cfg.get(key) and value:
+                cfg[key] = value
 
-    # Inject settings from db if missing
     try:
         from apps.core.database import get_user_settings
         settings = get_user_settings('default') or {}
-        if not cfg.get('dfs_login'): cfg['dfs_login'] = settings.get('dataforseo_login')
-        if not cfg.get('dfs_pass'): cfg['dfs_pass'] = settings.get('dataforseo_password')
-        if not cfg.get('serpapi_key'): cfg['serpapi_key'] = settings.get('serpapi_key')
+        fallback_from_db = {
+            'dfs_login': settings.get('dataforseo_login'),
+            'dfs_pass': settings.get('dataforseo_password'),
+            'cse_key': settings.get('google_cse_key'),
+            'cse_cx': settings.get('google_cse_cx'),
+            'cookie': settings.get('scraping_cookie'),
+            'serpapi_key': settings.get('serpapi_key'),
+            'serp_provider': settings.get('serp_provider'),
+        }
+        for key, value in fallback_from_db.items():
+            if not cfg.get(key) and value:
+                cfg[key] = value
     except Exception as e:
         logging.error(f"Error loading settings for smart_serp_search: {e}")
 

@@ -159,6 +159,10 @@ def init_db() -> None:
             dataforseo_login TEXT,
             dataforseo_password TEXT,
             serpapi_key TEXT,
+            serp_provider TEXT DEFAULT 'dataforseo',
+            google_cse_key TEXT,
+            google_cse_cx TEXT,
+            scraping_cookie TEXT,
             memory_limit INTEGER DEFAULT 4096,
             system_prompt TEXT
         )
@@ -359,6 +363,20 @@ def init_db() -> None:
             if USE_POSTGRES:
                 conn.rollback()
 
+    # Migration guards for user_settings SERP columns.
+    for query in (
+        "ALTER TABLE user_settings ADD COLUMN serp_provider TEXT DEFAULT 'dataforseo'",
+        "ALTER TABLE user_settings ADD COLUMN google_cse_key TEXT",
+        "ALTER TABLE user_settings ADD COLUMN google_cse_cx TEXT",
+        "ALTER TABLE user_settings ADD COLUMN scraping_cookie TEXT",
+    ):
+        try:
+            c.execute(query)
+            conn.commit()
+        except Exception:
+            if USE_POSTGRES:
+                conn.rollback()
+
     conn.commit()
     conn.close()
 
@@ -469,6 +487,7 @@ def upsert_user_settings(user_id: str, data: Dict[str, Any]) -> None:
         valid_columns = [
             'default_model', 'privacy_mode', 'openai_key', 'anthropic_key',
             'dataforseo_login', 'dataforseo_password', 'serpapi_key',
+            'serp_provider', 'google_cse_key', 'google_cse_cx', 'scraping_cookie',
             'memory_limit', 'system_prompt'
         ]
 
