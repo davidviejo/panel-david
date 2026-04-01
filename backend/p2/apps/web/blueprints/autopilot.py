@@ -16,6 +16,10 @@ from urllib.parse import urljoin, urlparse
 from werkzeug.utils import secure_filename
 from apps.web.blueprints.project_manager import get_active_project
 from apps.tools.scraper_core import smart_serp_search
+from apps.tools.credentials import (
+    MISSING_DFS_CREDENTIALS_MESSAGE,
+    resolve_dataforseo_credentials,
+)
 from apps.tools.utils import is_safe_url
 
 autopilot_bp = Blueprint('autopilot_bp', __name__)
@@ -303,6 +307,16 @@ def start():
         'dfs_login': data.get('dfs_login'),
         'dfs_pass': data.get('dfs_pass')
     }
+
+    if config.get('mode') == 'dataforseo':
+        dfs_credentials = resolve_dataforseo_credentials({
+            'dfs_login': data.get('dfs_login'),
+            'dfs_pass': data.get('dfs_pass')
+        })
+        if not dfs_credentials.get('login') or not dfs_credentials.get('password'):
+            return jsonify({"status": "error", "message": MISSING_DFS_CREDENTIALS_MESSAGE}), 400
+        config['dfs_login'] = dfs_credentials['login']
+        config['dfs_pass'] = dfs_credentials['password']
 
     threading.Thread(target=worker_elite_process, args=(project, config)).start()
     return jsonify({"status":"started"})

@@ -8,6 +8,10 @@ from collections import Counter
 
 from apps.core_monitor import update_global, reset_global
 from apps.tools.scraper_core import smart_serp_search
+from apps.tools.credentials import (
+    MISSING_DFS_CREDENTIALS_MESSAGE,
+    resolve_dataforseo_credentials,
+)
 
 seo_bp = Blueprint('seo', __name__, url_prefix='/seo')
 
@@ -547,6 +551,16 @@ def start():
         # NUEVO: dominio objetivo (opcional)
         'target_domain': (request.form.get('target_domain') or '').strip().lower()
     }
+
+    if cfg.get('mode') == 'dataforseo':
+        dfs_credentials = resolve_dataforseo_credentials({
+            'dfs_login': request.form.get('dfs_login'),
+            'dfs_pass': request.form.get('dfs_pass')
+        })
+        if not dfs_credentials.get('login') or not dfs_credentials.get('password'):
+            return jsonify({'status': 'error', 'message': MISSING_DFS_CREDENTIALS_MESSAGE}), 400
+        cfg['dfs_login'] = dfs_credentials['login']
+        cfg['dfs_pass'] = dfs_credentials['password']
 
     kws = request.form.get('keywords', '').split('\n')
     f = request.files.get('history_file')
