@@ -172,6 +172,7 @@ def update_settings_api():
         valid_fields = [
             'default_model', 'privacy_mode', 'openai_key', 'anthropic_key',
             'dataforseo_login', 'dataforseo_password', 'serpapi_key',
+            'serp_provider', 'google_cse_key', 'google_cse_cx', 'scraping_cookie',
             'memory_limit', 'system_prompt'
         ]
 
@@ -205,6 +206,10 @@ def update_settings_api():
         session['dataforseo_login'] = new_state.get('dataforseo_login')
         session['dataforseo_pass'] = new_state.get('dataforseo_password')
         session['serpapi_key'] = new_state.get('serpapi_key')
+        session['serp_provider'] = new_state.get('serp_provider', 'dataforseo')
+        session['google_cse_key'] = new_state.get('google_cse_key')
+        session['google_cse_cx'] = new_state.get('google_cse_cx')
+        session['scraping_cookie'] = new_state.get('scraping_cookie')
         session['memory_context_window'] = 'standard' # Simplificación, o mapear memory_limit
 
         # Mapeo extra para memory_limit -> memory_context_window si queremos
