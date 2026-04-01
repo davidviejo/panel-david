@@ -114,7 +114,7 @@
                         <label class="block text-xs font-bold text-blue-800 uppercase mb-1">DataForSEO (Recomendado)</label>
                         <div class="grid grid-cols-2 gap-2">
                             <input type="text" id="input_dfs_login" value="{{ config.dataforseo_login }}" class="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition-colors" placeholder="Login / Email">
-                            <input type="password" id="input_dfs_pass" value="{{ config.dataforseo_pass }}" class="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition-colors" placeholder="Password">
+                            <input type="password" id="input_dfs_pass" value="{{ config.dataforseo_password }}" class="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition-colors" placeholder="Password">
                         </div>
                     </div>
 
@@ -217,7 +217,7 @@
             anthropic_key: document.getElementById('input_anthropic_key').value,
             google_key: document.getElementById('input_google_key').value,
             dataforseo_login: document.getElementById('input_dfs_login').value,
-            dataforseo_pass: document.getElementById('input_dfs_pass').value,
+            dataforseo_password: document.getElementById('input_dfs_pass').value,
             google_cse_key: document.getElementById('input_cse_key').value,
             google_cse_cx: document.getElementById('input_cse_cx').value,
             scraping_cookie: document.getElementById('input_scraping_cookie').value,

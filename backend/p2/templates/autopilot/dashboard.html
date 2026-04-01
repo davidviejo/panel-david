@@ -48,7 +48,7 @@
                     <select id="modeSelect" class="form-select">
                         <option value="dataforseo" selected>DataForSEO API (Predeterminada)</option>
                         <option value="ddg">DuckDuckGo (Gratis)</option>
-                        <option value="google_api_official">Google API Oficial</option>
+                        <option value="google_official">Google API Oficial</option>
                         <option value="google_scraping">Google Scraping (Sin Cookie)</option>
                         <option value="google_nuclear">Google Nuclear (Con Cookie)</option>
                     </select>
@@ -56,15 +56,15 @@
                 <div class="col-md-6">
                     <!-- API Inputs -->
                     <div id="optsCSE" style="display:none;" class="row g-2">
-                        <div class="col-6"><input type="text" id="cse_key" class="form-control" placeholder="API Key"></div>
-                        <div class="col-6"><input type="text" id="cse_cx" class="form-control" placeholder="CX ID"></div>
+                        <div class="col-6"><input type="text" id="google_cse_key" class="form-control" placeholder="API Key"></div>
+                        <div class="col-6"><input type="text" id="google_cse_cx" class="form-control" placeholder="CX ID"></div>
                     </div>
                     <!-- DataForSEO Inputs (override avanzado explícito) -->
                     <details id="optsDataForSEO" class="mt-2">
                         <summary class="small fw-semibold text-warning">Override avanzado DataForSEO (opcional)</summary>
                         <div class="row g-2 mt-1">
-                            <div class="col-6"><input type="text" id="dfs_login" class="form-control" placeholder="DataForSEO Login"></div>
-                            <div class="col-6"><input type="password" id="dfs_pass" class="form-control" placeholder="DataForSEO Password"></div>
+                            <div class="col-6"><input type="text" id="dataforseo_login" class="form-control" placeholder="DataForSEO Login"></div>
+                            <div class="col-6"><input type="password" id="dataforseo_password" class="form-control" placeholder="DataForSEO Password"></div>
                         </div>
                     </details>
                     <!-- Cookie Input -->
@@ -139,7 +139,7 @@
         const modeSel = document.getElementById('modeSelect');
         if(modeSel) {
             modeSel.addEventListener('change', () => {
-                const isApi = modeSel.value === 'google_api_official';
+                const isApi = modeSel.value === 'google_official';
                 const isNuc = modeSel.value === 'google_nuclear';
                 document.getElementById('optsCSE').style.display = isApi ? 'flex' : 'none';
                 document.getElementById('optsCookie').style.display = isNuc ? 'block' : 'none';
@@ -157,11 +157,11 @@
         // Gather config
         const payload = {
             mode: document.getElementById('modeSelect').value,
-            cse_key: document.getElementById('cse_key').value,
-            cse_cx: document.getElementById('cse_cx').value,
+            google_cse_key: document.getElementById('google_cse_key').value,
+            google_cse_cx: document.getElementById('google_cse_cx').value,
             cookie: document.getElementById('cookie').value,
-            dfs_login: document.getElementById('dfs_login').value,
-            dfs_pass: document.getElementById('dfs_pass').value
+            dataforseo_login: document.getElementById('dataforseo_login').value,
+            dataforseo_password: document.getElementById('dataforseo_password').value
         };
 
         const res = await fetch('/api/v1/autopilot/start', {

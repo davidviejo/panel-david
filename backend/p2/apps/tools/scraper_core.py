@@ -45,6 +45,60 @@ def create_robust_session() -> requests.Session:
 # Global reusable session
 robust_session = create_robust_session()
 
+CANONICAL_SERP_KEYS = (
+    'serp_provider',
+    'dataforseo_login',
+    'dataforseo_password',
+    'google_cse_key',
+    'google_cse_cx',
+)
+
+
+def normalize_serp_config(config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    Normaliza configuración SERP para usar un contrato canónico interno, manteniendo
+    compatibilidad con aliases legacy.
+    """
+    raw_cfg = dict(config or {})
+    normalized = dict(raw_cfg)
+
+    # DataForSEO aliases
+    normalized['dataforseo_login'] = (
+        raw_cfg.get('dataforseo_login')
+        or raw_cfg.get('dfs_login')
+        or raw_cfg.get('login')
+    )
+    normalized['dataforseo_password'] = (
+        raw_cfg.get('dataforseo_password')
+        or raw_cfg.get('dataforseo_pass')
+        or raw_cfg.get('dfs_pass')
+        or raw_cfg.get('password')
+    )
+
+    # Google CSE aliases
+    normalized['google_cse_key'] = (
+        raw_cfg.get('google_cse_key')
+        or raw_cfg.get('cse_key')
+        or raw_cfg.get('key')
+    )
+    normalized['google_cse_cx'] = (
+        raw_cfg.get('google_cse_cx')
+        or raw_cfg.get('cse_cx')
+        or raw_cfg.get('cx')
+    )
+
+    provider = raw_cfg.get('serp_provider') or raw_cfg.get('provider')
+    mode = raw_cfg.get('mode')
+
+    if provider == 'google_api_official':
+        provider = 'google_official'
+    if mode == 'google_api_official':
+        mode = 'google_official'
+
+    normalized['serp_provider'] = provider
+    normalized['mode'] = mode
+    return normalized
+
 
 def get_optimized_headers(cookie: Optional[str] = None) -> Dict[str, str]:
     """
@@ -339,15 +393,15 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     Returns:
         List[Dict]: Lista de resultados estandarizada [{'url':..., 'title':..., 'snippet':...}]
     """
-    cfg = dict(config or {})
+    cfg = normalize_serp_config(config)
 
     # Fallback chain único: config explícita -> sesión -> DB
     if has_request_context():
         fallback_from_session = {
-            'dfs_login': session.get('dataforseo_login'),
-            'dfs_pass': session.get('dataforseo_pass'),
-            'cse_key': session.get('google_cse_key'),
-            'cse_cx': session.get('google_cse_cx'),
+            'dataforseo_login': session.get('dataforseo_login'),
+            'dataforseo_password': session.get('dataforseo_password') or session.get('dataforseo_pass'),
+            'google_cse_key': session.get('google_cse_key'),
+            'google_cse_cx': session.get('google_cse_cx'),
             'cookie': session.get('scraping_cookie'),
             'serpapi_key': session.get('serpapi_key'),
             'serp_provider': session.get('serp_provider'),
@@ -360,10 +414,10 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
         from apps.core.database import get_user_settings
         settings = get_user_settings('default') or {}
         fallback_from_db = {
-            'dfs_login': settings.get('dataforseo_login'),
-            'dfs_pass': settings.get('dataforseo_password'),
-            'cse_key': settings.get('google_cse_key'),
-            'cse_cx': settings.get('google_cse_cx'),
+            'dataforseo_login': settings.get('dataforseo_login'),
+            'dataforseo_password': settings.get('dataforseo_password'),
+            'google_cse_key': settings.get('google_cse_key'),
+            'google_cse_cx': settings.get('google_cse_cx'),
             'cookie': settings.get('scraping_cookie'),
             'serpapi_key': settings.get('serpapi_key'),
             'serp_provider': settings.get('serp_provider'),
@@ -374,6 +428,7 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     except Exception as e:
         logging.error(f"Error loading settings for smart_serp_search: {e}")
 
+    cfg = normalize_serp_config(cfg)
     mode = cfg.get('mode')
     provider = cfg.get('serp_provider')
 
@@ -381,12 +436,12 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     if mode == 'serpapi' and cfg.get('serpapi_key'):
         return search_serpapi(keyword, cfg['serpapi_key'], num_results, gl=country, hl=lang)
 
-    if mode == 'dataforseo' and cfg.get('dfs_login') and cfg.get('dfs_pass'):
-        return search_dataforseo(keyword, cfg['dfs_login'], cfg['dfs_pass'], num_results, lang, country)
+    if mode == 'dataforseo' and cfg.get('dataforseo_login') and cfg.get('dataforseo_password'):
+        return search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country)
 
-    if mode == 'google_api_official':
-         api_key = cfg.get('cse_key') or cfg.get('key')
-         cx = cfg.get('cse_cx') or cfg.get('cx')
+    if mode == 'google_official':
+         api_key = cfg.get('google_cse_key')
+         cx = cfg.get('google_cse_cx')
          if api_key and cx:
             return search_google_official(keyword, api_key, cx, num_results, gl=country, hl=lang)
 
@@ -406,13 +461,13 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
             return search_serpapi(keyword, cfg['serpapi_key'], num_results, gl=country, hl=lang)
 
         # DataForSEO Preference
-        if provider == 'dataforseo' and cfg.get('dfs_login') and cfg.get('dfs_pass'):
-             return search_dataforseo(keyword, cfg['dfs_login'], cfg['dfs_pass'], num_results, lang, country)
+        if provider == 'dataforseo' and cfg.get('dataforseo_login') and cfg.get('dataforseo_password'):
+             return search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country)
 
         # Google Official Preference
         if provider == 'google_official':
-             api_key = cfg.get('cse_key') or cfg.get('key')
-             cx = cfg.get('cse_cx') or cfg.get('cx')
+             api_key = cfg.get('google_cse_key')
+             cx = cfg.get('google_cse_cx')
              if api_key and cx:
                 return search_google_official(keyword, api_key, cx, num_results, gl=country, hl=lang)
 
@@ -429,15 +484,15 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     # --- 3. FALLBACKS AUTOMÁTICOS (Legacy logic) ---
 
     # 3.1 DataForSEO (Si hay credenciales en config/sesión)
-    dfs_login = cfg.get('dfs_login') or Config.DATAFORSEO_LOGIN
-    dfs_pass = cfg.get('dfs_pass') or Config.DATAFORSEO_PASSWORD
+    dfs_login = cfg.get('dataforseo_login') or Config.DATAFORSEO_LOGIN
+    dfs_pass = cfg.get('dataforseo_password') or Config.DATAFORSEO_PASSWORD
 
     if dfs_login and dfs_pass:
         return search_dataforseo(keyword, dfs_login, dfs_pass, num_results, lang, country)
 
     # 3.2 Google API Oficial
-    api_key = cfg.get('cse_key') or cfg.get('key')
-    cx = cfg.get('cse_cx') or cfg.get('cx')
+    api_key = cfg.get('google_cse_key')
+    cx = cfg.get('google_cse_cx')
 
     if api_key and cx:
         return search_google_official(keyword, api_key, cx, num_results, gl=country, hl=lang)

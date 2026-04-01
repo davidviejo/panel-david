@@ -91,7 +91,7 @@
                             <select name="mode" class="form-select mb-2" id="modeSelect">
                                 <option value="dataforseo" selected>DataForSEO (Predeterminado)</option>
                                 <option value="ddg">DuckDuckGo (Gratis)</option>
-                                <option value="google_api_official">Google API Oficial</option>
+                                <option value="google_official">Google API Oficial</option>
                                 <option value="serpapi">SerpApi (Google)</option>
                                 <option value="google_scraping">Google Scraping (Sin Cookie)</option>
                                 <option value="google_nuclear">Google Nuclear (Con Cookie)</option>
@@ -101,10 +101,10 @@
                             <div id="optsCSE" style="display:none;" class="alert alert-info p-2 mb-2">
                                 <div class="row g-1">
                                     <div class="col-6">
-                                        <input type="text" name="cse_key" class="form-control form-control-sm" placeholder="API Key">
+                                        <input type="text" name="google_cse_key" class="form-control form-control-sm" placeholder="API Key">
                                     </div>
                                     <div class="col-6" id="cxContainer">
-                                        <input type="text" name="cse_cx" class="form-control form-control-sm" placeholder="CX ID">
+                                        <input type="text" name="google_cse_cx" class="form-control form-control-sm" placeholder="CX ID">
                                     </div>
                                 </div>
                                 <div class="small mt-1">Necesitas un motor de búsqueda personalizado (CSE) de Google o SerpApi Key.</div>
@@ -115,10 +115,10 @@
                                 <summary class="fw-semibold">Override avanzado de credenciales DataForSEO (opcional)</summary>
                                 <div class="row g-1 mt-2">
                                     <div class="col-6">
-                                        <input type="text" name="dfs_login" class="form-control form-control-sm" placeholder="Login (Email)">
+                                        <input type="text" name="dataforseo_login" class="form-control form-control-sm" placeholder="Login (Email)">
                                     </div>
                                     <div class="col-6">
-                                        <input type="password" name="dfs_pass" class="form-control form-control-sm" placeholder="Password (API Pass)">
+                                        <input type="password" name="dataforseo_password" class="form-control form-control-sm" placeholder="Password (API Pass)">
                                     </div>
                                 </div>
                                 <div class="small mt-1">Por defecto se usan las credenciales guardadas en Ajustes.</div>
@@ -240,7 +240,7 @@ const alertBox  = document.getElementById('statusAlert');
 
 modeSel.addEventListener('change', () => {
     const val = modeSel.value;
-    const isApi = val === 'google_api_official' || val === 'serpapi';
+    const isApi = val === 'google_official' || val === 'serpapi';
     document.getElementById('optsCSE').style.display = isApi ? 'block' : 'none';
 
     // Hide CX for SerpApi
