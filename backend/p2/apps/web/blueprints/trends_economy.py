@@ -15,7 +15,10 @@ import os
 from urllib.parse import urljoin
 
 from apps.web.blueprints.trends_provider import fetch_trends_strategy
-from apps.core.database import get_user_settings
+from apps.tools.credentials import (
+    MISSING_DFS_CREDENTIALS_MESSAGE,
+    resolve_dataforseo_credentials,
+)
 
 trends_bp = Blueprint('trends_bp', __name__)
 
@@ -139,7 +142,7 @@ def update_job_status(job_id, updates, conn=None):
             except Exception:
                 pass
 
-def worker_realtime_trends(job_id, geo, category, focus_terms='', ranking_mode='balanced', dataforseo_login=None, dataforseo_password=None):
+def worker_realtime_trends(job_id, geo, category, focus_terms='', ranking_mode='balanced', credentials_override=None):
     """
     Worker en segundo plano para procesar tendencias usando DataForSEO.
 
@@ -147,8 +150,7 @@ def worker_realtime_trends(job_id, geo, category, focus_terms='', ranking_mode='
         job_id (str): ID del trabajo.
         geo (str): Geolocalización.
         category (str): Categoría de búsqueda.
-        dataforseo_login (str, optional): Login DataForSEO desde UI.
-        dataforseo_password (str, optional): Password DataForSEO desde UI.
+        credentials_override (dict, optional): Override explícito de credenciales.
     """
     init_db()
     conn = None
@@ -159,15 +161,11 @@ def worker_realtime_trends(job_id, geo, category, focus_terms='', ranking_mode='
 
         geo = geo.strip().upper()
 
-        settings = get_user_settings('default')
         provider = 'dataforseo'
-        credentials = {
-            'login': (dataforseo_login or '').strip() or os.getenv('DATAFORSEO_LOGIN') or settings.get('dataforseo_login'),
-            'password': (dataforseo_password or '').strip() or os.getenv('DATAFORSEO_PASSWORD') or settings.get('dataforseo_password')
-        }
+        credentials = resolve_dataforseo_credentials(credentials_override or {})
 
         if not credentials['login'] or not credentials['password']:
-            raise ValueError('Faltan las credenciales de DataForSEO. Configúralas en Settings o introdúcelas en el formulario.')
+            raise ValueError(MISSING_DFS_CREDENTIALS_MESSAGE)
 
         update_job_status(job_id, {'log_append': "🛠️ Usando DataForSEO API..."}, conn=conn)
 
@@ -214,6 +212,7 @@ def trends_media_assets(asset_path):
     return redirect(resolve_trends_media_frontend_url())
 
 @trends_bp.route('/trends/start', methods=['POST'])
+@trends_bp.route('/trends/start_realtime', methods=['POST'])
 def start_analysis():
     init_db()
     job_id = str(uuid.uuid4())
@@ -221,8 +220,13 @@ def start_analysis():
     category = request.form.get('category', 'h')
     focus_terms = request.form.get('focus_terms', '').strip()
     ranking_mode = request.form.get('ranking_mode', 'balanced').strip() or 'balanced'
-    dataforseo_login = request.form.get('dataforseo_login', '').strip()
-    dataforseo_password = request.form.get('dataforseo_password', '').strip()
+    credentials_override = {
+        'dataforseo_login': request.form.get('dataforseo_login', '').strip(),
+        'dataforseo_password': request.form.get('dataforseo_password', '').strip()
+    }
+    resolved_credentials = resolve_dataforseo_credentials(credentials_override)
+    if not resolved_credentials.get('login') or not resolved_credentials.get('password'):
+        return jsonify({"status": "error", "message": MISSING_DFS_CREDENTIALS_MESSAGE}), 400
 
     # Create initial job record
     conn = sqlite3.connect(DB_FILE)
@@ -232,7 +236,7 @@ def start_analysis():
     conn.commit()
     conn.close()
 
-    t = threading.Thread(target=worker_realtime_trends, args=(job_id, geo, category, focus_terms, ranking_mode, dataforseo_login, dataforseo_password))
+    t = threading.Thread(target=worker_realtime_trends, args=(job_id, geo, category, focus_terms, ranking_mode, credentials_override))
     t.start()
 
     return jsonify({"status": "started", "job_id": job_id})

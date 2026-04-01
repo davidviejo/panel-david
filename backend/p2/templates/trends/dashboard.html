@@ -415,11 +415,7 @@
           <section id="settingsView" class="tm-view">
             <div class="tm-settings-grid">
               <div class="tm-card tm-settings-box">
-                <h3 class="h5 fw-bold mb-4"><i class="fas fa-key text-primary me-2"></i>Credenciales & estrategia</h3>
-                <label class="form-label fw-semibold">DataForSEO Login</label>
-                <input id="settingsLogin" class="tm-form-control" placeholder="Opcional">
-                <label class="form-label fw-semibold mt-3">DataForSEO Password</label>
-                <input id="settingsPassword" type="password" class="tm-form-control" placeholder="Opcional">
+                <h3 class="h5 fw-bold mb-4"><i class="fas fa-sliders text-primary me-2"></i>Estrategia base</h3>
                 <label class="form-label fw-semibold mt-3">País por defecto</label>
                 <input id="settingsGeo" class="tm-form-control" maxlength="2" placeholder="ES, US, MX...">
                 <label class="form-label fw-semibold mt-3">Categoría por defecto</label>
@@ -431,6 +427,14 @@
                   <option value="s">Deportes</option>
                   <option value="e">Entretenimiento</option>
                 </select>
+                <details class="mt-3">
+                  <summary class="small fw-semibold text-warning">Override avanzado DataForSEO (opcional)</summary>
+                  <label class="form-label fw-semibold mt-3">DataForSEO Login</label>
+                  <input id="settingsLogin" class="tm-form-control" placeholder="Solo para override puntual">
+                  <label class="form-label fw-semibold mt-3">DataForSEO Password</label>
+                  <input id="settingsPassword" type="password" class="tm-form-control" placeholder="Solo para override puntual">
+                  <div class="small text-muted mt-2">Para el flujo normal, configura credenciales en Ajustes globales.</div>
+                </details>
               </div>
 
               <div class="tm-card tm-settings-box">
@@ -500,7 +504,7 @@
   const VIEW_TITLES = {
     dashboardView: ['Panel de Control', 'Comunidad Valenciana • Noticias & Eventos'],
     briefView: ['Generador de Contenido', 'Brief editorial priorizado y accionable'],
-    settingsView: ['Configuración', 'Credenciales, queries y reglas editoriales']
+    settingsView: ['Configuración', 'Queries, reglas editoriales y overrides avanzados']
   };
 
   function getStoredSettings() {
@@ -809,7 +813,7 @@
     try {
       const res = await fetch('/api/v1/trends/start', { method: 'POST', body: formData });
       const data = await res.json();
-      if (data.status !== 'started') throw new Error('No se pudo iniciar el análisis.');
+      if (data.status !== 'started') throw new Error(data.message || 'No se pudo iniciar el análisis.');
       currentJobId = data.job_id;
       if (intervalId) clearInterval(intervalId);
       intervalId = setInterval(checkStatus, 1000);

@@ -59,11 +59,14 @@
                         <div class="col-6"><input type="text" id="cse_key" class="form-control" placeholder="API Key"></div>
                         <div class="col-6"><input type="text" id="cse_cx" class="form-control" placeholder="CX ID"></div>
                     </div>
-                    <!-- DataForSEO Inputs -->
-                    <div id="optsDataForSEO" style="display:none;" class="row g-2 mt-2">
-                        <div class="col-6"><input type="text" id="dfs_login" class="form-control" placeholder="DataForSEO Login"></div>
-                        <div class="col-6"><input type="password" id="dfs_pass" class="form-control" placeholder="DataForSEO Password"></div>
-                    </div>
+                    <!-- DataForSEO Inputs (override avanzado explícito) -->
+                    <details id="optsDataForSEO" class="mt-2">
+                        <summary class="small fw-semibold text-warning">Override avanzado DataForSEO (opcional)</summary>
+                        <div class="row g-2 mt-1">
+                            <div class="col-6"><input type="text" id="dfs_login" class="form-control" placeholder="DataForSEO Login"></div>
+                            <div class="col-6"><input type="password" id="dfs_pass" class="form-control" placeholder="DataForSEO Password"></div>
+                        </div>
+                    </details>
                     <!-- Cookie Input -->
                     <div id="optsCookie" style="display:none;">
                         <input type="text" id="cookie" class="form-control" placeholder="Pegar Cookie de Google (SOCS=...; CONSENT=...)">
@@ -138,11 +141,8 @@
             modeSel.addEventListener('change', () => {
                 const isApi = modeSel.value === 'google_api_official';
                 const isNuc = modeSel.value === 'google_nuclear';
-                const isDfs = modeSel.value === 'dataforseo';
-
                 document.getElementById('optsCSE').style.display = isApi ? 'flex' : 'none';
                 document.getElementById('optsCookie').style.display = isNuc ? 'block' : 'none';
-                document.getElementById('optsDataForSEO').style.display = isDfs ? 'flex' : 'none';
             });
             // Init state
             modeSel.dispatchEvent(new Event('change'));
@@ -190,7 +190,7 @@
                 }
             }, 1000);
         } else {
-            alert(data.message);
+            alert(data.message || 'No se pudo iniciar la auditoría.');
             document.getElementById('progressUI').classList.add('d-none');
         }
     }
