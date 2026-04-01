@@ -272,6 +272,66 @@ def init_db() -> None:
         )
     ''')
 
+    # SEO TF-IDF Projects Table
+    c.execute(f'''
+        CREATE TABLE IF NOT EXISTS seo_tfidf_projects (
+            id {text_pk},
+            name TEXT NOT NULL,
+            description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # SEO TF-IDF Documents Table
+    c.execute(f'''
+        CREATE TABLE IF NOT EXISTS seo_tfidf_documents (
+            id {text_pk},
+            project_id TEXT NOT NULL,
+            doc_key TEXT,
+            title TEXT,
+            url TEXT,
+            content TEXT,
+            token_count INTEGER DEFAULT 0,
+            metadata_json TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (project_id) REFERENCES seo_tfidf_projects (id) ON DELETE CASCADE
+        )
+    ''')
+
+    # SEO TF-IDF Runs Table
+    c.execute(f'''
+        CREATE TABLE IF NOT EXISTS seo_tfidf_runs (
+            id {text_pk},
+            project_id TEXT NOT NULL,
+            status TEXT DEFAULT 'completed',
+            params_json TEXT,
+            results_json TEXT,
+            started_at TIMESTAMP,
+            finished_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (project_id) REFERENCES seo_tfidf_projects (id) ON DELETE CASCADE
+        )
+    ''')
+
+    # SEO TF-IDF Run Terms Table (optional for efficient querying)
+    c.execute(f'''
+        CREATE TABLE IF NOT EXISTS seo_tfidf_run_terms (
+            id {auto_inc_type},
+            run_id TEXT NOT NULL,
+            project_id TEXT NOT NULL,
+            term TEXT NOT NULL,
+            tfidf REAL NOT NULL,
+            doc_frequency INTEGER,
+            document_count INTEGER,
+            payload_json TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (run_id) REFERENCES seo_tfidf_runs (id) ON DELETE CASCADE,
+            FOREIGN KEY (project_id) REFERENCES seo_tfidf_projects (id) ON DELETE CASCADE
+        )
+    ''')
+
     # Check if item_metadata column exists (for migration of existing table)
     # This logic is slightly more complex with Postgres, keeping it simple for now
     try:
