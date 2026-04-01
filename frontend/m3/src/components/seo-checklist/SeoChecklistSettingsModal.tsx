@@ -54,6 +54,21 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
     onClose();
   };
 
+  const isUsingGlobalDataforseo = formData.serp.useGlobalDataforseo !== false;
+  const effectiveDataforseoLogin = formData.serp.dataforseoLogin?.trim() || '';
+  const effectiveDataforseoPassword = formData.serp.dataforseoPassword?.trim() || '';
+  const hasEffectiveDataforseoCredentials = Boolean(
+    effectiveDataforseoLogin && effectiveDataforseoPassword,
+  );
+  const isDataforseoAvailable = Boolean(
+    capabilities?.serpProviders['dataforseo'] || hasEffectiveDataforseoCredentials,
+  );
+  const maskCredential = (value: string) => {
+    if (!value) return '••••••';
+    if (value.length <= 4) return '••••';
+    return `${value.slice(0, 2)}${'•'.repeat(Math.max(2, value.length - 4))}${value.slice(-2)}`;
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh]">
@@ -118,24 +133,10 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                   >
                     <option
                       value="dataforseo"
-                      disabled={
-                        !!(
-                          capabilities &&
-                          !capabilities.serpProviders['dataforseo'] &&
-                          !(
-                            formData.serp.dataforseoLogin?.trim() &&
-                            formData.serp.dataforseoPassword?.trim()
-                          )
-                        )
-                      }
->
+                      disabled={Boolean(capabilities && !isDataforseoAvailable)}
+                    >
                       DataForSEO (Predeterminado){' '}
-                      {capabilities &&
-                      !capabilities.serpProviders['dataforseo'] &&
-                      !(
-                        formData.serp.dataforseoLogin?.trim() &&
-                        formData.serp.dataforseoPassword?.trim()
-                      )
+                      {capabilities && !isDataforseoAvailable
                         ? '(No disponible)'
                         : ''}
                     </option>
@@ -160,40 +161,54 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                   </select>
                   {formData.serp.provider === 'dataforseo' &&
                     capabilities &&
-                    !capabilities.serpProviders['dataforseo'] &&
-                    !(
-                      formData.serp.dataforseoLogin?.trim() &&
-                      formData.serp.dataforseoPassword?.trim()
-                    ) && (
+                    !isDataforseoAvailable && (
                       <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-                        DataForSEO no está configurado globalmente. Puedes usarlo desde aquí
-                        introduciendo tus credenciales.
+                        DataForSEO no está disponible con la configuración actual.{' '}
+                        {isUsingGlobalDataforseo
+                          ? 'Activa la sobrescritura del proyecto o configura credenciales globales.'
+                          : 'Completa login y password del proyecto para habilitarlo.'}
                       </p>
                     )}
                 </div>
 
                 {formData.serp.provider === 'dataforseo' && (
                   <div className="space-y-4 p-4 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-950/20">
-                    <div className="flex items-center justify-between bg-white/70 dark:bg-slate-900/40 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
-                      <div>
+                    <div className="flex items-center justify-between bg-white/70 dark:bg-slate-900/40 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30 gap-4">
+                      <div className="space-y-1">
                         <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                          Usar credenciales globales
+                          Prioridad actual:{' '}
+                          <span className="font-bold text-blue-700 dark:text-blue-300">
+                            {isUsingGlobalDataforseo ? 'Global' : 'Proyecto'}
+                          </span>
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Hereda login/password desde Ajustes globales
+                          {isUsingGlobalDataforseo
+                            ? 'Se aplican las credenciales de Ajustes globales.'
+                            : 'Se aplican credenciales locales de este proyecto.'}
                         </p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                           type="checkbox"
-                          checked={formData.serp.useGlobalDataforseo !== false}
+                          checked={!isUsingGlobalDataforseo}
                           onChange={(e) =>
-                            handleChange('serp', 'useGlobalDataforseo', e.target.checked)
+                            handleChange('serp', 'useGlobalDataforseo', !e.target.checked)
                           }
                           className="sr-only peer"
                         />
                         <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                       </label>
+                    </div>
+                    <div className="space-y-2 bg-white/70 dark:bg-slate-900/40 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                        Usar credenciales globales de Ajustes
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Por defecto, este proyecto hereda el login/password configurado en Ajustes.
+                      </p>
+                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                        Sobrescribir para este proyecto
+                      </p>
                     </div>
                     <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
                       <AlertTriangle size={14} className="mt-0.5 text-blue-500 shrink-0" />
@@ -202,40 +217,68 @@ export const SeoChecklistSettingsModal: React.FC<Props> = ({
                         envían al motor sólo cuando lanzas análisis avanzados desde esta pantalla.
                       </span>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        DataForSEO Login
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.serp.dataforseoLogin || ''}
-                        onChange={(e) =>
-                          handleChange('serp', 'dataforseoLogin', e.target.value.trim())
-                        }
-                        disabled={formData.serp.useGlobalDataforseo !== false}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                        placeholder="email / login"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        DataForSEO Password
-                      </label>
-                      <input
-                        type="password"
-                        value={formData.serp.dataforseoPassword || ''}
-                        onChange={(e) =>
-                          handleChange('serp', 'dataforseoPassword', e.target.value)
-                        }
-                        disabled={formData.serp.useGlobalDataforseo !== false}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                        placeholder="password"
-                      />
-                    </div>
-                    {formData.serp.useGlobalDataforseo !== false && (
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        Este proyecto usa las credenciales globales actuales.
-                      </p>
+                    {isUsingGlobalDataforseo ? (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            DataForSEO Login (global)
+                          </label>
+                          <input
+                            type="text"
+                            value={maskCredential(effectiveDataforseoLogin)}
+                            disabled
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-300 cursor-not-allowed"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            DataForSEO Password (global)
+                          </label>
+                          <input
+                            type="text"
+                            value={maskCredential(effectiveDataforseoPassword)}
+                            disabled
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-300 cursor-not-allowed"
+                          />
+                        </div>
+                        <a
+                          href="/app/settings"
+                          className="inline-flex text-xs font-medium text-blue-700 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200 underline"
+                        >
+                          Gestionar credenciales globales en Ajustes
+                        </a>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            DataForSEO Login (proyecto)
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.serp.dataforseoLogin || ''}
+                            onChange={(e) =>
+                              handleChange('serp', 'dataforseoLogin', e.target.value.trim())
+                            }
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                            placeholder="email / login"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            DataForSEO Password (proyecto)
+                          </label>
+                          <input
+                            type="password"
+                            value={formData.serp.dataforseoPassword || ''}
+                            onChange={(e) =>
+                              handleChange('serp', 'dataforseoPassword', e.target.value)
+                            }
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                            placeholder="password"
+                          />
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
