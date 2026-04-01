@@ -9,6 +9,7 @@ pandas
 playwright
 pytest
 requests
+scikit-learn
 spacy
 textblob
 openai
