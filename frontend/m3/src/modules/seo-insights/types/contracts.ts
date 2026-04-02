@@ -68,4 +68,7 @@ export interface RecommendedAction {
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high';
+  toolKey?: string;
+  isPrimary?: boolean;
+  weight?: number;
 }

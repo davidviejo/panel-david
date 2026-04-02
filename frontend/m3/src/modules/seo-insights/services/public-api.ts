@@ -4,3 +4,6 @@ export interface SeoInsightsService {
   listInsights(projectId: string): Promise<NormalizedInsight[]>;
   listRecommendations(insightId: string): Promise<RecommendedAction[]>;
 }
+
+export type { ToolRoutingInput } from './toolRoutingService';
+export { mapInsightToTool } from './toolRoutingService';
