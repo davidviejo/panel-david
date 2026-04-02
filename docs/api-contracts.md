@@ -43,3 +43,51 @@ Unificar frontend y backend para que el frontend consuma el backend como **fuent
 
 - En el piloto IA Visibility, la capa API (contratos, servicio y mapper) no usa `any`.
 - Para payloads dinámicos se usa `unknown` tipado (`Array<Record<string, unknown>>`) y se transforma en mappers antes de renderizar.
+
+## SEO Checklist (P0/P1 transición frontend-backend)
+
+Fuente de contratos en frontend:
+- `frontend/m3/src/shared/api/contracts/seoChecklist.ts`
+- Mappers/normalización: `frontend/m3/src/shared/api/mappers/seoChecklistMapper.ts`
+
+### Endpoints
+
+1. `GET /api/seo/checklist/:clientId`
+   - Response:
+     - `clientId: string`
+     - `pages: SeoPage[]`
+     - `updatedAt?: string`
+
+2. `POST /api/seo/checklist/:clientId/import`
+   - Request:
+     - `clientId: string`
+     - `pages: SeoPage[]` (snapshot normalizado del import/create)
+   - Response:
+     - `clientId: string`
+     - `pages: SeoPage[]`
+     - `updatedAt?: string`
+
+3. `PATCH /api/seo/checklist/:clientId/pages/:pageId`
+   - Request:
+     - `clientId: string`
+     - `pageId: string`
+     - `changes: Partial<SeoPage>`
+   - Response:
+     - `clientId: string`
+     - `pages: SeoPage[]`
+     - `updatedAt?: string`
+
+4. `PATCH /api/seo/checklist/:clientId/bulk`
+   - Request:
+     - `clientId: string`
+     - `updates: Array<{ id: string; changes: Partial<SeoPage> }>`
+   - Response:
+     - `clientId: string`
+     - `pages: SeoPage[]`
+     - `updatedAt?: string`
+
+### Reglas de compatibilidad
+
+- El frontend aplica normalización defensiva de checklist (`normalizeChecklistStatus`) para tolerar estados legacy.
+- Mutaciones `update` y `bulkUpdate` invalidan query key del módulo para asegurar refetch post-escritura.
+- Durante transición, feature flag `seoChecklistBackendSource` controla fallback local para rollback rápido.

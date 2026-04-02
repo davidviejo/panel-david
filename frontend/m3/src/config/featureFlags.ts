@@ -11,6 +11,16 @@ const toBooleanFlag = (value: string | undefined, fallback: boolean): boolean =>
   return fallback;
 };
 
+
+const resolveSeoChecklistBackendSource = (): boolean => {
+  const explicitSource = normalizeFlagValue(import.meta.env.VITE_SEO_CHECKLIST_DATA_SOURCE);
+
+  if (explicitSource === 'backend') return true;
+  if (explicitSource === 'legacy') return false;
+
+  return toBooleanFlag(import.meta.env.VITE_FF_SEO_CHECKLIST_BACKEND_SOURCE, true);
+};
+
 const resolveIAVisibilityBackendSource = (): boolean => {
   const explicitSource = normalizeFlagValue(import.meta.env.VITE_IA_VISIBILITY_DATA_SOURCE);
 
@@ -22,4 +32,5 @@ const resolveIAVisibilityBackendSource = (): boolean => {
 
 export const featureFlags = {
   iaVisibilityBackendSource: resolveIAVisibilityBackendSource(),
+  seoChecklistBackendSource: resolveSeoChecklistBackendSource(),
 };

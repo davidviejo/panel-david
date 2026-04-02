@@ -14,6 +14,15 @@ export const endpoints = {
   tools: {
     run: (tool: string) => `api/tools/run/${encodePathParam(tool)}`,
   },
+
+  seoChecklist: {
+    list: (clientId: string) => `api/seo/checklist/${encodePathParam(clientId)}`,
+    import: (clientId: string) => `api/seo/checklist/${encodePathParam(clientId)}/import`,
+    update: (clientId: string, pageId: string) =>
+      `api/seo/checklist/${encodePathParam(clientId)}/pages/${encodePathParam(pageId)}`,
+    bulkUpdate: (clientId: string) => `api/seo/checklist/${encodePathParam(clientId)}/bulk`,
+  },
+
   ai: {
     seoAnalysis: () => 'api/ai/seo-analysis',
     headlineChallenge: () => 'api/ai/headline-challenge',
