@@ -123,10 +123,31 @@ def test_seo_download_exports_urls_with_data(client):
         assert response.status_code == 200
 
         workbook = io.BytesIO(response.data)
+        workbook_sheets = pd.ExcelFile(workbook).sheet_names
+        assert 'Estrategia' in workbook_sheets
+        assert 'URLs' in workbook_sheets
+
+        workbook.seek(0)
         urls_df = pd.read_excel(workbook, sheet_name='URLs')
 
         assert not urls_df.empty
         assert list(urls_df['URL']) == ['https://example.com/a', 'https://example.com/b']
+    finally:
+        job_status.clear()
+        job_status.update(previous)
+
+
+def test_seo_download_returns_400_when_no_results(client):
+    previous = copy.deepcopy(job_status)
+    try:
+        job_status.update({'results': []})
+
+        response = client.get('/seo/download')
+        assert response.status_code == 400
+
+        data = response.get_json()
+        assert data['status'] == 'error'
+        assert data['message'] == 'No hay datos recolectados; ejecuta Estrategia primero'
     finally:
         job_status.clear()
         job_status.update(previous)

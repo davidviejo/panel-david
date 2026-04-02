@@ -179,7 +179,7 @@
                     <div class="d-flex flex-wrap gap-2">
                         <input type="text" id="clusterFilter" class="form-control form-control-sm" placeholder="Filtrar clusters por keyword...">
                         <button class="btn btn-outline-primary btn-sm" id="analyzeAllBtn" onclick="analyzeAll()">📊 Analizar todos</button>
-                        <a href="/seo/download" class="btn btn-success fw-bold">💾 Excel</a>
+                        <button type="button" class="btn btn-success fw-bold" onclick="exportStrategyResults()">💾 Excel</button>
                     </div>
                 </div>
                 <div id="summaryStats" class="alert alert-secondary py-2 px-3 mb-3 small"></div>
@@ -584,6 +584,37 @@ function copyStructure(id){
     navigator.clipboard.writeText(text)
         .then(()=> alert('Estructura copiada al portapapeles.'))
         .catch(()=> alert('No se pudo copiar la estructura.'));
+}
+
+function exportStrategyResults(){
+    hideAlert();
+    fetch('/seo/download')
+        .then(async (response) => {
+            if (!response.ok) {
+                let message = 'No hay datos recolectados; ejecuta Estrategia primero';
+                try {
+                    const errorData = await response.json();
+                    if (errorData?.message) {
+                        message = errorData.message;
+                    }
+                } catch (_) {}
+                showAlert(message);
+                return;
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'seo_v17.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(() => {
+            showAlert('No hay datos recolectados; ejecuta Estrategia primero');
+        });
 }
 
 function runBulk(){
