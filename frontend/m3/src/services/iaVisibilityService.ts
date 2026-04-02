@@ -35,54 +35,10 @@ export interface IAVisibilityListResponse {
   items: IAVisibilityListItem[];
 }
 
-const fallbackRows: IAVisibilityListItem[] = [
-  {
-    id: '1',
-    keyword: 'seo para medios digitales',
-    url: '/guias/seo-medios',
-    position: 5,
-    change: 3,
-    status: 'up',
-    updatedAt: '2026-03-30',
-  },
-  {
-    id: '2',
-    keyword: 'indexacion google news',
-    url: '/noticias/google-news-indexacion',
-    position: 12,
-    change: 0,
-    status: 'stable',
-    updatedAt: '2026-03-30',
-  },
-  {
-    id: '3',
-    keyword: 'clusterizacion semantica',
-    url: '/seo/clusterizacion-semantica',
-    position: 18,
-    change: -4,
-    status: 'down',
-    updatedAt: '2026-03-29',
-  },
-];
-
-const isNonProdMockFallbackEnabled =
-  import.meta.env.DEV && import.meta.env.VITE_IA_VISIBILITY_ENABLE_MOCK_FALLBACK === 'true';
 
 export const iaVisibilityService = {
-  list: async (clientId: string): Promise<IAVisibilityListResponse> => {
-    try {
-      return await httpClient.get<IAVisibilityListResponse>(endpoints.ai.visibilityList(clientId));
-    } catch (error) {
-      if (isNonProdMockFallbackEnabled) {
-        return {
-          clientId,
-          items: fallbackRows,
-        };
-      }
-
-      throw error;
-    }
-  },
+  list: (clientId: string): Promise<IAVisibilityListResponse> =>
+    httpClient.get<IAVisibilityListResponse>(endpoints.ai.visibilityList(clientId)),
 
   run: (payload: IAVisibilityRequest) =>
     httpClient.post<IAVisibilityResponse>(endpoints.ai.visibilityRun(), payload),

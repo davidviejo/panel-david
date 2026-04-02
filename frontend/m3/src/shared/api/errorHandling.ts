@@ -4,6 +4,8 @@ export interface UiApiError {
   code: string;
   message: string;
   status?: number;
+  traceId?: string;
+  requestId?: string;
   isNetworkError: boolean;
   isBusinessError: boolean;
   originalError: unknown;
@@ -23,11 +25,23 @@ type ErrorLikePayload = {
   message?: unknown;
   error?: unknown;
   status?: unknown;
+  traceId?: unknown;
+  requestId?: unknown;
 };
 
 const resolveStatusMessage = (status?: number): string | undefined => {
   if (!status) return undefined;
   return STATUS_UI_MESSAGES[status];
+};
+
+const resolveTraceability = (error: ErrorLikePayload): { traceId?: string; requestId?: string } => {
+  const traceId = typeof error.traceId === 'string' && error.traceId.trim() ? error.traceId : undefined;
+  const requestId = typeof error.requestId === 'string' && error.requestId.trim() ? error.requestId : undefined;
+
+  return {
+    traceId: traceId || requestId,
+    requestId,
+  };
 };
 
 const asBusinessError = (error: ErrorLikePayload, fallback: string): UiApiError => {
@@ -38,10 +52,14 @@ const asBusinessError = (error: ErrorLikePayload, fallback: string): UiApiError 
     resolveStatusMessage(status) ||
     fallback;
 
+  const traceability = resolveTraceability(error);
+
   return {
     code: typeof error.code === 'string' && error.code.trim() ? error.code : 'BUSINESS_ERROR',
     message,
     status,
+    traceId: traceability.traceId,
+    requestId: traceability.requestId,
     isNetworkError: false,
     isBusinessError: true,
     originalError: error,
@@ -57,6 +75,8 @@ export const normalizeApiError = (
       code: error.code,
       message: resolveStatusMessage(error.status) || error.message || fallbackMessage,
       status: error.status,
+      traceId: error.traceId || error.requestId,
+      requestId: error.requestId,
       isNetworkError: error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT_ERROR',
       isBusinessError: false,
       originalError: error,
@@ -90,6 +110,11 @@ export const getApiErrorMessage = (
   error: unknown,
   fallbackMessage: string = DEFAULT_UI_ERROR_MESSAGE,
 ): string => normalizeApiError(error, fallbackMessage).message;
+
+export const getApiErrorTraceabilityId = (
+  error: unknown,
+  fallbackMessage: string = DEFAULT_UI_ERROR_MESSAGE,
+): string | undefined => normalizeApiError(error, fallbackMessage).traceId;
 
 export const isApiErrorStatus = (error: unknown, status: number): boolean => {
   return normalizeApiError(error).status === status;

@@ -15,7 +15,7 @@ import {
   IAVisibilityHistoryItemViewModel,
   mapIAVisibilityHistoryToViewModel,
 } from '../shared/api/mappers/iaVisibilityMapper';
-import { getApiErrorMessage } from '../shared/api/errorHandling';
+import { getApiErrorMessage, getApiErrorTraceabilityId } from '../shared/api/errorHandling';
 
 const IAVisibility: React.FC = () => {
   const { t } = useTranslation();
@@ -48,9 +48,15 @@ const IAVisibility: React.FC = () => {
   const rowsError = rowsQueryError
     ? getApiErrorMessage(rowsQueryError, 'No fue posible cargar resultados.')
     : null;
+  const rowsErrorTraceId = rowsQueryError
+    ? getApiErrorTraceabilityId(rowsQueryError, 'No fue posible cargar resultados.')
+    : undefined;
   const scheduleQueryErrorMessage = scheduleQueryError
     ? getApiErrorMessage(scheduleQueryError, 'No fue posible cargar programación.')
     : null;
+  const scheduleQueryTraceId = scheduleQueryError
+    ? getApiErrorTraceabilityId(scheduleQueryError, 'No fue posible cargar programación.')
+    : undefined;
   const history: IAVisibilityHistoryItemViewModel[] = useMemo(
     () => (historyResponse?.runs || []).map(mapIAVisibilityHistoryToViewModel),
     [historyResponse?.runs],
@@ -80,7 +86,13 @@ const IAVisibility: React.FC = () => {
       setSchedule(response.schedule);
       setScheduleError(null);
     } catch (error) {
-      setScheduleError(getApiErrorMessage(error, 'No fue posible guardar programación.'));
+      const message = getApiErrorMessage(error, 'No fue posible guardar programación.');
+      const traceabilityId = getApiErrorTraceabilityId(error, 'No fue posible guardar programación.');
+      setScheduleError(
+        traceabilityId
+          ? `${message} (ID de trazabilidad: ${traceabilityId})`
+          : message,
+      );
     }
   };
 
@@ -99,7 +111,13 @@ const IAVisibility: React.FC = () => {
       });
       setScheduleError(null);
     } catch (error) {
-      setScheduleError(getApiErrorMessage(error, 'No fue posible actualizar programación.'));
+      const message = getApiErrorMessage(error, 'No fue posible actualizar programación.');
+      const traceabilityId = getApiErrorTraceabilityId(error, 'No fue posible actualizar programación.');
+      setScheduleError(
+        traceabilityId
+          ? `${message} (ID de trazabilidad: ${traceabilityId})`
+          : message,
+      );
     }
   };
 
@@ -239,7 +257,10 @@ const IAVisibility: React.FC = () => {
         </div>
         {(scheduleError || scheduleQueryErrorMessage) && (
           <p className="mt-2 text-xs text-rose-600">
-            {scheduleError || scheduleQueryErrorMessage}
+            {scheduleError ||
+              (scheduleQueryTraceId
+                ? `${scheduleQueryErrorMessage} (ID de trazabilidad: ${scheduleQueryTraceId})`
+                : scheduleQueryErrorMessage)}
           </p>
         )}
       </div>
@@ -249,7 +270,12 @@ const IAVisibility: React.FC = () => {
           {t('ia_visibility.results_title')}
         </h2>
         {isRowsLoading && <p className="text-sm text-slate-500 py-4">Cargando resultados...</p>}
-        {!isRowsLoading && rowsError && <p className="text-sm text-rose-600 py-4">{rowsError}</p>}
+        {!isRowsLoading && rowsError && (
+          <p className="text-sm text-rose-600 py-4">
+            {rowsError}
+            {rowsErrorTraceId ? ` (ID de trazabilidad: ${rowsErrorTraceId})` : ''}
+          </p>
+        )}
         {!isRowsLoading && !rowsError && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

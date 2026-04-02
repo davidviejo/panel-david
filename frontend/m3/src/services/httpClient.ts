@@ -1,3 +1,4 @@
+import { logApiError } from '../shared/api/apiErrorLogger';
 import { resolveApiUrl, resolveEngineUrl } from './apiUrlHelper';
 
 export type ServiceBase = 'api' | 'engine';
@@ -20,6 +21,7 @@ export interface HttpClientErrorPayload {
   error?: string;
   message?: string;
   traceId?: string;
+  requestId?: string;
   details?: unknown;
   [key: string]: unknown;
 }
@@ -29,6 +31,7 @@ export interface NormalizedHttpError {
   message: string;
   status?: number;
   traceId?: string;
+  requestId?: string;
   details?: unknown;
 }
 
@@ -36,6 +39,7 @@ export class HttpClientError extends Error implements NormalizedHttpError {
   code: string;
   status?: number;
   traceId?: string;
+  requestId?: string;
   details?: unknown;
 
   constructor(normalized: NormalizedHttpError) {
@@ -44,6 +48,7 @@ export class HttpClientError extends Error implements NormalizedHttpError {
     this.code = normalized.code;
     this.status = normalized.status;
     this.traceId = normalized.traceId;
+    this.requestId = normalized.requestId;
     this.details = normalized.details;
   }
 
@@ -61,6 +66,9 @@ const trimLeadingSlash = (value: string): string => value.replace(/^\/+/, '');
 
 const defaultApiBaseURL = resolveApiUrl();
 const defaultEngineBaseURL = resolveEngineUrl();
+
+const TRACE_ID_HEADERS = ['x-trace-id', 'trace-id'];
+const REQUEST_ID_HEADERS = ['x-request-id', 'request-id'];
 
 const normalizeBaseUrl = (config: HttpClientConfig): string => {
   if (config.baseURL && config.baseURL.trim()) {
@@ -110,21 +118,58 @@ const resolveErrorMessage = (payload?: HttpClientErrorPayload): string => {
   return DEFAULT_ERROR_MESSAGE;
 };
 
+const resolveHeaderValue = (headers: Headers, headerCandidates: string[]): string | undefined => {
+  for (const header of headerCandidates) {
+    const value = headers.get(header);
+    if (value && value.trim()) {
+      return value;
+    }
+  }
+  return undefined;
+};
+
+const resolveTraceability = (payload: HttpClientErrorPayload | undefined, headers?: Headers) => {
+  const payloadTraceId = typeof payload?.traceId === 'string' && payload.traceId.trim() ? payload.traceId : undefined;
+  const payloadRequestId =
+    typeof payload?.requestId === 'string' && payload.requestId.trim() ? payload.requestId : undefined;
+
+  if (!headers) {
+    return {
+      traceId: payloadTraceId,
+      requestId: payloadRequestId,
+    };
+  }
+
+  const headerTraceId = resolveHeaderValue(headers, TRACE_ID_HEADERS);
+  const headerRequestId = resolveHeaderValue(headers, REQUEST_ID_HEADERS);
+
+  return {
+    traceId: headerTraceId || payloadTraceId || payloadRequestId,
+    requestId: headerRequestId || payloadRequestId,
+  };
+};
+
 const normalizeHttpError = (
   payload: HttpClientErrorPayload | undefined,
   status?: number,
-): NormalizedHttpError => ({
-  code:
-    typeof payload?.code === 'string' && payload.code.trim()
-      ? payload.code
-      : status
-        ? `HTTP_${status}`
-        : 'HTTP_ERROR',
-  message: resolveErrorMessage(payload),
-  status,
-  traceId: typeof payload?.traceId === 'string' ? payload.traceId : undefined,
-  details: payload?.details,
-});
+  headers?: Headers,
+): NormalizedHttpError => {
+  const traceability = resolveTraceability(payload, headers);
+
+  return {
+    code:
+      typeof payload?.code === 'string' && payload.code.trim()
+        ? payload.code
+        : status
+          ? `HTTP_${status}`
+          : 'HTTP_ERROR',
+    message: resolveErrorMessage(payload),
+    status,
+    traceId: traceability.traceId,
+    requestId: traceability.requestId,
+    details: payload?.details,
+  };
+};
 
 const normalizeTimeoutError = (timeoutMs: number): NormalizedHttpError => ({
   code: 'TIMEOUT_ERROR',
@@ -175,7 +220,16 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
 
       if (!response.ok) {
         const payload = await parseErrorPayload(response);
-        throw new HttpClientError(normalizeHttpError(payload, response.status));
+        const normalizedError = normalizeHttpError(payload, response.status, response.headers);
+        logApiError({
+          endpoint,
+          code: normalizedError.code,
+          message: normalizedError.message,
+          status: normalizedError.status,
+          traceId: normalizedError.traceId,
+          requestId: normalizedError.requestId,
+        });
+        throw new HttpClientError(normalizedError);
       }
 
       if (response.status === 204) {
@@ -190,10 +244,28 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
       }
 
       if (error instanceof DOMException && error.name === 'AbortError') {
-        throw new HttpClientError(normalizeTimeoutError(timeoutMs));
+        const normalizedError = normalizeTimeoutError(timeoutMs);
+        logApiError({
+          endpoint,
+          code: normalizedError.code,
+          message: normalizedError.message,
+          status: normalizedError.status,
+          traceId: normalizedError.traceId,
+          requestId: normalizedError.requestId,
+        });
+        throw new HttpClientError(normalizedError);
       }
 
-      throw new HttpClientError(normalizeNetworkError(error));
+      const normalizedError = normalizeNetworkError(error);
+      logApiError({
+        endpoint,
+        code: normalizedError.code,
+        message: normalizedError.message,
+        status: normalizedError.status,
+        traceId: normalizedError.traceId,
+        requestId: normalizedError.requestId,
+      });
+      throw new HttpClientError(normalizedError);
     } finally {
       window.clearTimeout(timeoutId);
     }
