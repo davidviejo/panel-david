@@ -19,6 +19,9 @@ const IAVisibility = lazy(() => import('./pages/IAVisibility'));
 const Settings = lazy(() => import('./pages/Settings'));
 const AdminIdeasPage = lazy(() => import('./pages/admin/AdminIdeasPage'));
 const TrendsMediaPage = lazy(() => import('./pages/TrendsMediaPage'));
+const UnassignedInsightsPage = lazy(() => import('./pages/UnassignedInsightsPage'));
+const ProjectInsightsPage = lazy(() => import('./pages/ProjectInsightsPage'));
+const KeywordAssignmentCenter = lazy(() => import('./pages/KeywordAssignmentCenter'));
 
 const LandingPage = lazy(() => import('./pages/portal/LandingPage'));
 const ClientsLogin = lazy(() => import('./pages/portal/ClientsLogin'));
@@ -157,6 +160,9 @@ export const AppRoutes: React.FC = () => {
                 <Route path="challenge" element={<SpeedChallenge />} />
                 <Route path="trends-media" element={<TrendsMediaPage />} />
                 <Route path="admin/ideas" element={<AdminIdeasPage />} />
+                <Route path="insights/unassigned" element={<UnassignedInsightsPage />} />
+                <Route path="projects/:projectId/insights" element={<ProjectInsightsPage />} />
+                <Route path="keywords/assignment-center" element={<KeywordAssignmentCenter />} />
                 <Route
                   path="completed-tasks"
                   element={
