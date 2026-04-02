@@ -36,6 +36,22 @@ def test_normalize_serp_config_accepts_dataforseo_internal_contract_fields():
     assert cfg["max_crawl_pages"] == 7
 
 
+
+
+def test_build_dataforseo_request_standard_respects_requested_depth():
+    req = build_dataforseo_request({"requireRealtime": False, "depth": 77}, "test keyword", 10, "es", "es")
+    assert req["effective_mode"] == "STANDARD"
+    assert req["payload"][0]["depth"] == 77
+
+
+def test_build_dataforseo_request_rejects_invalid_depth():
+    try:
+        build_dataforseo_request({"requireRealtime": False, "depth": 0}, "test keyword", 10, "es", "es")
+        assert False, "Expected ValueError for invalid depth"
+    except ValueError as exc:
+        assert "depth" in str(exc)
+
+
 def test_build_dataforseo_request_defaults_to_standard_endpoint():
     req = build_dataforseo_request({}, "test keyword", 10, "es", "es")
     assert req["endpoint_url"].endswith("/task_post")
@@ -65,20 +81,19 @@ def test_build_dataforseo_request_batches_keywords_in_standard_mode():
     assert req["keywords_processed"] == ["kw one", "kw two"]
 
 
-def test_build_dataforseo_request_disables_batching_in_live_mode():
-    req = build_dataforseo_request(
-        {"requireRealtime": True},
-        "fallback keyword",
-        10,
-        "es",
-        "es",
-        keywords=["kw one", "kw two"],
-    )
-    assert req["endpoint_url"].endswith("/live/advanced")
-    assert len(req["payload"]) == 1
-    assert req["payload"][0]["keyword"] == "kw one"
-    assert req["batching_applied"] is False
-    assert req["effective_mode"] == "LIVE"
+def test_build_dataforseo_request_live_rejects_keyword_batching_when_realtime():
+    try:
+        build_dataforseo_request(
+            {"requireRealtime": True},
+            "fallback keyword",
+            10,
+            "es",
+            "es",
+            keywords=["kw one", "kw two"],
+        )
+        assert False, "Expected ValueError for realtime batching"
+    except ValueError as exc:
+        assert "requireRealtime=true" in str(exc)
 
 
 @patch("apps.tools.scraper_core.search_google_official")

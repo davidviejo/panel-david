@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from apps.web.blueprints.seo_tool import dispatcher
 
+
 def test_dispatcher_serpapi_success():
     kw = "test keyword"
     cfg = {
@@ -22,18 +23,21 @@ def test_dispatcher_serpapi_success():
     }
 
     with patch('apps.web.blueprints.seo_tool.requests.get', return_value=mock_response) as mock_get:
-        results = dispatcher(kw, cfg)
+        resp = dispatcher(kw, cfg)
 
-        assert len(results) == 2
-        assert results[0]['url'] == "https://example.com/1"
-        assert results[0]['title'] == "Title 1"
-        assert results[0]['rank'] == 1
+        assert resp['status'] == 'ok'
+        assert resp['error'] is None
+        assert len(resp['results']) == 2
+        assert resp['results'][0]['url'] == "https://example.com/1"
+        assert resp['results'][0]['title'] == "Title 1"
+        assert resp['results'][0]['rank'] == 1
 
         mock_get.assert_called_once()
         args, kwargs = mock_get.call_args
         assert args[0] == "https://serpapi.com/search"
         assert kwargs['params']['api_key'] == 'test_api_key'
         assert kwargs['params']['google_domain'] == 'google.es'
+
 
 def test_dispatcher_serpapi_error():
     kw = "test keyword"
@@ -50,8 +54,12 @@ def test_dispatcher_serpapi_error():
     mock_response.json.return_value = {"error": "Invalid key"}
 
     with patch('apps.web.blueprints.seo_tool.requests.get', return_value=mock_response):
-        with pytest.raises(Exception, match="SerpApi Error"):
-            dispatcher(kw, cfg)
+        resp = dispatcher(kw, cfg)
+
+    assert resp['status'] == 'error'
+    assert resp['results'] == []
+    assert 'SerpApi Error' in (resp['error'] or '')
+
 
 def test_dispatcher_serpapi_exception():
     kw = "test keyword"
@@ -65,5 +73,8 @@ def test_dispatcher_serpapi_exception():
     }
 
     with patch('apps.web.blueprints.seo_tool.requests.get', side_effect=Exception("Connection error")):
-        results = dispatcher(kw, cfg)
-        assert results == []
+        resp = dispatcher(kw, cfg)
+
+    assert resp['status'] == 'error'
+    assert resp['results'] == []
+    assert 'Connection error' in (resp['error'] or '')

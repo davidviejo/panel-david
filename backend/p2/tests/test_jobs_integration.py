@@ -192,5 +192,23 @@ class TestJobsIntegration(unittest.TestCase):
         self.assertFalse(data['advancedAllowed'])
         self.assertIn('requireRealtime=true', data['advancedBlockedReason'])
 
+
+    def test_create_job_rejects_missing_urls_with_400(self):
+        response = self.client.post('/api/jobs', json={"analysisConfig": {"mode": "quick"}})
+        self.assertEqual(response.status_code, 400)
+        data = response.get_json()
+        self.assertEqual(data['error'], 'No URLs provided')
+
+    def test_create_job_rejects_batch_size_limit_with_400(self):
+        payload = {
+            "items": [{"url": "https://example.com"}, {"url": "https://example.org"}],
+            "analysisConfig": {"mode": "quick"}
+        }
+        with patch('apps.web.blueprints.api_engine.job_routes.MAX_URLS_PER_BATCH', 1):
+            response = self.client.post('/api/jobs', json=payload)
+
+        self.assertEqual(response.status_code, 400)
+        data = response.get_json()
+        self.assertIn('Batch size exceeds limit of 1', data['error'])
 if __name__ == '__main__':
     unittest.main()
