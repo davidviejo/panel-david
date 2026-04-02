@@ -4,10 +4,11 @@ import {
   computeFreshnessScore,
   computeImpactScore,
   computeScoreComponents,
+  computeWeightedScore,
   computeSeverityScore,
   scoreInsight,
 } from './scoringService';
-import { SCORE_DEFAULT_COMPONENTS } from '../scoring/weights';
+import { SCORE_DEFAULT_COMPONENTS, SCORE_WEIGHTS } from '../scoring/weights';
 
 describe('scoringService', () => {
   it('scores a critical and fresh insight with high value above medium', () => {
@@ -59,5 +60,21 @@ describe('scoringService', () => {
       impact: 0.8,
       confidence: 0.9,
     });
+  });
+
+  it('computes weighted total from factor components', () => {
+    const weighted = computeWeightedScore({
+      severity: 1,
+      freshness: 1,
+      impact: 0.8,
+      confidence: 0.9,
+    });
+
+    expect(weighted).toBeCloseTo(
+      1 * SCORE_WEIGHTS.severity +
+        1 * SCORE_WEIGHTS.freshness +
+        0.8 * SCORE_WEIGHTS.impact +
+        0.9 * SCORE_WEIGHTS.confidence,
+    );
   });
 });

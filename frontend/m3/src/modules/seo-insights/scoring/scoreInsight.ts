@@ -103,17 +103,24 @@ export function computeScoreComponents(input: ScoreInsightInput): ScoreComponent
   };
 }
 
+export function computeWeightedScore(
+  components: ScoreComponents,
+  weights: ScoreWeights = SCORE_WEIGHTS,
+): number {
+  const normalizedWeights = normalizeWeight(weights);
+
+  return SCORE_WEIGHT_KEYS.reduce(
+    (total, key: ScoreWeightKey) => total + components[key] * normalizedWeights[key],
+    0,
+  );
+}
+
 export function scoreInsight(
   input: ScoreInsightInput,
   weights: ScoreWeights = SCORE_WEIGHTS,
 ): number {
-  const normalizedWeights = normalizeWeight(weights);
   const componentScores = computeScoreComponents(input);
-
-  const weightedTotal = SCORE_WEIGHT_KEYS.reduce(
-    (total, key: ScoreWeightKey) => total + componentScores[key] * normalizedWeights[key],
-    0,
-  );
+  const weightedTotal = computeWeightedScore(componentScores, weights);
 
   const scaled = weightedTotal * SCORE_LIMITS.max;
 
