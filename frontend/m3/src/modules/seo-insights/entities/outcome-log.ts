@@ -11,4 +11,9 @@ export interface OutcomeLog extends BaseEntity {
   delta?: number;
   notes?: string;
   outcomeStatus?: OutcomeStatus;
+  recommendationId?: Uuid;
+  toolKey?: string;
+  insightType?: string;
+  sectorId?: Uuid;
+  similarCasesResolved?: number;
 }

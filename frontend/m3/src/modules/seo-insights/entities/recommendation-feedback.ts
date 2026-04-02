@@ -8,4 +8,11 @@ export interface RecommendationFeedback extends BaseEntity {
   rating: 1 | 2 | 3 | 4 | 5;
   comment?: string;
   feedbackAt: string;
+  toolKey?: string;
+  insightType?: string;
+  sectorId?: Uuid;
+  wasUsed?: boolean;
+  wasEffective?: boolean;
+  clientIgnoredPattern?: boolean;
+  similarCasesResolved?: number;
 }
