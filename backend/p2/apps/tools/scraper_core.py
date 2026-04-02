@@ -18,6 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 from apps.web.blueprints.usage_tracker import increment_api_usage
 from apps.core.config import Config
 from apps.tools.utils import is_safe_url, sanitize_log_message
+from apps.tools.serp_costs import estimate_serp_cost, validate_serp_ranges
 
 class GoogleAPIError(Exception):
     pass
@@ -134,6 +135,15 @@ def build_dataforseo_request(
     keywords: Optional[Sequence[str]] = None
 ) -> Dict[str, Any]:
     cfg = normalize_serp_config(config)
+    range_validation = validate_serp_ranges({
+        "topN": cfg.get("topN"),
+        "depth": cfg.get("depth"),
+        "max_crawl_pages": cfg.get("max_crawl_pages"),
+        "requireRealtime": cfg.get("requireRealtime"),
+        "keyword_count": len([kw for kw in (keywords or [keyword]) if str(kw).strip()]),
+    })
+    if not range_validation["valid"]:
+        raise ValueError(" ".join(range_validation["errors"]))
 
     require_realtime = bool(cfg.get('requireRealtime'))
     endpoint_path = "live/advanced" if require_realtime else "task_post"
@@ -662,6 +672,7 @@ def search_dataforseo(
         "batching_applied": False,
         "keywords_processed": [keyword],
         "effective_mode": "STANDARD",
+        "cost_estimate": None,
     }
     try:
         start_time = time.time()
@@ -676,6 +687,13 @@ def search_dataforseo(
             "effective_mode": request_config.get("effective_mode", "STANDARD"),
             "mode": f"dataforseo_{request_config.get('effective_mode', 'STANDARD').lower()}",
         })
+        diagnostics["cost_estimate"] = estimate_serp_cost(
+            {
+                "provider": "dataforseo",
+                "requireRealtime": request_config.get("require_realtime", False),
+            },
+            diagnostics.get("batch_size", 1),
+        )
 
         # Codificar keyword en base64 - NO NECESARIO PARA ESTE ENDPOINT
         auth_b64 = base64.b64encode(f"{login}:{passw}".encode('utf-8')).decode('utf-8')
@@ -865,6 +883,7 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
             "batching_applied": bool(diagnostics.get('batching_applied')) if diagnostics else False,
             "batch_size": diagnostics.get('batch_size') if diagnostics else 1,
             "keywords_processed": diagnostics.get('keywords_processed') if diagnostics else keyword_list,
+            "cost_estimate": diagnostics.get('cost_estimate') if diagnostics else estimate_serp_cost(cfg, len(keyword_list) or 1),
         }
         logging.info("SERP_EVENT %s", event)
 
