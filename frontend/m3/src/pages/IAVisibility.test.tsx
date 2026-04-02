@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import IAVisibility from './IAVisibility';
 import { HttpClientError } from '../services/httpClient';
@@ -136,5 +136,53 @@ describe('IAVisibility', () => {
     await waitFor(() => {
       expect(screen.getByText('No encontramos la información solicitada.')).toBeTruthy();
     });
+  });
+
+  it('renders help trigger collapsed by default', async () => {
+    mockList.mockResolvedValue({
+      clientId: 'client-1',
+      items: [],
+    });
+
+    renderWithProviders();
+
+    const toggleButton = await screen.findByRole('button', { name: 'Mostrar ayuda' });
+    expect(toggleButton.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText('¿Cómo usar IA Visibility?')).toBeNull();
+  });
+
+  it('expands help content when clicking the trigger', async () => {
+    mockList.mockResolvedValue({
+      clientId: 'client-1',
+      items: [],
+    });
+
+    renderWithProviders();
+
+    const toggleButton = await screen.findByRole('button', { name: 'Mostrar ayuda' });
+    fireEvent.click(toggleButton);
+
+    expect(screen.getByRole('button', { name: 'Ocultar ayuda' }).getAttribute('aria-expanded')).toBe(
+      'true',
+    );
+    expect(screen.getByText('¿Cómo usar IA Visibility?')).toBeTruthy();
+    expect(screen.getByText('Flujo recomendado')).toBeTruthy();
+  });
+
+  it('collapses help content when clicking trigger again', async () => {
+    mockList.mockResolvedValue({
+      clientId: 'client-1',
+      items: [],
+    });
+
+    renderWithProviders();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mostrar ayuda' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar ayuda' }));
+
+    expect(screen.getByRole('button', { name: 'Mostrar ayuda' }).getAttribute('aria-expanded')).toBe(
+      'false',
+    );
+    expect(screen.queryByText('¿Cómo usar IA Visibility?')).toBeNull();
   });
 });
