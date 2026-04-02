@@ -101,6 +101,21 @@ The application follows a modular MVC pattern using Flask Blueprints.
 *   **Playwright Errors**: Ensure `playwright install` was run.
 *   **Database**: The app initializes `projects.db` automatically. If empty, it attempts to migrate from `projects_db.json`.
 
+## 🧭 Guía operativa: modo sin API (Google scraping directo)
+
+Cuando se trabaja sin SerpApi/DataForSEO/Google CSE, el módulo SEO usa scraping directo de SERP. Recomendaciones prácticas:
+
+* **Delay recomendado**: empieza con `2.5s–4s` entre keywords; si hay bloqueos, sube a `5s–8s`.
+* **Cookie de sesión**: usar una cookie válida de Google suele reducir bloqueos y mejorar estabilidad de parseo.
+* **Límites prácticos por sesión**:
+  * Lotes pequeños/medios (ej. `20–80` keywords) son más estables.
+  * En lotes largos, divide en bloques y añade pausas entre bloques.
+* **Señales de bloqueo**: HTTP 429/403, páginas con captcha o “unusual traffic”, y caída brusca de resultados orgánicos.
+* **Estrategia recomendada**:
+  1. Ejecutar primero con menor volumen para calibrar delay.
+  2. Activar fallback (retry o DDG) si está disponible.
+  3. Revisar `/seo/status?diagnostics=1` para inspeccionar ratio de bloqueos y causa técnica por keyword.
+
 ## 🔌 Providers Configuration
 
 ### Real-Time Trends Provider

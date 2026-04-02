@@ -6,6 +6,7 @@ import requests
 import atexit
 import logging
 import base64
+import hashlib
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 import urllib.parse
@@ -273,7 +274,8 @@ def scrape_google_serp(
     gl: str = "es",
     hl: str = "es",
     user_agent: Optional[str] = None,
-) -> Union[List[Dict[str, str]], str]:
+    return_meta: bool = False,
+) -> Union[List[Dict[str, str]], str, Dict[str, Any]]:
     """
     Realiza un scraping de la SERP de Google para una palabra clave dada.
 
@@ -289,6 +291,11 @@ def scrape_google_serp(
     Returns:
         list: Lista de resultados o cadena "BLOCKED" si se detecta bloqueo 429.
     """
+    started_at = time.perf_counter()
+    mode = "with_cookie" if cookie else "gbv_legacy"
+    http_status: Optional[int] = None
+    blocked = False
+
     try:
         time.sleep(float(delay))
         url = "https://www.google.com/search"
@@ -298,24 +305,23 @@ def scrape_google_serp(
             'num': num_results + 5,
             'hl': hl,
             'gl': gl,
-            'pws': '0',     # Desactivar personalización (historial)
-            'filter': '0'   # Mostrar resultados omitidos
+            'pws': '0',
+            'filter': '0'
         }
 
-        # SI NO HAY COOKIE -> Usamos modo ligero (GBV=1) para evitar bloqueos JS
-        # SI HAY COOKIE -> Usamos modo normal (Sin GBV) para máxima precisión
         if not cookie:
             params['gbv'] = '1'
 
-        mode = "with_cookie" if cookie else "gbv_legacy"
         response = requests.get(
             url,
             params=params,
             headers=get_optimized_headers(cookie, user_agent=user_agent),
             timeout=int(tos)
         )
+        http_status = response.status_code
 
         if response.status_code == 429:
+            blocked = True
             logging.warning(
                 "Google SERP blocked keyword=%s mode=%s status=%s parsed=%s",
                 sanitize_log_message(keyword),
@@ -323,11 +329,20 @@ def scrape_google_serp(
                 response.status_code,
                 0
             )
+            if return_meta:
+                return {
+                    "results": [],
+                    "http_status": http_status,
+                    "blocked": blocked,
+                    "mode": mode,
+                    "elapsed_ms": int((time.perf_counter() - started_at) * 1000),
+                }
             return "BLOCKED"
 
         if response.status_code == 200:
             parsed = parse_google_html(response.text)
             if isinstance(parsed, dict) and parsed.get("status") == "blocked":
+                blocked = True
                 logging.warning(
                     "Google SERP blocked keyword=%s mode=%s status=%s parsed=%s",
                     sanitize_log_message(keyword),
@@ -335,7 +350,16 @@ def scrape_google_serp(
                     response.status_code,
                     0
                 )
+                if return_meta:
+                    return {
+                        "results": [],
+                        "http_status": http_status,
+                        "blocked": blocked,
+                        "mode": mode,
+                        "elapsed_ms": int((time.perf_counter() - started_at) * 1000),
+                    }
                 return "BLOCKED"
+
             parsed_results = parsed[:num_results]
             logging.info(
                 "Google SERP parsed keyword=%s mode=%s status=%s parsed=%s",
@@ -344,7 +368,16 @@ def scrape_google_serp(
                 response.status_code,
                 len(parsed_results)
             )
+            if return_meta:
+                return {
+                    "results": parsed_results,
+                    "http_status": http_status,
+                    "blocked": blocked,
+                    "mode": mode,
+                    "elapsed_ms": int((time.perf_counter() - started_at) * 1000),
+                }
             return parsed_results
+
         logging.info(
             "Google SERP no-parse keyword=%s mode=%s status=%s parsed=%s",
             sanitize_log_message(keyword),
@@ -356,7 +389,14 @@ def scrape_google_serp(
     except Exception:
         logging.error("Request failed during Google SERP scrape", exc_info=True)
 
-    return []
+    fallback = {
+        "results": [],
+        "http_status": http_status,
+        "blocked": blocked,
+        "mode": mode,
+        "elapsed_ms": int((time.perf_counter() - started_at) * 1000),
+    }
+    return fallback if return_meta else []
 
 
 def search_ddg(keyword: str, num_results: int = 10, lang: str = 'es') -> List[Dict[str, Any]]:
@@ -390,16 +430,42 @@ def _run_google_scraping_with_policy(
     cookie = cfg.get('cookie')
     delay = cfg.get('delay', 2)
     primary_ua = random.choice(Config.USER_AGENTS)
-    res = scrape_google_serp(keyword, num_results, delay, cookie=cookie, gl=country, hl=lang, user_agent=primary_ua)
+    res_meta = scrape_google_serp(
+        keyword,
+        num_results,
+        delay,
+        cookie=cookie,
+        gl=country,
+        hl=lang,
+        user_agent=primary_ua,
+        return_meta=True
+    )
+    res = res_meta.get('results', [])
 
-    if isinstance(res, list):
+    if isinstance(res, list) and not res_meta.get('blocked'):
         for r in res:
             if 'snippet' not in r:
                 r['snippet'] = ''
-        return {"status": "ok" if res else "empty", "results": res, "provider": "google_scraping"}
+        return {
+            "status": "ok" if res else "empty",
+            "results": res,
+            "provider": "google_scraping",
+            "http_status": res_meta.get('http_status'),
+            "blocked": bool(res_meta.get('blocked')),
+            "elapsed_ms": res_meta.get('elapsed_ms'),
+            "mode": res_meta.get('mode'),
+        }
 
-    if res != "BLOCKED":
-        return {"status": "error", "results": [], "provider": "google_scraping"}
+    if not res_meta.get('blocked'):
+        return {
+            "status": "error",
+            "results": [],
+            "provider": "google_scraping",
+            "http_status": res_meta.get('http_status'),
+            "blocked": False,
+            "elapsed_ms": res_meta.get('elapsed_ms'),
+            "mode": res_meta.get('mode'),
+        }
 
     ux_msg = "Google bloqueó la consulta, prueba cookie o mayor delay"
     logging.warning("%s | keyword=%s", ux_msg, sanitize_log_message(keyword))
@@ -415,26 +481,36 @@ def _run_google_scraping_with_policy(
         time.sleep(jitter)
         alternative_uas = [ua for ua in Config.USER_AGENTS if ua != primary_ua]
         retry_ua = random.choice(alternative_uas) if alternative_uas else primary_ua
-        retry_res = scrape_google_serp(
+        retry_meta = scrape_google_serp(
             keyword,
             num_results,
             0,
             cookie=cookie,
             gl=country,
             hl=lang,
-            user_agent=retry_ua
+            user_agent=retry_ua,
+            return_meta=True
         )
-        if isinstance(retry_res, list):
+        retry_res = retry_meta.get('results', [])
+        if isinstance(retry_res, list) and not retry_meta.get('blocked'):
             for r in retry_res:
                 if 'snippet' not in r:
                     r['snippet'] = ''
-            return {"status": "ok" if retry_res else "empty", "results": retry_res, "provider": "google_scraping_retry"}
+            return {
+                "status": "ok" if retry_res else "empty",
+                "results": retry_res,
+                "provider": "google_scraping_retry",
+                "http_status": retry_meta.get('http_status'),
+                "blocked": bool(retry_meta.get('blocked')),
+                "elapsed_ms": retry_meta.get('elapsed_ms'),
+                "mode": retry_meta.get('mode'),
+            }
 
     if auto_fallback and fallback_mode == 'ddg' and allow_ddg:
         ddg_results = search_ddg(keyword, num_results=num_results, lang=lang)
         if ddg_results:
-            return {"status": "ok", "results": ddg_results, "provider": "ddg_fallback"}
-        return {"status": "empty", "results": [], "provider": "ddg_fallback"}
+            return {"status": "ok", "results": ddg_results, "provider": "ddg_fallback", "http_status": None, "blocked": False, "elapsed_ms": None, "mode": "ddg_fallback"}
+        return {"status": "empty", "results": [], "provider": "ddg_fallback", "http_status": None, "blocked": False, "elapsed_ms": None, "mode": "ddg_fallback"}
 
     raise GoogleSERPBlockedError(ux_msg)
 
@@ -638,12 +714,34 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     provider = cfg.get('serp_provider')
     return_diagnostics = bool(cfg.get('return_diagnostics'))
 
-    def _return(results: List[Dict[str, Any]], status: str = 'ok', provider_name: Optional[str] = None):
+    def _keyword_hash(raw_keyword: str) -> str:
+        return hashlib.sha256((raw_keyword or "").encode("utf-8")).hexdigest()[:16]
+
+    def _return(
+        results: List[Dict[str, Any]],
+        status: str = 'ok',
+        provider_name: Optional[str] = None,
+        diagnostics: Optional[Dict[str, Any]] = None
+    ):
+        event = {
+            "mode": diagnostics.get('mode') if diagnostics and diagnostics.get('mode') else (mode or 'auto'),
+            "keyword_hash": _keyword_hash(keyword),
+            "http_status": diagnostics.get('http_status') if diagnostics else None,
+            "blocked": bool(diagnostics.get('blocked')) if diagnostics else False,
+            "results_count": len(results or []),
+            "elapsed_ms": diagnostics.get('elapsed_ms') if diagnostics else None,
+        }
+        logging.info("SERP_EVENT %s", event)
+
         if return_diagnostics:
             return {
                 "status": status,
                 "results": results,
-                "provider": provider_name
+                "provider": provider_name,
+                "diagnostics": {
+                    **event,
+                    "provider": provider_name,
+                },
             }
         return results
 
@@ -662,7 +760,7 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
 
     if mode in ['google_scraping', 'google_nuclear']:
          handled = _run_google_scraping_with_policy(keyword, cfg, num_results, lang, country)
-         return _return(handled['results'], status=handled['status'], provider_name=handled.get('provider'))
+         return _return(handled['results'], status=handled['status'], provider_name=handled.get('provider'), diagnostics=handled)
 
     # --- 2. SELECTOR DE PROVEEDOR GLOBAL (Si no hay modo explícito) ---
     if not mode or mode == 'auto':
@@ -684,7 +782,7 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
         # Google Scraping Preference
         if provider == 'google_scraping':
              handled = _run_google_scraping_with_policy(keyword, cfg, num_results, lang, country)
-             return _return(handled['results'], status=handled['status'], provider_name=handled.get('provider'))
+             return _return(handled['results'], status=handled['status'], provider_name=handled.get('provider'), diagnostics=handled)
 
     # --- 3. FALLBACKS AUTOMÁTICOS (Legacy logic) ---
 
