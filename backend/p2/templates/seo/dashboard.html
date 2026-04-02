@@ -305,7 +305,11 @@ form.addEventListener('submit', e => {
     document.getElementById('configPanel').style.display='none';
     document.getElementById('progressPanel').style.display='block';
 
-    fetch('/seo/start', {method:'POST', body:new FormData(e.target)})
+    const formData = new FormData(e.target);
+    // PATCH TEMPORAL: forzamos realtime solo en pestaña Estrategia.
+    formData.set('requireRealtime', 'true');
+
+    fetch('/seo/start', {method:'POST', body: formData})
         .then(r=>r.json())
         .then(d=>{
             if(d.status==='ok') {
