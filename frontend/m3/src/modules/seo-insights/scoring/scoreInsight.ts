@@ -1,5 +1,11 @@
 import type { Severity } from '../enums/severity';
-import { SCORE_LIMITS, SCORE_WEIGHTS, SEVERITY_BASE_SCORES, type ScoreWeights } from './weights';
+import {
+  SCORE_DEFAULT_COMPONENTS,
+  SCORE_LIMITS,
+  SCORE_WEIGHTS,
+  SEVERITY_BASE_SCORES,
+  type ScoreWeights,
+} from './weights';
 
 export interface ScoreInsightInput {
   severity?: Severity | number;
@@ -8,6 +14,8 @@ export interface ScoreInsightInput {
   confidence?: number;
   now?: Date;
 }
+
+const MS_PER_DAY = 86_400_000;
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -34,7 +42,7 @@ export function computeSeverityScore(severity: ScoreInsightInput['severity']): n
   }
 
   if (!severity) {
-    return 0.5;
+    return SCORE_DEFAULT_COMPONENTS.severity;
   }
 
   return SEVERITY_BASE_SCORES[severity];
@@ -45,16 +53,16 @@ export function computeFreshnessScore(
   now: Date = new Date(),
 ): number {
   if (!detectedAt) {
-    return 0.5;
+    return SCORE_DEFAULT_COMPONENTS.freshness;
   }
 
   const timestamp = Date.parse(detectedAt);
 
   if (Number.isNaN(timestamp)) {
-    return 0.5;
+    return SCORE_DEFAULT_COMPONENTS.freshness;
   }
 
-  const ageInDays = Math.max(0, (now.getTime() - timestamp) / 86_400_000);
+  const ageInDays = Math.max(0, (now.getTime() - timestamp) / MS_PER_DAY);
   const freshness = 1 - ageInDays / SCORE_LIMITS.freshnessWindowDays;
 
   return clamp01(freshness);
@@ -62,7 +70,7 @@ export function computeFreshnessScore(
 
 export function computeImpactScore(value: ScoreInsightInput['value']): number {
   if (typeof value !== 'number' || Number.isNaN(value)) {
-    return 0.5;
+    return SCORE_DEFAULT_COMPONENTS.impact;
   }
 
   return clamp01(Math.abs(value) / SCORE_LIMITS.impactCap);
@@ -70,7 +78,7 @@ export function computeImpactScore(value: ScoreInsightInput['value']): number {
 
 export function computeConfidenceScore(confidence: ScoreInsightInput['confidence']): number {
   if (typeof confidence !== 'number' || Number.isNaN(confidence)) {
-    return 0.5;
+    return SCORE_DEFAULT_COMPONENTS.confidence;
   }
 
   return clamp01(confidence);
@@ -82,16 +90,18 @@ export function scoreInsight(
 ): number {
   const normalizedWeights = normalizeWeight(weights);
 
-  const severityScore = computeSeverityScore(input.severity);
-  const freshnessScore = computeFreshnessScore(input.detectedAt, input.now);
-  const impactScore = computeImpactScore(input.value);
-  const confidenceScore = computeConfidenceScore(input.confidence);
+  const componentScores = {
+    severity: computeSeverityScore(input.severity),
+    freshness: computeFreshnessScore(input.detectedAt, input.now),
+    impact: computeImpactScore(input.value),
+    confidence: computeConfidenceScore(input.confidence),
+  };
 
   const weightedTotal =
-    severityScore * normalizedWeights.severity +
-    freshnessScore * normalizedWeights.freshness +
-    impactScore * normalizedWeights.impact +
-    confidenceScore * normalizedWeights.confidence;
+    componentScores.severity * normalizedWeights.severity +
+    componentScores.freshness * normalizedWeights.freshness +
+    componentScores.impact * normalizedWeights.impact +
+    componentScores.confidence * normalizedWeights.confidence;
 
   const scaled = weightedTotal * SCORE_LIMITS.max;
 
