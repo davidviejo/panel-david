@@ -49,6 +49,38 @@ def test_build_dataforseo_request_uses_live_when_require_realtime():
     assert req["payload"][0]["depth"] == 55
 
 
+def test_build_dataforseo_request_batches_keywords_in_standard_mode():
+    req = build_dataforseo_request(
+        {"requireRealtime": False},
+        "fallback keyword",
+        10,
+        "es",
+        "es",
+        keywords=["kw one", "kw two"],
+    )
+    assert req["endpoint_url"].endswith("/task_post")
+    assert len(req["payload"]) == 2
+    assert req["batching_applied"] is True
+    assert req["effective_mode"] == "STANDARD"
+    assert req["keywords_processed"] == ["kw one", "kw two"]
+
+
+def test_build_dataforseo_request_disables_batching_in_live_mode():
+    req = build_dataforseo_request(
+        {"requireRealtime": True},
+        "fallback keyword",
+        10,
+        "es",
+        "es",
+        keywords=["kw one", "kw two"],
+    )
+    assert req["endpoint_url"].endswith("/live/advanced")
+    assert len(req["payload"]) == 1
+    assert req["payload"][0]["keyword"] == "kw one"
+    assert req["batching_applied"] is False
+    assert req["effective_mode"] == "LIVE"
+
+
 @patch("apps.tools.scraper_core.search_google_official")
 def test_smart_serp_search_supports_google_mode_alias(mock_google):
     mock_google.return_value = [{"url": "https://example.com", "title": "ok", "snippet": "", "rank": 1}]
@@ -65,7 +97,10 @@ def test_smart_serp_search_supports_google_mode_alias(mock_google):
 
 @patch("apps.tools.scraper_core.search_dataforseo")
 def test_smart_serp_search_prefers_canonical_dataforseo_keys(mock_dfs):
-    mock_dfs.return_value = [{"url": "https://example.com", "title": "ok", "snippet": "", "rank": 1}]
+    mock_dfs.return_value = {
+        "results": [{"url": "https://example.com", "title": "ok", "snippet": "", "rank": 1}],
+        "diagnostics": {"batching_applied": False, "batch_size": 1, "keywords_processed": ["test keyword"]},
+    }
 
     result = smart_serp_search(
         "test keyword",
@@ -83,6 +118,35 @@ def test_smart_serp_search_prefers_canonical_dataforseo_keys(mock_dfs):
     assert args[:6] == ("test keyword", "canonical-login", "canonical-password", 1, "es", "es")
     assert kwargs["config"]["mode"] == "dataforseo"
     assert kwargs["config"]["requireRealtime"] is False
+    assert kwargs["return_meta"] is True
+
+
+@patch("apps.tools.scraper_core.search_dataforseo")
+def test_smart_serp_search_exposes_batching_in_diagnostics(mock_dfs):
+    mock_dfs.return_value = {
+        "results": [{"url": "https://example.com", "title": "ok", "snippet": "", "rank": 1}],
+        "diagnostics": {
+            "mode": "dataforseo_standard",
+            "batching_applied": True,
+            "batch_size": 2,
+            "keywords_processed": ["k1", "k2"],
+        },
+    }
+
+    result = smart_serp_search(
+        ["k1", "k2"],
+        config={
+            "mode": "dataforseo",
+            "dataforseo_login": "canonical-login",
+            "dataforseo_password": "canonical-password",
+            "return_diagnostics": True,
+        },
+        num_results=1,
+    )
+
+    assert result["diagnostics"]["batching_applied"] is True
+    assert result["diagnostics"]["batch_size"] == 2
+    assert result["diagnostics"]["keywords_processed"] == ["k1", "k2"]
 
 
 @patch("apps.tools.scraper_core.scrape_google_serp")

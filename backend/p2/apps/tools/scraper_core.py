@@ -10,7 +10,7 @@ import hashlib
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 import urllib.parse
-from typing import List, Dict, Optional, Any, Union
+from typing import List, Dict, Optional, Any, Union, Sequence
 from flask import session, has_request_context
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -130,7 +130,8 @@ def build_dataforseo_request(
     keyword: str,
     num_results: int,
     lang: str,
-    country: str
+    country: str,
+    keywords: Optional[Sequence[str]] = None
 ) -> Dict[str, Any]:
     cfg = normalize_serp_config(config)
 
@@ -161,17 +162,30 @@ def build_dataforseo_request(
 
     effective_depth = requested_depth if requested_depth is not None else max(100, requested_top_n + 20)
 
+    normalized_keywords = [
+        str(kw).strip() for kw in (keywords or [keyword]) if str(kw).strip()
+    ]
+    if not normalized_keywords:
+        normalized_keywords = [keyword]
+
+    effective_mode = "LIVE" if require_realtime else "STANDARD"
+    effective_keywords = normalized_keywords if not require_realtime else normalized_keywords[:1]
     payload = [{
-        "keyword": keyword,
+        "keyword": kw,
         "language_code": (lang or "es")[:2],
         "location_name": location_name,
         "depth": max(1, effective_depth),
-    }]
+    } for kw in effective_keywords]
+    batching_applied = (not require_realtime) and len(payload) > 1
 
     return {
         "endpoint_url": endpoint_url,
         "require_realtime": require_realtime,
         "payload": payload,
+        "batch_size": len(payload),
+        "batching_applied": batching_applied,
+        "keywords_processed": [item.get("keyword", "") for item in payload],
+        "effective_mode": effective_mode,
     }
 
 
@@ -634,14 +648,34 @@ def search_dataforseo(
     num_results: int = 10,
     lang: str = 'es',
     country: str = 'es',
-    config: Optional[Dict[str, Any]] = None
-) -> List[Dict[str, Any]]:
+    config: Optional[Dict[str, Any]] = None,
+    keywords: Optional[Sequence[str]] = None,
+    return_meta: bool = False
+) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
     results = []
+    diagnostics = {
+        "mode": "dataforseo",
+        "http_status": None,
+        "blocked": False,
+        "elapsed_ms": None,
+        "batch_size": 1,
+        "batching_applied": False,
+        "keywords_processed": [keyword],
+        "effective_mode": "STANDARD",
+    }
     try:
+        start_time = time.time()
         increment_api_usage(1)
-        request_config = build_dataforseo_request(config, keyword, num_results, lang, country)
+        request_config = build_dataforseo_request(config, keyword, num_results, lang, country, keywords=keywords)
         url = request_config["endpoint_url"]
         payload = request_config["payload"]
+        diagnostics.update({
+            "batch_size": request_config.get("batch_size", len(payload)),
+            "batching_applied": request_config.get("batching_applied", False),
+            "keywords_processed": request_config.get("keywords_processed", []),
+            "effective_mode": request_config.get("effective_mode", "STANDARD"),
+            "mode": f"dataforseo_{request_config.get('effective_mode', 'STANDARD').lower()}",
+        })
 
         # Codificar keyword en base64 - NO NECESARIO PARA ESTE ENDPOINT
         auth_b64 = base64.b64encode(f"{login}:{passw}".encode('utf-8')).decode('utf-8')
@@ -652,6 +686,7 @@ def search_dataforseo(
         }
 
         response = requests.post(url, json=payload, headers=headers, timeout=60)
+        diagnostics["http_status"] = getattr(response, "status_code", None)
         data = response.json()
 
         if data.get('status_code') == 20000:
@@ -669,10 +704,25 @@ def search_dataforseo(
         else:
             logging.error(f"DataForSEO Error: {data.get('status_message')}")
 
+        diagnostics["elapsed_ms"] = int((time.time() - start_time) * 1000)
+        logging.info(
+            "DFS_BATCH batch_size=%s effective_mode=%s keywords_processed=%s batching_applied=%s",
+            diagnostics.get("batch_size"),
+            diagnostics.get("effective_mode"),
+            diagnostics.get("keywords_processed"),
+            diagnostics.get("batching_applied"),
+        )
+
     except Exception as e:
         logging.error(f"DataForSEO Exception: {sanitize_log_message(str(e))}")
 
-    return results[:num_results]
+    trimmed_results = results[:num_results]
+    if return_meta:
+        return {
+            "results": trimmed_results,
+            "diagnostics": diagnostics,
+        }
+    return trimmed_results
 
 # --- SERPAPI ---
 def search_serpapi(keyword: str, api_key: str, num_results: int = 10, gl: str = 'es', hl: str = 'es') -> List[Dict[str, Any]]:
@@ -777,8 +827,27 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     provider = cfg.get('serp_provider')
     return_diagnostics = bool(cfg.get('return_diagnostics'))
 
+    if isinstance(keyword, (list, tuple, set)):
+        keyword_list = [str(kw).strip() for kw in keyword if str(kw).strip()]
+        keyword = keyword_list[0] if keyword_list else ""
+    else:
+        keyword_list = [keyword] if keyword else []
+
     def _keyword_hash(raw_keyword: str) -> str:
         return hashlib.sha256((raw_keyword or "").encode("utf-8")).hexdigest()[:16]
+
+    def _search_dataforseo_with_meta(login: str, password: str) -> Dict[str, Any]:
+        return search_dataforseo(
+            keyword,
+            login,
+            password,
+            num_results,
+            lang,
+            country,
+            config=cfg,
+            keywords=keyword_list,
+            return_meta=True,
+        )
 
     def _return(
         results: List[Dict[str, Any]],
@@ -793,6 +862,9 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
             "blocked": bool(diagnostics.get('blocked')) if diagnostics else False,
             "results_count": len(results or []),
             "elapsed_ms": diagnostics.get('elapsed_ms') if diagnostics else None,
+            "batching_applied": bool(diagnostics.get('batching_applied')) if diagnostics else False,
+            "batch_size": diagnostics.get('batch_size') if diagnostics else 1,
+            "keywords_processed": diagnostics.get('keywords_processed') if diagnostics else keyword_list,
         }
         logging.info("SERP_EVENT %s", event)
 
@@ -813,7 +885,8 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
         return _return(search_serpapi(keyword, cfg['serpapi_key'], num_results, gl=country, hl=lang), provider_name='serpapi')
 
     if mode == 'dataforseo' and cfg.get('dataforseo_login') and cfg.get('dataforseo_password'):
-        return _return(search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country, config=cfg), provider_name='dataforseo')
+        dfs_response = _search_dataforseo_with_meta(cfg['dataforseo_login'], cfg['dataforseo_password'])
+        return _return(dfs_response.get('results', []), provider_name='dataforseo', diagnostics=dfs_response.get('diagnostics'))
 
     if mode == 'google_official':
          api_key = cfg.get('google_cse_key')
@@ -833,7 +906,8 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
 
         # DataForSEO Preference
         if provider == 'dataforseo' and cfg.get('dataforseo_login') and cfg.get('dataforseo_password'):
-             return _return(search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country, config=cfg), provider_name='dataforseo')
+             dfs_response = _search_dataforseo_with_meta(cfg['dataforseo_login'], cfg['dataforseo_password'])
+             return _return(dfs_response.get('results', []), provider_name='dataforseo', diagnostics=dfs_response.get('diagnostics'))
 
         # Google Official Preference
         if provider == 'google_official':
@@ -854,7 +928,8 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     dfs_pass = cfg.get('dataforseo_password') or Config.DATAFORSEO_PASSWORD
 
     if dfs_login and dfs_pass:
-        return _return(search_dataforseo(keyword, dfs_login, dfs_pass, num_results, lang, country, config=cfg), provider_name='dataforseo')
+        dfs_response = _search_dataforseo_with_meta(dfs_login, dfs_pass)
+        return _return(dfs_response.get('results', []), provider_name='dataforseo', diagnostics=dfs_response.get('diagnostics'))
 
     # 3.2 Google API Oficial
     api_key = cfg.get('google_cse_key')
