@@ -73,7 +73,7 @@ class TestDataForSEOIntegration(unittest.TestCase):
 
         # Verify requests.post was called with correct URL and auth
         args, kwargs = self.mock_post.call_args
-        self.assertEqual(args[0], "https://api.dataforseo.com/v3/serp/google/organic/live/advanced")
+        self.assertEqual(args[0], "https://api.dataforseo.com/v3/serp/google/organic/task_post")
 
         # Verify result parsing
         self.assertEqual(len(results), 1)
@@ -95,6 +95,21 @@ class TestDataForSEOIntegration(unittest.TestCase):
         smart_serp_search("test", config={'mode': 'dataforseo'})
 
         self.mock_post.assert_called_once()
+
+    @patch('apps.core.config.Config.DATAFORSEO_LOGIN', 'test_user')
+    @patch('apps.core.config.Config.DATAFORSEO_PASSWORD', 'test_pass')
+    def test_smart_serp_search_dataforseo_realtime_uses_live_endpoint(self):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            'status_code': 20000,
+            'tasks': [{'result': [{'items': []}]}]
+        }
+        self.mock_post.return_value = mock_response
+
+        smart_serp_search("test", config={'mode': 'dataforseo', 'requireRealtime': True})
+
+        args, _ = self.mock_post.call_args
+        self.assertEqual(args[0], "https://api.dataforseo.com/v3/serp/google/organic/live/advanced")
 
     def test_smart_serp_search_fallback_google(self):
         # Ensure DFS creds are None for this test via patching Config inside the context manager

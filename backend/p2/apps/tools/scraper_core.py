@@ -60,6 +60,16 @@ CANONICAL_SERP_KEYS = (
 )
 
 
+def _to_bool(value: Any, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
+
 def normalize_serp_config(config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Normaliza configuración SERP para usar un contrato canónico interno, manteniendo
@@ -103,7 +113,66 @@ def normalize_serp_config(config: Optional[Dict[str, Any]] = None) -> Dict[str, 
 
     normalized['serp_provider'] = provider
     normalized['mode'] = mode
+    normalized['requireRealtime'] = _to_bool(
+        raw_cfg.get('requireRealtime')
+        if raw_cfg.get('requireRealtime') is not None
+        else raw_cfg.get('require_realtime', False),
+        default=False
+    )
+    normalized['topN'] = raw_cfg.get('topN') or raw_cfg.get('top_n')
+    normalized['depth'] = raw_cfg.get('depth')
+    normalized['max_crawl_pages'] = raw_cfg.get('max_crawl_pages') or raw_cfg.get('maxCrawlPages')
     return normalized
+
+
+def build_dataforseo_request(
+    config: Optional[Dict[str, Any]],
+    keyword: str,
+    num_results: int,
+    lang: str,
+    country: str
+) -> Dict[str, Any]:
+    cfg = normalize_serp_config(config)
+
+    require_realtime = bool(cfg.get('requireRealtime'))
+    endpoint_path = "live/advanced" if require_realtime else "task_post"
+    endpoint_url = f"https://api.dataforseo.com/v3/serp/google/organic/{endpoint_path}"
+
+    location_name = "Spain"
+    country_lower = (country or "").lower()
+    if country_lower in ['us', 'en', 'usa', 'united states']:
+        location_name = "United States"
+    elif country_lower in ['fr', 'france']:
+        location_name = "France"
+    elif country_lower in ['de', 'germany']:
+        location_name = "Germany"
+    elif country_lower in ['it', 'italy']:
+        location_name = "Italy"
+
+    try:
+        requested_top_n = int(cfg.get('topN') or num_results)
+    except (TypeError, ValueError):
+        requested_top_n = num_results
+
+    try:
+        requested_depth = int(cfg.get('depth')) if cfg.get('depth') is not None else None
+    except (TypeError, ValueError):
+        requested_depth = None
+
+    effective_depth = requested_depth if requested_depth is not None else max(100, requested_top_n + 20)
+
+    payload = [{
+        "keyword": keyword,
+        "language_code": (lang or "es")[:2],
+        "location_name": location_name,
+        "depth": max(1, effective_depth),
+    }]
+
+    return {
+        "endpoint_url": endpoint_url,
+        "require_realtime": require_realtime,
+        "payload": payload,
+    }
 
 
 def get_optimized_headers(cookie: Optional[str] = None, user_agent: Optional[str] = None) -> Dict[str, str]:
@@ -558,30 +627,24 @@ def search_google_official(keyword: str, api_key: str, cx: str, num_results: int
     return results[:num_results]
 
 # --- DATAFORSEO API ---
-def search_dataforseo(keyword: str, login: str, passw: str, num_results: int = 10, lang: str = 'es', country: str = 'es') -> List[Dict[str, Any]]:
+def search_dataforseo(
+    keyword: str,
+    login: str,
+    passw: str,
+    num_results: int = 10,
+    lang: str = 'es',
+    country: str = 'es',
+    config: Optional[Dict[str, Any]] = None
+) -> List[Dict[str, Any]]:
     results = []
     try:
         increment_api_usage(1)
-        url = "https://api.dataforseo.com/v3/serp/google/organic/live/advanced"
-
-        # Mapeo simple de país. DataForSEO usa location_code o location_name.
-        # Por defecto usamos 'Spain' si es 'es'.
-        location_name = "Spain"
-        if country.lower() in ['us', 'en', 'usa', 'united states']: location_name = "United States"
-        elif country.lower() in ['fr', 'france']: location_name = "France"
-        elif country.lower() in ['de', 'germany']: location_name = "Germany"
-        elif country.lower() in ['it', 'italy']: location_name = "Italy"
-        # Se puede extender según necesidad
+        request_config = build_dataforseo_request(config, keyword, num_results, lang, country)
+        url = request_config["endpoint_url"]
+        payload = request_config["payload"]
 
         # Codificar keyword en base64 - NO NECESARIO PARA ESTE ENDPOINT
         auth_b64 = base64.b64encode(f"{login}:{passw}".encode('utf-8')).decode('utf-8')
-
-        payload = [{
-            "keyword": keyword,
-            "language_code": lang[:2],
-            "location_name": location_name,
-            "depth": max(100, num_results + 20) # DataForSEO cuenta todos los elementos. Un depth bajo puede omitir orgánicos.
-        }]
 
         headers = {
             'Authorization': f"Basic {auth_b64}",
@@ -750,7 +813,7 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
         return _return(search_serpapi(keyword, cfg['serpapi_key'], num_results, gl=country, hl=lang), provider_name='serpapi')
 
     if mode == 'dataforseo' and cfg.get('dataforseo_login') and cfg.get('dataforseo_password'):
-        return _return(search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country), provider_name='dataforseo')
+        return _return(search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country, config=cfg), provider_name='dataforseo')
 
     if mode == 'google_official':
          api_key = cfg.get('google_cse_key')
@@ -770,7 +833,7 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
 
         # DataForSEO Preference
         if provider == 'dataforseo' and cfg.get('dataforseo_login') and cfg.get('dataforseo_password'):
-             return _return(search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country), provider_name='dataforseo')
+             return _return(search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country, config=cfg), provider_name='dataforseo')
 
         # Google Official Preference
         if provider == 'google_official':
@@ -791,7 +854,7 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     dfs_pass = cfg.get('dataforseo_password') or Config.DATAFORSEO_PASSWORD
 
     if dfs_login and dfs_pass:
-        return _return(search_dataforseo(keyword, dfs_login, dfs_pass, num_results, lang, country), provider_name='dataforseo')
+        return _return(search_dataforseo(keyword, dfs_login, dfs_pass, num_results, lang, country, config=cfg), provider_name='dataforseo')
 
     # 3.2 Google API Oficial
     api_key = cfg.get('google_cse_key')
