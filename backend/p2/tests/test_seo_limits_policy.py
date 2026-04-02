@@ -121,6 +121,7 @@ def test_seo_download_exports_urls_with_data_regression(client):
 
         response = client.get('/seo/download')
         assert response.status_code == 200
+        assert response.mimetype == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
         workbook = io.BytesIO(response.data)
         workbook_sheets = pd.ExcelFile(workbook).sheet_names
