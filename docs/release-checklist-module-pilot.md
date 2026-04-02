@@ -26,6 +26,13 @@ Objetivo: asegurar un rollout/rollback predecible del piloto de migración FE/BE
 - [ ] Criterios de rollback definidos y ensayados.
 - [ ] Owner de guardia identificado para ventana de release.
 
+
+### 5) Estados asíncronos unificados (UI)
+- [ ] Pantalla usa componentes shared `LoadingState`, `ErrorState`, `EmptyState`.
+- [ ] Estado `error` expone CTA `Reintentar` funcional (refetch real).
+- [ ] Estado `empty` incluye copy + CTA coherentes con el módulo.
+- [ ] Roles ARIA (`status`/`alert`) verificados para feedback accesible.
+
 ## Go/No-Go
 
 La decisión se toma en la revisión semanal y antes de cada subida de porcentaje del flag.
@@ -58,7 +65,7 @@ La decisión se toma en la revisión semanal y antes de cada subida de porcentaj
 
 - Backend tests endpoint overview: 200/401/403/404 (`backend/p2/tests/test_portal_overview_endpoint.py`).
 - Frontend tests overview:
-  - render éxito/error/empty (`frontend/m3/src/pages/portal/ProjectOverview.test.tsx`)
+  - render éxito/loading/error/empty + retry (`frontend/m3/src/pages/portal/ProjectOverview.test.tsx`)
   - validación/mapper contrato (`frontend/m3/src/shared/api/mappers/projectOverviewMapper.test.ts`)
 - Smoke funcional ejecutado en flujo piloto:
   1. login de proyecto válido,

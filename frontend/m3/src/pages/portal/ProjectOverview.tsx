@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BarChart, Activity, AlertTriangle, CheckCircle, LogOut, ArrowLeft } from 'lucide-react';
 import { PortalShell } from '../../components/shell/ShellVariants';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { EmptyState } from '../../components/ui/EmptyState';
-import { Spinner } from '../../components/ui/Spinner';
+import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/async-states';
 import { api } from '../../services/api';
 import { featureFlags } from '../../config/featureFlags';
 import { ProjectOverviewViewModel } from '../../shared/api/contracts/projectOverview';
@@ -31,10 +30,14 @@ const ProjectOverview: React.FC = () => {
   const [traceabilityId, setTraceabilityId] = useState<string | undefined>(undefined);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!slug) return;
-    const fetchData = async () => {
-      try {
+
+    setLoading(true);
+    setErrorMessage(null);
+    setTraceabilityId(undefined);
+
+    try {
         if (!featureFlags.portalOverviewBackendSource) {
           setData({ ...LEGACY_FALLBACK_OVERVIEW, projectSlug: slug });
           return;
@@ -55,26 +58,36 @@ const ProjectOverview: React.FC = () => {
           traceId: normalized.traceId,
           requestId: normalized.requestId,
         });
-      } finally {
-        setLoading(false);
-      }
-    };
+    } finally {
+      setLoading(false);
+    }
+  }, [slug]);
+
+  useEffect(() => {
     fetchData();
-  }, [slug, navigate]);
+  }, [fetchData]);
 
   if (loading)
     return (
       <PortalShell contentClassName="flex min-h-screen items-center justify-center px-4">
-        <EmptyState title="Cargando dashboard..." icon={<Spinner size={28} />} />
+        <LoadingState
+          mode="spinner"
+          title="Cargando dashboard..."
+          description="Estamos consultando los datos más recientes del backend."
+          className="w-full max-w-lg"
+        />
       </PortalShell>
     );
 
   if (errorMessage) {
     return (
       <PortalShell contentClassName="flex min-h-screen items-center justify-center px-4">
-        <EmptyState
-          title={errorMessage}
-          description={traceabilityId ? `ID de trazabilidad: ${traceabilityId}` : undefined}
+        <ErrorState
+          title="No pudimos cargar el overview del proyecto"
+          message={errorMessage}
+          traceId={traceabilityId}
+          onRetry={fetchData}
+          className="w-full max-w-lg"
         />
       </PortalShell>
     );
@@ -86,6 +99,9 @@ const ProjectOverview: React.FC = () => {
         <EmptyState
           title="Aún no hay datos de overview para este proyecto."
           description="Ejecuta un crawl para comenzar a ver métricas."
+          ctaLabel="Actualizar datos"
+          onCta={fetchData}
+          className="w-full max-w-lg"
         />
       </PortalShell>
     );

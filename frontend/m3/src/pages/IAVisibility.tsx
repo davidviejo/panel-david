@@ -16,6 +16,7 @@ import {
   mapIAVisibilityHistoryToViewModel,
 } from '../shared/api/mappers/iaVisibilityMapper';
 import { UiApiErrorDisplay, getUiApiErrorDisplay } from '../shared/api/errorHandling';
+import { EmptyState, ErrorState, LoadingState } from '../shared/ui/async-states';
 
 const IAVisibility: React.FC = () => {
   const { t } = useTranslation();
@@ -36,6 +37,7 @@ const IAVisibility: React.FC = () => {
     data: rowsResponse,
     isLoading: isRowsLoading,
     error: rowsQueryError,
+    refetch: refetchRows,
   } = useIAVisibilityListQuery(currentClientId);
   const { data: scheduleResponse, error: scheduleQueryError } =
     useIAVisibilityScheduleQuery(currentClientId);
@@ -74,16 +76,7 @@ const IAVisibility: React.FC = () => {
     return t('ia_visibility.filters.stable');
   };
 
-  const renderErrorNotice = (errorDisplay: { message: string; traceabilityId?: string }) => (
-    <div className="py-4">
-      <p className="text-sm text-rose-600">{errorDisplay.message}</p>
-      {errorDisplay.traceabilityId && (
-        <p className="text-xs text-slate-500 mt-1">
-          ID de trazabilidad: <span className="font-mono">{errorDisplay.traceabilityId}</span>
-        </p>
-      )}
-    </div>
-  );
+
 
   const saveSchedule = async () => {
     if (!currentClientId) return;
@@ -319,14 +312,13 @@ const IAVisibility: React.FC = () => {
           )}
         </div>
         {(scheduleError || scheduleQueryErrorDisplay) && (
-          <div className="mt-2">
-            {scheduleError && renderErrorNotice(scheduleError)}
-            {!scheduleError &&
-              scheduleQueryErrorDisplay &&
-              renderErrorNotice({
-                message: scheduleQueryErrorDisplay.message,
-                traceabilityId: scheduleQueryErrorDisplay.traceabilityId,
-              })}
+          <div className="mt-4">
+            <ErrorState
+              title="No pudimos actualizar la programación"
+              message={(scheduleError || scheduleQueryErrorDisplay)?.message || ''}
+              traceId={(scheduleError || scheduleQueryErrorDisplay)?.traceabilityId}
+              className="p-4"
+            />
           </div>
         )}
       </div>
@@ -335,11 +327,22 @@ const IAVisibility: React.FC = () => {
         <h2 className="font-bold text-slate-900 dark:text-white mb-4">
           {t('ia_visibility.results_title')}
         </h2>
-        {isRowsLoading && <p className="text-sm text-slate-500 py-4">Cargando resultados...</p>}
-        {!isRowsLoading && rowsErrorDisplay && (
-          renderErrorNotice(rowsErrorDisplay)
+        {isRowsLoading && (
+          <LoadingState
+            mode="skeleton"
+            title="Cargando resultados..."
+            description="Consultando posiciones y variaciones de IA Visibility."
+          />
         )}
-        {!isRowsLoading && !rowsErrorDisplay && (
+        {!isRowsLoading && rowsErrorDisplay && (
+          <ErrorState
+            title="No pudimos cargar los resultados"
+            message={rowsErrorDisplay.message}
+            traceId={rowsErrorDisplay.traceabilityId}
+            onRetry={() => refetchRows()}
+          />
+        )}
+        {!isRowsLoading && !rowsErrorDisplay && filteredRows.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -371,10 +374,15 @@ const IAVisibility: React.FC = () => {
                 ))}
               </tbody>
             </table>
-            {filteredRows.length === 0 && (
-              <p className="text-sm text-slate-500 py-4">{t('ia_visibility.no_results')}</p>
-            )}
           </div>
+        )}
+        {!isRowsLoading && !rowsErrorDisplay && filteredRows.length === 0 && (
+          <EmptyState
+            title={t('ia_visibility.no_results')}
+            description="Ajusta filtros o espera una nueva corrida para ver resultados."
+            ctaLabel="Reintentar carga"
+            onCta={() => refetchRows()}
+          />
         )}
       </div>
 
@@ -401,7 +409,12 @@ const IAVisibility: React.FC = () => {
             </li>
           ))}
           {history.length === 0 && (
-            <li className="text-sm text-slate-500">Sin historial todavía.</li>
+            <li>
+              <EmptyState
+                title="Sin historial todavía."
+                description="Cuando se ejecuten corridas automáticas verás su registro aquí."
+              />
+            </li>
           )}
         </ul>
       </div>
