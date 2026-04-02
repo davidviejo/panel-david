@@ -1,5 +1,7 @@
 import { createHttpClient } from './httpClient';
 import { endpoints } from './endpoints';
+import { ProjectOverviewResponseContract } from '../shared/api/contracts/projectOverview';
+import { parseProjectOverviewContract } from '../shared/api/mappers/projectOverviewMapper';
 
 interface AuthResponse {
   token: string;
@@ -50,7 +52,14 @@ export const api = {
 
   getPublicClients: async () => httpClient.get(endpoints.clients.listPublic(), { includeAuth: false }),
 
-  getProjectOverview: async (slug: string) => httpClient.get(endpoints.clients.projectOverview(slug)),
+  getProjectOverview: async (slug: string): Promise<ProjectOverviewResponseContract> => {
+    const payload = await httpClient.get<unknown>(endpoints.clients.projectOverview(slug));
+    const parsed = parseProjectOverviewContract(payload);
+    if (!parsed) {
+      throw new Error('Invalid overview contract response');
+    }
+    return parsed;
+  },
 
   runOperatorTool: async (tool: string) =>
     httpClient.post(endpoints.tools.run(tool), undefined),

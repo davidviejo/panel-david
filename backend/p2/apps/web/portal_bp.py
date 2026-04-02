@@ -1,11 +1,34 @@
+import logging
+import uuid
 from flask import Blueprint, request, jsonify, make_response, session, redirect, url_for
 from apps.auth_utils import verify_token
 from apps.web.clients_store import get_safe_clients
+from apps.services.project_overview_service import build_project_overview
 from functools import wraps
 
 portal_bp = Blueprint('portal_bp', __name__)
 
 WEB_AUTH_COOKIE = 'portal_auth_token'
+
+
+def _resolve_trace_id():
+    trace_id = request.headers.get('x-trace-id') or request.headers.get('x-request-id')
+    if trace_id and trace_id.strip():
+        return trace_id.strip()
+    return str(uuid.uuid4())
+
+
+def _error_response(message, status_code):
+    trace_id = _resolve_trace_id()
+    payload = {
+        'error': message,
+        'traceId': trace_id,
+        'requestId': trace_id,
+    }
+    response = make_response(jsonify(payload), status_code)
+    response.headers['x-trace-id'] = trace_id
+    response.headers['x-request-id'] = trace_id
+    return response
 
 
 def _extract_bearer_token_from_header():
@@ -48,15 +71,15 @@ def require_role(allowed_roles):
         def decorated_function(*args, **kwargs):
             token = _extract_bearer_token_from_header()
             if not token:
-                return jsonify({'error': 'Missing or invalid Authorization header'}), 401
+                return _error_response('Missing or invalid Authorization header', 401)
 
             payload = _get_payload_from_token(token)
 
             if not payload:
-                return jsonify({'error': 'Invalid or expired token'}), 401
+                return _error_response('Invalid or expired token', 401)
 
             if payload.get('role') not in allowed_roles:
-                return jsonify({'error': 'Insufficient permissions'}), 403
+                return _error_response('Insufficient permissions', 403)
 
             # For project role, verify scope if applicable
             if payload.get('role') == 'project':
@@ -107,19 +130,38 @@ def project_overview(slug):
     # If role is project, ensure scope matches slug
     payload = request.user_payload
     if payload.get('role') == 'project' and payload.get('scope') != slug:
-        return jsonify({'error': 'Access denied for this project'}), 403
+        return _error_response('Access denied for this project', 403)
 
-    # Return mock data
-    return jsonify({
-        "project": slug,
-        "traffic": "12.5K",
-        "keywords_top3": 45,
-        "health_score": 92,
-        "recent_issues": [
-            "Missing H1 on 3 pages",
-            "Slow LCP on homepage"
-        ]
-    })
+    try:
+        overview = build_project_overview(slug)
+    except Exception as exc:
+        trace_id = _resolve_trace_id()
+        logging.error(
+            'portal_overview_error status=%s endpoint=%s traceId=%s slug=%s error=%s',
+            500,
+            f'/api/{slug}/overview',
+            trace_id,
+            slug,
+            str(exc),
+        )
+        return _error_response('Overview unavailable', 500)
+
+    if not overview:
+        logging.error(
+            'portal_overview_error status=%s endpoint=%s traceId=%s slug=%s error=%s',
+            404,
+            f'/api/{slug}/overview',
+            _resolve_trace_id(),
+            slug,
+            'project_not_found',
+        )
+        return _error_response('Project not found', 404)
+
+    response = make_response(jsonify(overview), 200)
+    trace_id = _resolve_trace_id()
+    response.headers['x-trace-id'] = trace_id
+    response.headers['x-request-id'] = trace_id
+    return response
 
 @portal_bp.route('/api/tools/run/<tool>', methods=['POST'])
 @require_role(['operator'])

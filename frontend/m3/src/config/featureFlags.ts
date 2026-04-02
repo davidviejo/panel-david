@@ -30,7 +30,17 @@ const resolveIAVisibilityBackendSource = (): boolean => {
   return toBooleanFlag(import.meta.env.VITE_FF_IA_VISIBILITY_BACKEND_SOURCE, true);
 };
 
+const resolvePortalOverviewBackendSource = (): boolean => {
+  const explicitSource = normalizeFlagValue(import.meta.env.VITE_PORTAL_OVERVIEW_DATA_SOURCE);
+
+  if (explicitSource === 'backend') return true;
+  if (explicitSource === 'legacy') return false;
+
+  return toBooleanFlag(import.meta.env.VITE_FF_PORTAL_OVERVIEW_BACKEND_SOURCE, true);
+};
+
 export const featureFlags = {
   iaVisibilityBackendSource: resolveIAVisibilityBackendSource(),
   seoChecklistBackendSource: resolveSeoChecklistBackendSource(),
+  portalOverviewBackendSource: resolvePortalOverviewBackendSource(),
 };
