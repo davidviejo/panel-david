@@ -54,6 +54,29 @@ def test_smart_serp_search_prefers_canonical_dataforseo_keys(mock_dfs):
     mock_dfs.assert_called_once_with("test keyword", "canonical-login", "canonical-password", 1, "es", "es")
 
 
+@patch("apps.tools.scraper_core.scrape_google_serp")
+def test_smart_serp_search_google_scraping_passes_gl_hl(mock_scrape):
+    mock_scrape.return_value = [{"url": "https://example.com", "title": "ok"}]
+
+    result = smart_serp_search(
+        "test keyword",
+        config={"mode": "google_scraping"},
+        num_results=1,
+        lang="en",
+        country="us",
+    )
+
+    assert len(result) == 1
+    mock_scrape.assert_called_once_with(
+        "test keyword",
+        1,
+        2,
+        cookie=None,
+        gl="us",
+        hl="en",
+    )
+
+
 def test_resolve_dataforseo_credentials_supports_canonical_override():
     with patch("apps.tools.credentials.get_user_settings", return_value={}):
         creds = resolve_dataforseo_credentials({
