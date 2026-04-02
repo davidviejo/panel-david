@@ -314,8 +314,10 @@ form.addEventListener('submit', e => {
     document.getElementById('progressPanel').style.display='block';
 
     const formData = new FormData(e.target);
-    // PATCH TEMPORAL: forzamos realtime solo en pestaña Estrategia.
-    formData.set('requireRealtime', 'true');
+    // Realtime es opcional y por defecto permanece desactivado en Estrategia.
+    if (!formData.has('requireRealtime')) {
+        formData.set('requireRealtime', 'false');
+    }
 
     fetch('/seo/start', {method:'POST', body: formData})
         .then(r=>r.json())

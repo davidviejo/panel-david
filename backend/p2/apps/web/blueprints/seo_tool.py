@@ -458,6 +458,12 @@ def worker(kws, file, cfg):
             blocked = bool(diag.get('blocked') or status == 'blocked')
             results_count = diag.get('results_count', len(res or []))
             elapsed_ms = diag.get('elapsed_ms')
+            effective_mode = diag.get('effective_mode', 'STANDARD')
+            batch_size = diag.get('batch_size', 1)
+
+            append_log(
+                f"ℹ️ SERP mode={effective_mode} batch_size={batch_size} ({ckw})"
+            )
 
             with _status_lock:
                 session_diag = job_status.setdefault('diagnostics', {}).setdefault('session', {
@@ -472,19 +478,28 @@ def worker(kws, file, cfg):
                 session_diag['blocked_ratio'] = round(session_diag['queries_blocked'] / total_q, 4)
 
             if status == 'blocked':
-                cause = f"{provider}: bloqueo detectado (http={http_status or 'n/a'}, t={elapsed_ms or 'n/a'}ms)"
+                cause = (
+                    f"{provider}: bloqueo detectado (http={http_status or 'n/a'}, "
+                    f"t={elapsed_ms or 'n/a'}ms, mode={effective_mode}, batch_size={batch_size})"
+                )
                 append_log("⛔ Google bloqueó la consulta, prueba cookie o mayor delay", keyword=ckw, technical_cause=cause)
                 new_data[ckw] = []
             elif status == 'error':
-                cause = f"{provider}: {err or 'Error desconocido'}"
+                cause = f"{provider}: {err or 'Error desconocido'} (mode={effective_mode}, batch_size={batch_size})"
                 append_log(f"⛔ Error técnico en SERP ({ckw}): {err or 'Error desconocido'}", keyword=ckw, technical_cause=cause)
                 new_data[ckw] = []
             elif not res:
-                cause = f"{provider}: sin resultados (http={http_status or 'n/a'}, parsed={results_count}, t={elapsed_ms or 'n/a'}ms)"
+                cause = (
+                    f"{provider}: sin resultados (http={http_status or 'n/a'}, parsed={results_count}, "
+                    f"t={elapsed_ms or 'n/a'}ms, mode={effective_mode}, batch_size={batch_size})"
+                )
                 append_log(f"⚠️ 0 resultados reales: {ckw}", keyword=ckw, technical_cause=cause)
                 new_data[ckw] = []
             else:
-                cause = f"{provider}: ok (http={http_status or 'n/a'}, parsed={results_count}, t={elapsed_ms or 'n/a'}ms)"
+                cause = (
+                    f"{provider}: ok (http={http_status or 'n/a'}, parsed={results_count}, "
+                    f"t={elapsed_ms or 'n/a'}ms, mode={effective_mode}, batch_size={batch_size})"
+                )
                 append_log(f"✅ {ckw}: {len(res)} URLs", keyword=ckw, technical_cause=cause)
                 new_data[ckw] = res if isinstance(res, list) else []
 
