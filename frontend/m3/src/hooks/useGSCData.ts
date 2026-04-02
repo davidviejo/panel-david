@@ -7,8 +7,24 @@ import {
 } from '../services/googleSearchConsole';
 import { runAnalysisInWorker } from '../utils/workerClient';
 import { useToast } from '../components/ui/ToastContext';
+import { buildModuleScopeKey, buildQueryKey } from '../shared/data-hooks/queryKeys';
+import { buildRetryPolicy, withNormalizedError } from '../shared/data-hooks/queryPolicies';
 
 export type GSCComparisonMode = 'previous_period' | 'previous_year';
+
+const MODULE_KEY = 'gsc';
+
+export const gscKeys = {
+  all: buildModuleScopeKey(MODULE_KEY),
+  sites: (accessToken: string) => buildQueryKey(MODULE_KEY, 'sites', { accessToken }),
+  report: (params: {
+    accessToken: string;
+    selectedSite: string;
+    startDate?: string;
+    endDate?: string;
+    comparisonMode: GSCComparisonMode;
+  }) => buildQueryKey(MODULE_KEY, 'report', params),
+};
 
 const getPreviousRange = (startDate: string, endDate: string) => {
   const start = new Date(`${startDate}T00:00:00Z`);
@@ -54,6 +70,68 @@ const getComparisonRange = (
   return getPreviousRange(startDate, endDate);
 };
 
+export const useGSCSitesQuery = (accessToken: string | null) =>
+  useQuery({
+    queryKey: accessToken ? gscKeys.sites(accessToken) : gscKeys.all,
+    queryFn: () => withNormalizedError(() => listSites(accessToken!)),
+    enabled: !!accessToken,
+    staleTime: 1000 * 60 * 30,
+    retry: buildRetryPolicy('standard_read'),
+  });
+
+export const useGSCReportQuery = (
+  accessToken: string | null,
+  selectedSite: string,
+  startDate: string | undefined,
+  endDate: string | undefined,
+  comparisonMode: GSCComparisonMode,
+) =>
+  useQuery({
+    queryKey:
+      accessToken && selectedSite
+        ? gscKeys.report({ accessToken, selectedSite, startDate, endDate, comparisonMode })
+        : gscKeys.all,
+    queryFn: () =>
+      withNormalizedError(async () => {
+        const finalEndDate = endDate || new Date().toISOString().split('T')[0];
+        const finalStartDate =
+          startDate ||
+          new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const { previousStartDate, previousEndDate } = getComparisonRange(
+          comparisonMode,
+          finalStartDate,
+          finalEndDate,
+        );
+
+        const [dateData, comparisonDateData, currentQueryPageData, previousQueryPageData] =
+          await Promise.all([
+            getSearchAnalytics(accessToken!, selectedSite, finalStartDate, finalEndDate),
+            getSearchAnalytics(accessToken!, selectedSite, previousStartDate, previousEndDate),
+            getGSCQueryPageData(accessToken!, selectedSite, finalStartDate, finalEndDate),
+            getGSCQueryPageData(accessToken!, selectedSite, previousStartDate, previousEndDate),
+          ]);
+
+        const insights = await runAnalysisInWorker({
+          currentRows: currentQueryPageData,
+          previousRows: previousQueryPageData,
+        });
+
+        return {
+          gscData: dateData,
+          comparisonGscData: comparisonDateData,
+          insights,
+          comparisonPeriod: {
+            mode: comparisonMode,
+            current: { startDate: finalStartDate, endDate: finalEndDate },
+            previous: { startDate: previousStartDate, endDate: previousEndDate },
+          },
+        };
+      }),
+    enabled: !!accessToken && !!selectedSite,
+    staleTime: 1000 * 60 * 5,
+    retry: buildRetryPolicy('background_sync'),
+  });
+
 export const useGSCData = (
   accessToken: string | null,
   startDate?: string,
@@ -76,12 +154,7 @@ export const useGSCData = (
     data: gscSites = [],
     isLoading: isLoadingSites,
     error: sitesError,
-  } = useQuery({
-    queryKey: ['gscSites', accessToken],
-    queryFn: () => listSites(accessToken!),
-    enabled: !!accessToken,
-    staleTime: 1000 * 60 * 30,
-  });
+  } = useGSCSitesQuery(accessToken);
 
   useEffect(() => {
     if (sitesError) {
@@ -101,45 +174,7 @@ export const useGSCData = (
     data: siteData,
     isLoading: isLoadingData,
     error: dataError,
-  } = useQuery({
-    queryKey: ['gscData', accessToken, resolvedSelectedSite, startDate, endDate, comparisonMode],
-    queryFn: async () => {
-      const finalEndDate = endDate || new Date().toISOString().split('T')[0];
-      const finalStartDate =
-        startDate || new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const { previousStartDate, previousEndDate } = getComparisonRange(
-        comparisonMode,
-        finalStartDate,
-        finalEndDate,
-      );
-
-      const [dateData, comparisonDateData, currentQueryPageData, previousQueryPageData] =
-        await Promise.all([
-          getSearchAnalytics(accessToken!, resolvedSelectedSite, finalStartDate, finalEndDate),
-          getSearchAnalytics(accessToken!, resolvedSelectedSite, previousStartDate, previousEndDate),
-          getGSCQueryPageData(accessToken!, resolvedSelectedSite, finalStartDate, finalEndDate),
-          getGSCQueryPageData(accessToken!, resolvedSelectedSite, previousStartDate, previousEndDate),
-        ]);
-
-      const insights = await runAnalysisInWorker({
-        currentRows: currentQueryPageData,
-        previousRows: previousQueryPageData,
-      });
-
-      return {
-        gscData: dateData,
-        comparisonGscData: comparisonDateData,
-        insights,
-        comparisonPeriod: {
-          mode: comparisonMode,
-          current: { startDate: finalStartDate, endDate: finalEndDate },
-          previous: { startDate: previousStartDate, endDate: previousEndDate },
-        },
-      };
-    },
-    enabled: !!accessToken && !!resolvedSelectedSite,
-    staleTime: 1000 * 60 * 5,
-  });
+  } = useGSCReportQuery(accessToken, resolvedSelectedSite, startDate, endDate, comparisonMode);
 
   useEffect(() => {
     if (dataError) {
@@ -151,7 +186,7 @@ export const useGSCData = (
   const clearData = () => {
     setSelectedSite('');
     localStorage.removeItem('mediaflow_gsc_selected_site');
-    queryClient.removeQueries({ queryKey: ['gscData'] });
+    queryClient.removeQueries({ queryKey: buildQueryKey(MODULE_KEY, 'report') });
   };
 
   return {
@@ -181,7 +216,10 @@ export const useGSCData = (
         stableUrls: null,
         internalRedirects: null,
       } as const),
-    fetchSites: () => queryClient.invalidateQueries({ queryKey: ['gscSites'] }),
+    fetchSites: () =>
+      accessToken
+        ? queryClient.invalidateQueries({ queryKey: gscKeys.sites(accessToken) })
+        : Promise.resolve(),
     clearData,
   };
 };

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   seoChecklistKeys,
   useBulkUpdateSeoChecklistPagesMutation,
+  useImportSeoChecklistPagesMutation,
   useUpdateSeoChecklistPageMutation,
 } from './useSeoChecklistServerState';
 import { seoChecklistApi } from '../services/seoChecklistApi';
@@ -52,6 +53,36 @@ const buildPage = (id: string): SeoPage => ({
 describe('useSeoChecklistServerState mutations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+
+  it('updates cache and avoids stale data after import/create mutation', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+
+    queryClient.setQueryData(seoChecklistKeys.list('client-1'), [buildPage('page-1')]);
+
+    vi.mocked(seoChecklistApi.importPages).mockResolvedValue({
+      clientId: 'client-1',
+      pages: [buildPage('page-1'), buildPage('page-2')],
+    });
+
+    const { result } = renderHook(
+      () => useImportSeoChecklistPagesMutation('client-1', []),
+      { wrapper: createWrapper(queryClient) },
+    );
+
+    await act(async () => {
+      await result.current.mutateAsync([buildPage('page-2')]);
+    });
+
+    await waitFor(() => {
+      const cachedPages = queryClient.getQueryData<SeoPage[]>(seoChecklistKeys.list('client-1')) || [];
+      expect(cachedPages).toHaveLength(2);
+      expect(cachedPages.map((page) => page.id)).toEqual(['page-1', 'page-2']);
+      expect(cachedPages.every((page) => page.kwPrincipal)).toBe(true);
+    });
   });
 
   it('invalidates list key after update mutation', async () => {

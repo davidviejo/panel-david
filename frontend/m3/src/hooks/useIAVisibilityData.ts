@@ -5,14 +5,18 @@ import {
   IAVisibilitySchedule,
   iaVisibilityService,
 } from '../services/iaVisibilityService';
+import { buildModuleScopeKey, buildQueryKey } from '../shared/data-hooks/queryKeys';
+import { buildRetryPolicy, withNormalizedError } from '../shared/data-hooks/queryPolicies';
+
+const MODULE_KEY = 'iaVisibility';
 
 export const iaVisibilityKeys = {
-  all: ['iaVisibility'] as const,
-  byClient: (clientId: string) => [...iaVisibilityKeys.all, clientId] as const,
-  list: (clientId: string) => [...iaVisibilityKeys.byClient(clientId), 'list'] as const,
-  history: (clientId: string) => [...iaVisibilityKeys.byClient(clientId), 'history'] as const,
-  config: (clientId: string) => [...iaVisibilityKeys.byClient(clientId), 'config'] as const,
-  schedule: (clientId: string) => [...iaVisibilityKeys.byClient(clientId), 'schedule'] as const,
+  all: buildModuleScopeKey(MODULE_KEY),
+  byClient: (clientId: string) => buildModuleScopeKey(MODULE_KEY, { clientId }),
+  list: (clientId: string) => buildQueryKey(MODULE_KEY, 'list', { clientId }),
+  history: (clientId: string) => buildQueryKey(MODULE_KEY, 'history', { clientId }),
+  config: (clientId: string) => buildQueryKey(MODULE_KEY, 'config', { clientId }),
+  schedule: (clientId: string) => buildQueryKey(MODULE_KEY, 'schedule', { clientId }),
 };
 
 const useInvalidateClientQueries = (clientId: string | null | undefined) => {
@@ -33,22 +37,25 @@ const useInvalidateClientQueries = (clientId: string | null | undefined) => {
 export const useIAVisibilityListQuery = (clientId: string | null | undefined) =>
   useQuery({
     queryKey: clientId ? iaVisibilityKeys.list(clientId) : iaVisibilityKeys.all,
-    queryFn: () => iaVisibilityService.list(clientId!),
+    queryFn: () => withNormalizedError(() => iaVisibilityService.list(clientId!)),
     enabled: Boolean(clientId),
+    retry: buildRetryPolicy('standard_read'),
   });
 
 export const useIAVisibilityHistoryQuery = (clientId: string | null | undefined) =>
   useQuery({
     queryKey: clientId ? iaVisibilityKeys.history(clientId) : iaVisibilityKeys.all,
-    queryFn: () => iaVisibilityService.getHistory(clientId!),
+    queryFn: () => withNormalizedError(() => iaVisibilityService.getHistory(clientId!)),
     enabled: Boolean(clientId),
+    retry: buildRetryPolicy('background_sync'),
   });
 
 export const useIAVisibilityScheduleQuery = (clientId: string | null | undefined) =>
   useQuery({
     queryKey: clientId ? iaVisibilityKeys.schedule(clientId) : iaVisibilityKeys.all,
-    queryFn: () => iaVisibilityService.getSchedule(clientId!),
+    queryFn: () => withNormalizedError(() => iaVisibilityService.getSchedule(clientId!)),
     enabled: Boolean(clientId),
+    retry: buildRetryPolicy('realtime_read'),
   });
 
 export const useSaveIAVisibilityScheduleMutation = (clientId: string | null | undefined) => {
@@ -57,7 +64,8 @@ export const useSaveIAVisibilityScheduleMutation = (clientId: string | null | un
 
   return useMutation({
     mutationFn: (payload: Partial<IAVisibilitySchedule>) =>
-      iaVisibilityService.saveSchedule(clientId!, payload),
+      withNormalizedError(() => iaVisibilityService.saveSchedule(clientId!, payload)),
+    retry: buildRetryPolicy('mutation'),
     onSuccess: async (response) => {
       if (clientId) {
         queryClient.setQueryData(iaVisibilityKeys.schedule(clientId), response);
@@ -73,7 +81,8 @@ export const useToggleIAVisibilityScheduleMutation = (clientId: string | null | 
 
   return useMutation({
     mutationFn: (action: 'pause' | 'resume') =>
-      iaVisibilityService.toggleSchedule(clientId!, action),
+      withNormalizedError(() => iaVisibilityService.toggleSchedule(clientId!, action)),
+    retry: buildRetryPolicy('mutation'),
     onSuccess: async (response) => {
       if (clientId) {
         queryClient.setQueryData(iaVisibilityKeys.schedule(clientId), response);
@@ -87,7 +96,8 @@ export const useRunIAVisibilityMutation = (clientId: string | null | undefined) 
   const invalidateClientQueries = useInvalidateClientQueries(clientId);
 
   return useMutation({
-    mutationFn: (payload: IAVisibilityRequest) => iaVisibilityService.run(payload),
+    mutationFn: (payload: IAVisibilityRequest) => withNormalizedError(() => iaVisibilityService.run(payload)),
+    retry: buildRetryPolicy('mutation'),
     onSuccess: async () => {
       await invalidateClientQueries();
     },
@@ -100,7 +110,8 @@ export const useSaveIAVisibilityConfigMutation = (clientId: string | null | unde
 
   return useMutation({
     mutationFn: (payload: IAVisibilityRequest) =>
-      iaVisibilityService.saveConfig(clientId!, payload),
+      withNormalizedError(() => iaVisibilityService.saveConfig(clientId!, payload)),
+    retry: buildRetryPolicy('mutation'),
     onSuccess: async (response) => {
       if (clientId) {
         queryClient.setQueryData(iaVisibilityKeys.config(clientId), response);
