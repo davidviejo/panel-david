@@ -1,5 +1,7 @@
 import type { BaseEntity, Uuid } from './base';
 import type { AnalysisSource } from '../enums/analysis-source';
+import type { Severity } from '../enums/severity';
+import type { Status } from '../enums/status';
 import type { NormalizedInsight, RecommendedAction } from '../types/contracts';
 
 export interface Insight extends BaseEntity {
@@ -12,8 +14,8 @@ export interface Insight extends BaseEntity {
   metric: string;
   value: number;
   detectedAt: string;
-  severity: 'low' | 'medium' | 'high';
-  status: 'open' | 'in_progress' | 'resolved' | 'ignored';
+  severity: Severity;
+  status: Status;
 }
 
 export interface ProjectInsight {
