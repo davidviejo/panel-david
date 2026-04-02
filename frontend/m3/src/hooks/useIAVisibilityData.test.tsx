@@ -35,6 +35,38 @@ describe('useIAVisibilityData mutations', () => {
     vi.clearAllMocks();
   });
 
+
+  it('updates schedule cache and invalidates affected keys after save mutation', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+
+    const saveResponse = {
+      clientId: 'client-1',
+      schedule: {
+        frequency: 'daily',
+        timezone: 'UTC',
+        runHour: 6,
+        runMinute: 30,
+        status: 'active',
+      },
+    };
+
+    vi.mocked(iaVisibilityService.saveSchedule).mockResolvedValue(saveResponse);
+
+    const { result } = renderHook(() => useSaveIAVisibilityScheduleMutation('client-1'), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await act(async () => {
+      await result.current.mutateAsync({ runHour: 6, runMinute: 30 });
+    });
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData(iaVisibilityKeys.schedule('client-1'))).toEqual(saveResponse);
+    });
+  });
+
   it('invalidates module keys after save schedule mutation', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
