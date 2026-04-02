@@ -223,12 +223,16 @@ def dispatcher(kw, cfg):
             country=cfg.get('gl', 'es')
         )
         if isinstance(resp, dict):
+            diagnostics = resp.get('diagnostics', {}) or {}
+            worker_results = resp.get('results', [])
+            if isinstance(resp.get('full_results'), list) and resp.get('full_results'):
+                worker_results = resp.get('full_results')
             return {
                 'status': resp.get('status', 'ok'),
-                'results': resp.get('results', []),
+                'results': worker_results,
                 'error': None,
                 'provider': resp.get('provider'),
-                'diagnostics': resp.get('diagnostics', {})
+                'diagnostics': diagnostics
             }
         results = resp if isinstance(resp, list) else []
         return {'status': 'ok' if results else 'empty', 'results': results, 'error': None}

@@ -10,7 +10,7 @@ import hashlib
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 import urllib.parse
-from typing import List, Dict, Optional, Any, Union, Sequence
+from typing import List, Dict, Optional, Any, Union, Sequence, Set
 from flask import session, has_request_context
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -310,6 +310,20 @@ def _parse_dataforseo_task_results(task: Dict[str, Any], limit: Optional[int] = 
             if limit is not None and len(parsed_results) >= limit:
                 return parsed_results
     return parsed_results
+
+
+def _extract_task_ready_ids(ready_data: Dict[str, Any]) -> Set[str]:
+    ready_ids: Set[str] = set()
+    for task in (ready_data.get("tasks") or []):
+        task_id = task.get("id")
+        if task_id is not None:
+            ready_ids.add(str(task_id))
+        for result_block in (task.get("result") or []):
+            for item in (result_block.get("items") or []):
+                item_id = item.get("id")
+                if item_id is not None:
+                    ready_ids.add(str(item_id))
+    return ready_ids
 
 
 def _dataforseo_request_with_retries(
@@ -732,7 +746,8 @@ def search_dataforseo(
     keywords: Optional[Sequence[str]] = None,
     return_meta: bool = False
 ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
-    results = []
+    results: List[Dict[str, Any]] = []
+    full_results_by_keyword: Dict[str, List[Dict[str, Any]]] = {}
     diagnostics = {
         "mode": "dataforseo",
         "http_status": None,
@@ -808,10 +823,12 @@ def search_dataforseo(
                     "state": "posted",
                     "results": 0,
                 }
+                full_results_by_keyword[kw] = []
 
             if request_config.get("require_realtime"):
                 for task in posted_tasks:
-                    task_results = _parse_dataforseo_task_results(task, limit=num_results - len(results))
+                    all_task_results = _parse_dataforseo_task_results(task)
+                    task_results = all_task_results[:max(0, num_results - len(results))]
                     results.extend(task_results)
                     if len(results) >= num_results:
                         break
@@ -825,13 +842,15 @@ def search_dataforseo(
                 for task in posted_tasks:
                     if not task.get("result"):
                         continue
-                    task_results = _parse_dataforseo_task_results(task, limit=num_results - len(results))
+                    all_task_results = _parse_dataforseo_task_results(task)
+                    task_results = all_task_results[:max(0, num_results - len(results))]
                     results.extend(task_results)
                     posted_task_id = str(task.get("id")) if task.get("id") is not None else None
                     for kw, info in keyword_status.items():
                         if posted_task_id and info.get("task_id") == posted_task_id:
                             info["state"] = "ready"
-                            info["results"] = len(task_results)
+                            info["results"] = len(all_task_results)
+                            full_results_by_keyword[kw] = all_task_results
                             break
                     if len(results) >= num_results:
                         pending.clear()
@@ -850,11 +869,7 @@ def search_dataforseo(
                     if ready_response is None:
                         break
                     ready_data = ready_response.json()
-                    ready_ids = {
-                        str(task.get("id"))
-                        for task in (ready_data.get("tasks") or [])
-                        if task.get("id") is not None
-                    }
+                    ready_ids = _extract_task_ready_ids(ready_data)
                     for task_id in list(pending):
                         if task_id not in ready_ids:
                             continue
@@ -869,18 +884,23 @@ def search_dataforseo(
                         if task_get_response is None:
                             continue
                         task_get_data = task_get_response.json()
+                        task_has_items = False
                         for task in (task_get_data.get("tasks") or []):
                             if str(task.get("id")) != task_id:
                                 continue
-                            task_results = _parse_dataforseo_task_results(task, limit=num_results - len(results))
+                            all_task_results = _parse_dataforseo_task_results(task)
+                            task_results = all_task_results[:max(0, num_results - len(results))]
                             results.extend(task_results)
+                            task_has_items = len(all_task_results) > 0
                             for kw, info in keyword_status.items():
                                 if info.get("task_id") == task_id:
                                     info["state"] = "ready"
-                                    info["results"] = len(task_results)
+                                    info["results"] = len(all_task_results)
+                                    full_results_by_keyword[kw] = all_task_results
                                     break
                             break
-                        pending.discard(task_id)
+                        if task_has_items:
+                            pending.discard(task_id)
                         if len(results) >= num_results:
                             pending.clear()
                             break
@@ -919,8 +939,13 @@ def search_dataforseo(
 
     trimmed_results = results[:num_results]
     if return_meta:
+        full_results = []
+        for kw in diagnostics.get("keywords_processed") or []:
+            full_results.extend(full_results_by_keyword.get(kw, []))
         return {
             "results": trimmed_results,
+            "full_results": full_results,
+            "full_results_by_keyword": full_results_by_keyword,
             "diagnostics": diagnostics,
         }
     return trimmed_results
@@ -1054,7 +1079,9 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
         results: List[Dict[str, Any]],
         status: str = 'ok',
         provider_name: Optional[str] = None,
-        diagnostics: Optional[Dict[str, Any]] = None
+        diagnostics: Optional[Dict[str, Any]] = None,
+        full_results: Optional[List[Dict[str, Any]]] = None,
+        full_results_by_keyword: Optional[Dict[str, List[Dict[str, Any]]]] = None,
     ):
         event = {
             "mode": diagnostics.get('mode') if diagnostics and diagnostics.get('mode') else (mode or 'auto'),
@@ -1074,6 +1101,8 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
             return {
                 "status": status,
                 "results": results,
+                "full_results": full_results if full_results is not None else results,
+                "full_results_by_keyword": full_results_by_keyword or {},
                 "provider": provider_name,
                 "diagnostics": {
                     **event,
@@ -1088,7 +1117,13 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
 
     if mode == 'dataforseo' and cfg.get('dataforseo_login') and cfg.get('dataforseo_password'):
         dfs_response = _search_dataforseo_with_meta(cfg['dataforseo_login'], cfg['dataforseo_password'])
-        return _return(dfs_response.get('results', []), provider_name='dataforseo', diagnostics=dfs_response.get('diagnostics'))
+        return _return(
+            dfs_response.get('results', []),
+            provider_name='dataforseo',
+            diagnostics=dfs_response.get('diagnostics'),
+            full_results=dfs_response.get('full_results'),
+            full_results_by_keyword=dfs_response.get('full_results_by_keyword'),
+        )
 
     if mode == 'google_official':
          api_key = cfg.get('google_cse_key')
@@ -1109,7 +1144,13 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
         # DataForSEO Preference
         if provider == 'dataforseo' and cfg.get('dataforseo_login') and cfg.get('dataforseo_password'):
              dfs_response = _search_dataforseo_with_meta(cfg['dataforseo_login'], cfg['dataforseo_password'])
-             return _return(dfs_response.get('results', []), provider_name='dataforseo', diagnostics=dfs_response.get('diagnostics'))
+             return _return(
+                 dfs_response.get('results', []),
+                 provider_name='dataforseo',
+                 diagnostics=dfs_response.get('diagnostics'),
+                 full_results=dfs_response.get('full_results'),
+                 full_results_by_keyword=dfs_response.get('full_results_by_keyword'),
+             )
 
         # Google Official Preference
         if provider == 'google_official':
@@ -1131,7 +1172,13 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
 
     if dfs_login and dfs_pass:
         dfs_response = _search_dataforseo_with_meta(dfs_login, dfs_pass)
-        return _return(dfs_response.get('results', []), provider_name='dataforseo', diagnostics=dfs_response.get('diagnostics'))
+        return _return(
+            dfs_response.get('results', []),
+            provider_name='dataforseo',
+            diagnostics=dfs_response.get('diagnostics'),
+            full_results=dfs_response.get('full_results'),
+            full_results_by_keyword=dfs_response.get('full_results_by_keyword'),
+        )
 
     # 3.2 Google API Oficial
     api_key = cfg.get('google_cse_key')

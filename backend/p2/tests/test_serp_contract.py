@@ -285,5 +285,68 @@ def test_search_dataforseo_standard_polls_tasks_ready_and_task_get(mock_post, mo
     )
 
     assert response["results"][0]["url"] == "https://example.com"
+    assert response["full_results"][0]["url"] == "https://example.com"
+    assert response["full_results_by_keyword"]["kw"][0]["url"] == "https://example.com"
     assert response["diagnostics"]["task_ids"] == ["task-1"]
     assert response["diagnostics"]["timed_out"] is False
+
+
+@patch("apps.tools.scraper_core.time.sleep")
+@patch("apps.tools.scraper_core.requests.get")
+@patch("apps.tools.scraper_core.requests.post")
+def test_search_dataforseo_standard_polls_until_task_get_has_items_when_tasks_ready_uses_nested_ids(mock_post, mock_get, _mock_sleep):
+    task_post_response = MagicMock()
+    task_post_response.status_code = 200
+    task_post_response.json.return_value = {
+        "status_code": 20000,
+        "tasks": [{"id": "task-1"}],
+    }
+    tasks_ready_response = MagicMock()
+    tasks_ready_response.status_code = 200
+    tasks_ready_response.json.return_value = {
+        "status_code": 20000,
+        "tasks": [{
+            "result": [{
+                "items": [{"id": "task-1"}],
+            }],
+        }],
+    }
+    mock_post.side_effect = [task_post_response, tasks_ready_response, tasks_ready_response]
+
+    first_task_get_response = MagicMock()
+    first_task_get_response.status_code = 200
+    first_task_get_response.json.return_value = {
+        "status_code": 20000,
+        "tasks": [{"id": "task-1", "result": [{"items": []}]}],
+    }
+    second_task_get_response = MagicMock()
+    second_task_get_response.status_code = 200
+    second_task_get_response.json.return_value = {
+        "status_code": 20000,
+        "tasks": [{
+            "id": "task-1",
+            "result": [{
+                "items": [{
+                    "type": "organic",
+                    "url": "https://later.example.com",
+                    "title": "Later",
+                    "snippet": "Loaded later",
+                    "rank_group": 1,
+                }],
+            }],
+        }],
+    }
+    mock_get.side_effect = [first_task_get_response, second_task_get_response]
+
+    response = search_dataforseo(
+        "kw",
+        "login",
+        "pass",
+        num_results=10,
+        config={"requireRealtime": False, "dfs_poll_timeout_s": 5, "dfs_poll_interval_s": 0.1},
+        return_meta=True,
+    )
+
+    assert response["results"][0]["url"] == "https://later.example.com"
+    assert response["diagnostics"]["timed_out"] is False
+    assert mock_get.call_count == 2
