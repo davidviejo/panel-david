@@ -22,7 +22,15 @@ job_status = {
     'current_action': 'Esperando...',
     'results': [],
     'logs': [],
-    'error': None
+    'error': None,
+    'diagnostics': {
+        'keywords': {},
+        'session': {
+            'queries_total': 0,
+            'queries_blocked': 0,
+            'blocked_ratio': 0.0,
+        }
+    }
 }
 _status_lock = threading.Lock()
 
@@ -35,10 +43,12 @@ def update_status(**kwargs):
         job_status.update(kwargs)
 
 
-def append_log(msg: str):
-    """Añade una línea al log (limitamos longitud para no reventar la memoria)."""
+def append_log(msg: str, keyword: str = None, technical_cause: str = None):
+    """Añade una línea al log y, opcionalmente, una causa técnica resumida por keyword."""
     with _status_lock:
         job_status['logs'].append(msg)
+        if keyword and technical_cause:
+            job_status.setdefault('diagnostics', {}).setdefault('keywords', {})[keyword] = technical_cause
         # Nos quedamos con las últimas 300 líneas como máximo
         if len(job_status['logs']) > 300:
             job_status['logs'] = job_status['logs'][-300:]
@@ -214,7 +224,8 @@ def dispatcher(kw, cfg):
                 'status': resp.get('status', 'ok'),
                 'results': resp.get('results', []),
                 'error': None,
-                'provider': resp.get('provider')
+                'provider': resp.get('provider'),
+                'diagnostics': resp.get('diagnostics', {})
             }
         results = resp if isinstance(resp, list) else []
         return {'status': 'ok' if results else 'empty', 'results': results, 'error': None}
@@ -391,7 +402,15 @@ def worker(kws, file, cfg):
         current_action='Iniciando motor...',
         results=[],
         logs=[],
-        error=None
+        error=None,
+        diagnostics={
+            'keywords': {},
+            'session': {
+                'queries_total': 0,
+                'queries_blocked': 0,
+                'blocked_ratio': 0.0,
+            }
+        }
     )
     update_global("Cluster SEO", 0, "Iniciando motor...", active=True)
 
@@ -426,18 +445,40 @@ def worker(kws, file, cfg):
             status = dispatch_result.get('status')
             res = dispatch_result.get('results', [])
             err = dispatch_result.get('error')
+            diag = dispatch_result.get('diagnostics') or {}
+            provider = dispatch_result.get('provider') or diag.get('provider') or 'unknown'
+            http_status = diag.get('http_status')
+            blocked = bool(diag.get('blocked') or status == 'blocked')
+            results_count = diag.get('results_count', len(res or []))
+            elapsed_ms = diag.get('elapsed_ms')
+
+            with _status_lock:
+                session_diag = job_status.setdefault('diagnostics', {}).setdefault('session', {
+                    'queries_total': 0,
+                    'queries_blocked': 0,
+                    'blocked_ratio': 0.0,
+                })
+                session_diag['queries_total'] += 1
+                if blocked:
+                    session_diag['queries_blocked'] += 1
+                total_q = max(1, session_diag['queries_total'])
+                session_diag['blocked_ratio'] = round(session_diag['queries_blocked'] / total_q, 4)
 
             if status == 'blocked':
-                append_log("⛔ Google bloqueó la consulta, prueba cookie o mayor delay")
+                cause = f"{provider}: bloqueo detectado (http={http_status or 'n/a'}, t={elapsed_ms or 'n/a'}ms)"
+                append_log("⛔ Google bloqueó la consulta, prueba cookie o mayor delay", keyword=ckw, technical_cause=cause)
                 new_data[ckw] = []
             elif status == 'error':
-                append_log(f"⛔ Error técnico en SERP ({ckw}): {err or 'Error desconocido'}")
+                cause = f"{provider}: {err or 'Error desconocido'}"
+                append_log(f"⛔ Error técnico en SERP ({ckw}): {err or 'Error desconocido'}", keyword=ckw, technical_cause=cause)
                 new_data[ckw] = []
             elif not res:
-                append_log(f"⚠️ 0 resultados reales: {ckw}")
+                cause = f"{provider}: sin resultados (http={http_status or 'n/a'}, parsed={results_count}, t={elapsed_ms or 'n/a'}ms)"
+                append_log(f"⚠️ 0 resultados reales: {ckw}", keyword=ckw, technical_cause=cause)
                 new_data[ckw] = []
             else:
-                append_log(f"✅ {ckw}: {len(res)} URLs")
+                cause = f"{provider}: ok (http={http_status or 'n/a'}, parsed={results_count}, t={elapsed_ms or 'n/a'}ms)"
+                append_log(f"✅ {ckw}: {len(res)} URLs", keyword=ckw, technical_cause=cause)
                 new_data[ckw] = res if isinstance(res, list) else []
 
         # --- FASE 2: CLUSTERIZACIÓN CON HISTÓRICO (45-70%) ---
@@ -608,6 +649,7 @@ def start():
 
 @seo_bp.route('/status')
 def status():
+    include_diagnostics = str(request.args.get('diagnostics', '')).strip().lower() in ('1', 'true', 'yes', 'on')
     clean_results = []
     # Solo enviamos los clusters completos si el job ya ha terminado,
     # para no mandar sets ni estructuras incompletas
@@ -617,14 +659,17 @@ def status():
             cc.pop('urls_set', None)
             clean_results.append(cc)
 
-    return jsonify({
+    payload = {
         'active': job_status['active'],
         'progress': job_status['progress'],
         'current_action': job_status['current_action'],
         'logs': job_status['logs'],
         'results': clean_results,
         'error': job_status['error']
-    })
+    }
+    if include_diagnostics:
+        payload['diagnostics'] = job_status.get('diagnostics', {})
+    return jsonify(payload)
 
 
 @seo_bp.route('/analyze_cluster', methods=['POST'])
