@@ -40,13 +40,13 @@ Formato actual: `console.error('[api-error]', payload)`.
 
 ## Módulo piloto (IA Visibility)
 
-- La lista del piloto ya no usa fallback local para datos de producción/desarrollo.
+- La lista del piloto usa backend por defecto y permite rollback controlado con `VITE_IA_VISIBILITY_DATA_SOURCE=legacy`.
 - Errores de carga de listado y programación muestran ID de trazabilidad cuando existe.
 - El ID se presenta en una línea separada y en formato monoespaciado para facilitar copia/pegado en soporte.
 - Esto permite soporte L1/L2 con correlación directa sin exponer payloads sensibles en UI.
 
 ## Decisiones técnicas
 
-- **Fuente de verdad única:** se eliminó fallback mock en servicio de IA Visibility para evitar divergencia FE/BE.
+- **Fuente de verdad por flag:** `backend` es el valor por defecto del piloto para producción; `legacy` queda disponible solo como rollback operativo.
 - **Trazabilidad resiliente:** se soporta `traceId` y `requestId` desde headers o body para compatibilidad con diferentes middlewares backend.
 - **Observabilidad incremental:** logging estructurado agregado en `httpClient` para centralizar telemetría de errores API sin modificar cada pantalla.

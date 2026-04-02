@@ -1,5 +1,7 @@
 import { createHttpClient } from './httpClient';
 import { endpoints } from './endpoints';
+import { featureFlags } from '../config/featureFlags';
+import { getLegacyIAVisibilityList } from './iaVisibilityLegacySource';
 import {
   IAVisibilityConfigResponseContract,
   IAVisibilityHistoryResponseContract,
@@ -37,8 +39,13 @@ export interface IAVisibilityListResponse {
 
 
 export const iaVisibilityService = {
-  list: (clientId: string): Promise<IAVisibilityListResponse> =>
-    httpClient.get<IAVisibilityListResponse>(endpoints.ai.visibilityList(clientId)),
+  list: (clientId: string): Promise<IAVisibilityListResponse> => {
+    if (featureFlags.iaVisibilityBackendSource) {
+      return httpClient.get<IAVisibilityListResponse>(endpoints.ai.visibilityList(clientId));
+    }
+
+    return getLegacyIAVisibilityList(clientId);
+  },
 
   run: (payload: IAVisibilityRequest) =>
     httpClient.post<IAVisibilityResponse>(endpoints.ai.visibilityRun(), payload),
