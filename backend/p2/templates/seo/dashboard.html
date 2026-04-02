@@ -53,7 +53,7 @@
             <div class="alert alert-light border small mb-3">
                 <strong>Cómo funciona esta pestaña:</strong><br>
                 1) Pega tus keywords y, si tienes, un Excel histórico de clusters. <br>
-                2) Elige país, idioma y motor de búsqueda (Google oficial, scraping o DuckDuckGo).<br>
+                2) Elige país, idioma y motor de búsqueda (Google oficial, scraping o DuckDuckGo). Para DataForSEO: <strong>STANDARD</strong> (más barato, respuesta asíncrona) para la mayoría de análisis; <strong>LIVE</strong> (realtime) solo cuando necesites resultados inmediatos con más coste y posible mayor latencia.<br>
                 3) Define <strong>Top N</strong> (nº de resultados por keyword) y <strong>Strict</strong> (qué tan exigente es el match entre keywords).<br>
                 4) Opcional: indica tu <strong>dominio objetivo</strong> para ver en qué clusters ya rankeas (<em>OWNED</em>) y cuáles son oportunidad.
             </div>
@@ -96,6 +96,12 @@
                                 <option value="google_scraping">Google Scraping (Sin Cookie)</option>
                                 <option value="google_nuclear">Google Nuclear (Con Cookie)</option>
                             </select>
+
+                            <div class="form-check form-switch mb-2" id="realtimeControl">
+                                <input class="form-check-input" type="checkbox" role="switch" id="requireRealtime" name="requireRealtime" value="true">
+                                <label class="form-check-label" for="requireRealtime">DataForSEO LIVE (realtime)</label>
+                                <div class="small text-muted">Activar solo si necesitas respuesta inmediata. Puede aumentar coste por consulta y latencia frente a STANDARD.</div>
+                            </div>
                             
                             <!-- OPCIONES API GOOGLE -->
                             <div id="optsCSE" style="display:none;" class="alert alert-info p-2 mb-2">
@@ -257,7 +263,12 @@ window.addEventListener('load', () => {
         const data = JSON.parse(saved);
         Object.entries(data).forEach(([k,v])=>{
             const el = form.elements[k];
-            if (el) el.value = v;
+            if (!el) return;
+            if (el.type === 'checkbox') {
+                el.checked = v === true || v === 'true';
+            } else {
+                el.value = v;
+            }
         });
         // Forzar opciones según modo
         modeSel.dispatchEvent(new Event('change'));
@@ -302,7 +313,12 @@ form.addEventListener('submit', e => {
     // Guardar config (incluye target_domain)
     const data = {};
     Array.from(form.elements).forEach(el => {
-        if (el.name) data[el.name] = el.value;
+        if (!el.name) return;
+        if (el.type === 'checkbox') {
+            data[el.name] = el.checked;
+        } else {
+            data[el.name] = el.value;
+        }
     });
     localStorage.setItem('seoConfig', JSON.stringify(data));
 
@@ -314,10 +330,7 @@ form.addEventListener('submit', e => {
     document.getElementById('progressPanel').style.display='block';
 
     const formData = new FormData(e.target);
-    // Realtime es opcional y por defecto permanece desactivado en Estrategia.
-    if (!formData.has('requireRealtime')) {
-        formData.set('requireRealtime', 'false');
-    }
+    formData.set('requireRealtime', form.elements['requireRealtime'].checked ? 'true' : 'false');
 
     fetch('/seo/start', {method:'POST', body: formData})
         .then(r=>r.json())
