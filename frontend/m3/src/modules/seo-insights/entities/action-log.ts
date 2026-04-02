@@ -10,6 +10,8 @@ export interface ActionLog extends BaseEntity {
   recommendationId?: Uuid;
   toolKey?: string;
   insightType?: string;
+  sectorId?: Uuid;
   patternIgnored?: boolean;
   applied?: boolean;
+  wasEffective?: boolean;
 }

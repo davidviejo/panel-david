@@ -83,11 +83,9 @@ export function computeRecommendationDelta({
   const ineffectiveByInsightType = typedFeedback.filter(
     (entry) => entry.wasEffective === false || entry.rating <= 2,
   ).length + typedOutcomes.filter((entry) => entry.outcomeStatus === 'worsened').length;
+  const insightTypeSignals = typedFeedback.length + typedOutcomes.length;
 
-  if (
-    typedFeedback.length >= 2 &&
-    effectiveByInsightType > ineffectiveByInsightType
-  ) {
+  if (insightTypeSignals >= 2 && effectiveByInsightType > ineffectiveByInsightType) {
     delta += RECOMMENDATION_FEEDBACK_RULES.INSIGHT_TOOL_EFFECTIVE_BOOST;
   }
 
@@ -122,7 +120,7 @@ export function computeRecommendationDelta({
     delta -= RECOMMENDATION_FEEDBACK_RULES.LOW_USAGE_OR_INEFFECTIVE_PENALTY * 0.6;
   }
 
-  if (typedFeedback.length >= 2 && ineffectiveByInsightType >= effectiveByInsightType) {
+  if (insightTypeSignals >= 2 && ineffectiveByInsightType >= effectiveByInsightType) {
     delta -= RECOMMENDATION_FEEDBACK_RULES.LOW_USAGE_OR_INEFFECTIVE_PENALTY;
   }
 
