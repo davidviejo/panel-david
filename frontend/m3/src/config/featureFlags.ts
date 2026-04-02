@@ -20,6 +20,10 @@ const resolveIAVisibilityBackendSource = (): boolean => {
   return toBooleanFlag(import.meta.env.VITE_FF_IA_VISIBILITY_BACKEND_SOURCE, true);
 };
 
+const resolvePortalOverviewFallback = (): boolean =>
+  toBooleanFlag(import.meta.env.VITE_FF_PORTAL_OVERVIEW_FALLBACK, false);
+
 export const featureFlags = {
   iaVisibilityBackendSource: resolveIAVisibilityBackendSource(),
+  portalOverviewFallback: resolvePortalOverviewFallback(),
 };
