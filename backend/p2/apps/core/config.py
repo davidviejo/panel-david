@@ -35,6 +35,12 @@ class Config:
     OPERATOR_PASSWORD = os.environ.get('OPERATOR_PASSWORD', '123456')
 
     JWT_SECRET = os.environ.get('JWT_SECRET', secrets.token_hex(32))
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'false').lower() == 'true'
+    SESSION_COOKIE_SAMESITE = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
+    SESSION_COOKIE_HTTPONLY = True
+    PORTAL_AUTH_COOKIE_SECURE = os.environ.get('PORTAL_AUTH_COOKIE_SECURE', str(SESSION_COOKIE_SECURE)).lower() == 'true'
+    PORTAL_AUTH_COOKIE_SAMESITE = os.environ.get('PORTAL_AUTH_COOKIE_SAMESITE', 'Lax')
+    PORTAL_AUTH_MAX_AGE_SECONDS = int(os.environ.get('PORTAL_AUTH_MAX_AGE_SECONDS', 24 * 60 * 60))
 
     # Job Runner Configuration
     JOBS_CONCURRENCY_LIMIT = int(os.environ.get('JOBS_CONCURRENCY_LIMIT', 2))

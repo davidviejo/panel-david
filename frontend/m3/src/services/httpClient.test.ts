@@ -18,8 +18,7 @@ describe('httpClient', () => {
     sessionStorage.clear();
   });
 
-  it('injects Authorization header from sessionStorage', async () => {
-    sessionStorage.setItem('portal_token', 'token-123');
+  it('uses cookie credentials by default for authenticated requests', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -38,7 +37,23 @@ describe('httpClient', () => {
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const headers = new Headers(init.headers);
-    expect(headers.get('Authorization')).toBe('Bearer token-123');
+    expect(headers.get('Authorization')).toBeNull();
+    expect(init.credentials).toBe('include');
+  });
+
+  it('redirects to login on 401 for protected routes without redirect loops', async () => {
+    window.location.hash = '#/c/demo/overview';
+
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      headers: new Headers(),
+      json: async () => ({ error: 'expired', code: 'AUTH_UNAUTHORIZED' }),
+    });
+
+    const client = createHttpClient({ service: 'api' });
+    await expect(client.get('api/protected')).rejects.toMatchObject({ status: 401 });
+    expect(window.location.hash).toBe('#/clientes?reason=session-expired');
   });
 
   it('normalizes HTTP errors with unique error shape and traceability ids from headers', async () => {

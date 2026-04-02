@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { PortalShell } from '../../components/shell/ShellVariants';
@@ -10,7 +10,9 @@ const ClientsLogin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const sessionExpired = searchParams.get('reason') === 'session-expired';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +21,7 @@ const ClientsLogin: React.FC = () => {
 
     try {
       const res = await api.authClientsArea(password);
-      if (res.token) {
+      if (res.role) {
         navigate('/clientes/dashboard');
       } else {
         setError('Contraseña incorrecta');
@@ -40,6 +42,9 @@ const ClientsLogin: React.FC = () => {
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Área de Clientes</h1>
           <p className="text-slate-500 mt-2">Introduce la contraseña global para acceder.</p>
+          {sessionExpired && (
+            <p className="mt-2 text-sm text-amber-600">Tu sesión expiró. Inicia sesión nuevamente.</p>
+          )}
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">

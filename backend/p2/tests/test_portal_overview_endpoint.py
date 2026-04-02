@@ -31,7 +31,8 @@ def test_project_overview_returns_401_without_auth_header():
 
     assert response.status_code == 401
     payload = response.get_json()
-    assert payload['error'] == 'Missing or invalid Authorization header'
+    assert payload['error'] == 'Invalid or expired token'
+    assert payload['code'] == 'AUTH_UNAUTHORIZED'
     assert payload['traceId']
 
 
@@ -46,6 +47,7 @@ def test_project_overview_returns_403_for_scope_mismatch():
     assert response.status_code == 403
     payload = response.get_json()
     assert payload['error'] == 'Access denied for this project'
+    assert payload['code'] == 'AUTH_FORBIDDEN'
 
 
 def test_project_overview_returns_404_when_slug_does_not_exist():

@@ -20,7 +20,12 @@ def _resolve_trace_id():
 
 def _error_response(message, status_code):
     trace_id = _resolve_trace_id()
+    code = {
+        401: 'AUTH_UNAUTHORIZED',
+        403: 'AUTH_FORBIDDEN',
+    }.get(status_code, f'HTTP_{status_code}')
     payload = {
+        'code': code,
         'error': message,
         'traceId': trace_id,
         'requestId': trace_id,
@@ -46,13 +51,10 @@ def _get_payload_from_token(token):
 
 def _get_web_payload():
     """
-    Resolve auth payload for HTML views.
-    Priority: Flask session payload -> JWT in session -> JWT in HttpOnly cookie -> Bearer header.
+    Resolve auth payload for HTML views and API routes.
+    Priority: JWT in Flask session -> JWT in HttpOnly cookie -> Bearer header.
+    Note: payload cache in session is refreshed from a validated token to avoid stale roles after expiration.
     """
-    payload = session.get('auth_payload')
-    if payload:
-        return payload
-
     for token in (
         session.get('auth_token'),
         request.cookies.get(WEB_AUTH_COOKIE),
@@ -69,11 +71,10 @@ def require_role(allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            token = _extract_bearer_token_from_header()
-            if not token:
-                return _error_response('Missing or invalid Authorization header', 401)
-
-            payload = _get_payload_from_token(token)
+            payload = _get_web_payload()
+            if not payload:
+                token = _extract_bearer_token_from_header()
+                payload = _get_payload_from_token(token)
 
             if not payload:
                 return _error_response('Invalid or expired token', 401)

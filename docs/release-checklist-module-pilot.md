@@ -65,3 +65,14 @@ La decisión se toma en la revisión semanal y antes de cada subida de porcentaj
   2. navegación a `/c/:slug/overview`,
   3. render de métricas desde backend,
   4. validación de mensajes consistentes para 401/403/404/500 vía `normalizeApiError`.
+
+
+## Actualización auth/session unificada (2026-04-02)
+
+- Estrategia aprobada: **cookie HttpOnly + sesión Flask** (sin dependencia de `portal_token` en frontend).
+- `httpClient` usa `credentials: include` y redirección uniforme ante `401` sin loop de login.
+- Endpoints nuevos: `GET /api/auth/session` y `POST /api/auth/logout`.
+- Validado logout confiable FE/BE (limpieza cookie + sesión + navegación a login).
+- Cobertura de tests agregada:
+  - frontend `httpClient`: credenciales por cookie y redirect 401.
+  - backend auth/session: login, sesión válida/inválida y logout.

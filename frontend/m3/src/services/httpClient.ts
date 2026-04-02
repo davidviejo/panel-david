@@ -14,6 +14,7 @@ export interface HttpRequestConfig extends Omit<RequestInit, 'body'> {
   timeoutMs?: number;
   body?: unknown;
   includeAuth?: boolean;
+  onUnauthorizedRedirect?: boolean;
 }
 
 export interface HttpClientErrorPayload {
@@ -60,6 +61,7 @@ export class HttpClientError extends Error implements NormalizedHttpError {
 const DEFAULT_TIMEOUT_MS = 12000;
 const ENGINE_DEFAULT_TIMEOUT_MS = 90000;
 const DEFAULT_ERROR_MESSAGE = 'Request failed';
+let hasActiveUnauthorizedRedirect = false;
 
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 const trimLeadingSlash = (value: string): string => value.replace(/^\/+/, '');
@@ -212,6 +214,43 @@ const normalizeNetworkError = (error: unknown): NormalizedHttpError => ({
   message: (error as Error)?.message || DEFAULT_ERROR_MESSAGE,
 });
 
+
+const resolveUnauthorizedRedirectHash = (): string | null => {
+  const hash = window.location.hash || '';
+
+  if (hash.startsWith('#/operator')) {
+    return '#/operator?reason=session-expired';
+  }
+
+  if (hash.startsWith('#/c/') || hash.startsWith('#/p/')) {
+    return '#/clientes?reason=session-expired';
+  }
+
+  if (hash.startsWith('#/clientes/dashboard')) {
+    return '#/clientes?reason=session-expired';
+  }
+
+  if (hash.startsWith('#/clientes')) {
+    return null;
+  }
+
+  return '#/clientes?reason=session-expired';
+};
+
+const redirectOnUnauthorized = () => {
+  if (hasActiveUnauthorizedRedirect) {
+    return;
+  }
+
+  const targetHash = resolveUnauthorizedRedirectHash();
+  if (!targetHash) {
+    return;
+  }
+
+  hasActiveUnauthorizedRedirect = true;
+  window.location.hash = targetHash;
+};
+
 export const createHttpClient = (config: HttpClientConfig = {}) => {
   const baseURL = normalizeBaseUrl(config);
   const includeAuth = config.includeAuth !== false;
@@ -229,21 +268,22 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
     }
 
     const shouldIncludeAuth = requestConfig.includeAuth ?? includeAuth;
-
-    if (shouldIncludeAuth) {
-      const token = sessionStorage.getItem('portal_token');
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-    }
+    const shouldRedirectOnUnauthorized = requestConfig.onUnauthorizedRedirect ?? shouldIncludeAuth;
 
     const endpoint = `${baseURL}/${trimLeadingSlash(path)}`;
 
     try {
-      const { includeAuth: _includeAuth, timeoutMs: _timeoutMs, body, ...fetchInit } = requestConfig;
+      const {
+        includeAuth: _includeAuth,
+        timeoutMs: _timeoutMs,
+        onUnauthorizedRedirect: _onUnauthorizedRedirect,
+        body,
+        ...fetchInit
+      } = requestConfig;
 
       const response = await fetch(endpoint, {
         ...fetchInit,
+        credentials: fetchInit.credentials ?? 'include',
         headers,
         body: toRequestBody(body),
         signal: controller.signal,
@@ -260,7 +300,11 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
           traceId: normalizedError.traceId,
           requestId: normalizedError.requestId,
         });
-        throw new HttpClientError(normalizedError);
+        const clientError = new HttpClientError(normalizedError);
+        if (response.status === 401 && shouldRedirectOnUnauthorized) {
+          redirectOnUnauthorized();
+        }
+        throw clientError;
       }
 
       if (response.status === 204) {
