@@ -83,3 +83,15 @@ La decisión se toma en la revisión semanal y antes de cada subida de porcentaj
 - Cobertura de tests agregada:
   - frontend `httpClient`: credenciales por cookie y redirect 401.
   - backend auth/session: login, sesión válida/inválida y logout.
+
+## Evidencia módulo Trends Media (2026-04-02)
+
+- Migración completada a backend como fuente de verdad para noticias (`POST /trends/media/news` + alias `/api/v1/trends/media/news`).
+- Frontend dejó de consumir SerpApi directo y usa `httpClient` unificado (`frontend/m3/src/features/trends-media/services/serp.ts`).
+- Rollback controlado por flag temporal:
+  - `VITE_TRENDS_MEDIA_DATA_SOURCE=backend` (default)
+  - `VITE_TRENDS_MEDIA_DATA_SOURCE=legacy` (solo dev/test; en producción falla explícitamente para evitar fallback silencioso).
+- Evidencia de checks ejecutados:
+  - build/lint/tests frontend del módulo (`trendsMediaMapper`, `serp service`).
+  - tests backend endpoint (`test_trends_media_news_endpoint.py`).
+  - smoke mínimo: flujo Trends con estados loading/error/empty y trazabilidad visible en errores.

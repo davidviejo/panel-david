@@ -116,3 +116,26 @@ export const iaVisibilityService = {
 ```
 
 Este patrón permite migraciones incrementales módulo por módulo sin romper funcionalidades existentes.
+
+## Ejemplo real (Trends Media)
+
+`frontend/m3/src/features/trends-media/services/serp.ts` consume únicamente API interna vía `httpClient`:
+
+```ts
+const response = await httpClient.post<TrendsMediaNewsResponseContract>(
+  endpoints.trendsMedia.news(),
+  {
+    queries: settings.searchQueries,
+    provider: appSettings.defaultSerpProvider || 'serpapi',
+    language: 'es',
+    country: 'es',
+    maxResults: 100,
+  },
+);
+```
+
+Buenas prácticas aplicadas:
+- DTO tipado en `shared/api/contracts/trendsMedia.ts`.
+- Mapper backend → UI sin `any`.
+- Error con trazabilidad propagada a UX (`traceId/requestId`) para soporte/observabilidad.
+- Feature flag de rollback (`VITE_TRENDS_MEDIA_DATA_SOURCE=legacy`) solo para dev/test; en producción lanza error explícito.

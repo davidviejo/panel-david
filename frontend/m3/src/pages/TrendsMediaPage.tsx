@@ -46,8 +46,20 @@ const TrendsMediaPage: React.FC = () => {
       if (currentView === 'dashboard') setCurrentView('brief');
 
       const rawArticles = await fetchSerpResults(settings);
+      if (rawArticles.length === 0) {
+        setNewsClusters([]);
+        setPipelineStatus('done');
+        setStatusMessage('No se encontraron noticias para las queries configuradas.');
+        return;
+      }
       setStatusMessage('Procesando: deduplicando y calculando scores...');
       const processedClusters = processNews(rawArticles);
+      if (processedClusters.length === 0) {
+        setNewsClusters([]);
+        setPipelineStatus('done');
+        setStatusMessage('No hubo clusters válidos tras deduplicación.');
+        return;
+      }
 
       setPipelineStatus('analyzing');
       setStatusMessage(`Analizando ${processedClusters.length} temas con Gemini AI...`);
