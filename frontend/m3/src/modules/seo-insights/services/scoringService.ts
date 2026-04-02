@@ -4,6 +4,7 @@ import {
   computeConfidenceScore,
   computeFreshnessScore,
   computeImpactScore,
+  computeScoreComponents,
   computeSeverityScore,
   type ScoreInsightInput,
 } from '../scoring/scoreInsight';
@@ -31,5 +32,6 @@ export {
   computeConfidenceScore,
   computeFreshnessScore,
   computeImpactScore,
+  computeScoreComponents,
   computeSeverityScore,
 };
