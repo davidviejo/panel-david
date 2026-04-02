@@ -21,6 +21,11 @@ from apps.tools.utils import is_safe_url, sanitize_log_message
 class GoogleAPIError(Exception):
     pass
 
+
+class GoogleSERPBlockedError(Exception):
+    """Señal controlada para indicar bloqueo/captcha en la SERP."""
+    pass
+
 # --- ROBUST SCRAPING SESSION ---
 def create_robust_session() -> requests.Session:
     """
@@ -130,7 +135,58 @@ def get_optimized_headers(cookie: Optional[str] = None) -> Dict[str, str]:
         headers['Cookie'] = Config.DEFAULT_COOKIE
     return headers
 
-def parse_google_html(html_content: str) -> List[Dict[str, str]]:
+def _extract_google_redirect_target(raw_href: str) -> str:
+    if not raw_href:
+        return ""
+
+    href = raw_href.strip()
+    if href.startswith('/url?'):
+        parsed = urllib.parse.urlparse(href)
+        q = urllib.parse.parse_qs(parsed.query)
+        target = (q.get('q') or q.get('url') or [""])[0]
+        return urllib.parse.unquote(target) if target else ""
+    return href
+
+
+def _canonicalize_result_url(raw_href: str) -> str:
+    candidate = _extract_google_redirect_target(raw_href)
+    if not candidate:
+        return ""
+
+    parsed = urllib.parse.urlparse(candidate)
+    if parsed.scheme not in {"http", "https"}:
+        return ""
+    if not parsed.netloc:
+        return ""
+
+    host = parsed.netloc.lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if "google." in host:
+        return ""
+
+    blocked_tracking_params = {
+        "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+        "gclid", "gbraid", "wbraid", "fbclid", "ved", "ei", "sa", "usg"
+    }
+    filtered_query = [
+        (k, v)
+        for k, v in urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+        if k.lower() not in blocked_tracking_params
+    ]
+
+    canonical = urllib.parse.urlunparse((
+        parsed.scheme.lower(),
+        host,
+        parsed.path.rstrip('/'),
+        '',
+        urllib.parse.urlencode(filtered_query, doseq=True),
+        ''
+    ))
+    return canonical
+
+
+def parse_google_html(html_content: str) -> Union[List[Dict[str, str]], Dict[str, str]]:
     """
     Analiza el HTML de una página de resultados de Google (SERP) para extraer URLs y títulos.
 
@@ -138,54 +194,73 @@ def parse_google_html(html_content: str) -> List[Dict[str, str]]:
         html_content (str): El contenido HTML de la SERP.
 
     Returns:
-        list: Lista de diccionarios con 'url' y 'title' de los resultados orgánicos.
+        list|dict: Lista de resultados orgánicos o {"status":"blocked"} si hay captcha/bloqueo.
     """
+    blocked_markers = (
+        "sorry",
+        "unusual traffic",
+        "detected unusual traffic",
+        "our systems have detected unusual traffic",
+        "recaptcha",
+    )
+    lowered_html = (html_content or "").lower()
+    if any(marker in lowered_html for marker in blocked_markers):
+        return {"status": "blocked"}
+
     soup = BeautifulSoup(html_content, 'html.parser')
     results: List[Dict[str, str]] = []
+    seen_urls = set()
 
-    # INTENTO 1: Selectores Modernos (Para modo Nuclear/Cookies)
-    # Google moderno usa estructuras complejas. Buscamos el contenedor principal 'g'
-    # o atributos data-header-feature que suelen indicar resultados
-    for result_div in soup.select('div.g'):
-        # Filtrar basura (widgets, "otras preguntas", etc)
-        if result_div.find_parent(class_=['mgAbYb', 'kno-kp']): continue
+    def append_result(raw_href: str, title: str) -> None:
+        canonical_url = _canonicalize_result_url(raw_href)
+        if not canonical_url or canonical_url in seen_urls:
+            return
+        clean_title = (title or "").strip()
+        if not clean_title:
+            return
+        results.append({"url": canonical_url, "title": clean_title})
+        seen_urls.add(canonical_url)
 
-        anchor_tag = result_div.find('a')
-        header_tag = result_div.find('h3')
-
+    # INTENTO 1: Orgánico moderno (contenedores principales de resultado).
+    modern_containers = soup.select("div#search div.MjjYud, div#search div.g, div#rso div.MjjYud, div#rso div.g")
+    for container in modern_containers:
+        if container.select_one(
+            ".ULSxyf, .xpdopen, .kp-wholepage, .V3FYCf, .commercial-unit-desktop-top, "
+            ".related-question-pair, [data-init-vis=true]"
+        ):
+            continue
+        if container.find_parent(attrs={"data-hveid": True}) and container.select_one(".related-question-pair"):
+            continue
+        anchor_tag = container.select_one("a[href]")
+        header_tag = container.select_one("h3")
         if anchor_tag and header_tag:
-            link = anchor_tag['href']
-            if link:
-                title = header_tag.get_text(strip=True)
-
-                # Limpieza de trackers de google (/url?q=...) si aparecen
-                if '/url?q=' in link:
-                    try:
-                        link = link.split('/url?q=')[1].split('&')[0]
-                        link = urllib.parse.unquote(link)
-                    except Exception: pass
-
-                if link.startswith('http') and 'google.' not in link:
-                    if not any(r['url'] == link for r in results):
-                        results.append({'url': link, 'title': title})
+            append_result(anchor_tag.get("href", ""), header_tag.get_text(strip=True))
 
     # INTENTO 2: Selectores Legacy (Para modo GBV=1 / Sin cookies)
     if not results:
-        for anchor_tag in soup.find_all('a', href=True):
-            href = anchor_tag['href']
-            if href.startswith('/url?q='):
-                try:
-                    clean = href.split('/url?q=')[1].split('&')[0]
-                    clean = urllib.parse.unquote(clean)
-                    if 'google.' in clean: continue
+        legacy_containers = soup.select("div#main div.g, div#main .kCrYT, div.ZINbbc")
+        for container in legacy_containers:
+            anchor_tag = container.select_one("a[href^='/url?'], a[href^='http']")
+            if not anchor_tag:
+                continue
+            title_tag = container.select_one("h3") or container.select_one("div.BNeawe") or anchor_tag.select_one("span")
+            if title_tag:
+                append_result(anchor_tag.get("href", ""), title_tag.get_text(strip=True))
 
-                    # En modo legacy el título suele estar en un h3 o div dentro del a
-                    title_tag = anchor_tag.find('h3') or anchor_tag.find('div', class_='BNeawe') or anchor_tag.find('span')
-                    if title_tag:
-                        title = title_tag.get_text(strip=True)
-                        if title and not any(r['url'] == clean for r in results):
-                            results.append({'url': clean, 'title': title})
-                except Exception: continue
+    # INTENTO 3: Enlaces limpios de respaldo solo en zona orgánica (#search/#rso).
+    if not results:
+        organic_root = soup.select_one("div#search") or soup.select_one("div#rso") or soup
+        for anchor_tag in organic_root.select("a[href]"):
+            href = anchor_tag.get("href", "")
+            if not (href.startswith("/url?") or href.startswith("http")):
+                continue
+            if any(x in href for x in ("/aclk?", "/imgres?", "/search?", "/maps?")):
+                continue
+            if anchor_tag.find_parent(class_=["related-question-pair", "ULSxyf", "xpdopen"]):
+                continue
+            title_tag = anchor_tag.find("h3") or anchor_tag.find("span")
+            if title_tag:
+                append_result(href, title_tag.get_text(strip=True))
 
     return results
 
@@ -221,12 +296,46 @@ def scrape_google_serp(keyword: str, num_results: int = 10, delay: Union[int, fl
         if not cookie:
             params['gbv'] = '1'
 
+        mode = "with_cookie" if cookie else "gbv_legacy"
         response = requests.get(url, params=params, headers=get_optimized_headers(cookie), timeout=int(tos))
 
-        if response.status_code == 429: return "BLOCKED"
+        if response.status_code == 429:
+            logging.warning(
+                "Google SERP blocked keyword=%s mode=%s status=%s parsed=%s",
+                sanitize_log_message(keyword),
+                mode,
+                response.status_code,
+                0
+            )
+            return "BLOCKED"
 
         if response.status_code == 200:
-            return parse_google_html(response.text)[:num_results]
+            parsed = parse_google_html(response.text)
+            if isinstance(parsed, dict) and parsed.get("status") == "blocked":
+                logging.warning(
+                    "Google SERP blocked keyword=%s mode=%s status=%s parsed=%s",
+                    sanitize_log_message(keyword),
+                    mode,
+                    response.status_code,
+                    0
+                )
+                return "BLOCKED"
+            parsed_results = parsed[:num_results]
+            logging.info(
+                "Google SERP parsed keyword=%s mode=%s status=%s parsed=%s",
+                sanitize_log_message(keyword),
+                mode,
+                response.status_code,
+                len(parsed_results)
+            )
+            return parsed_results
+        logging.info(
+            "Google SERP no-parse keyword=%s mode=%s status=%s parsed=%s",
+            sanitize_log_message(keyword),
+            mode,
+            response.status_code,
+            0
+        )
 
     except Exception:
         logging.error("Request failed during Google SERP scrape", exc_info=True)
