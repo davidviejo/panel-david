@@ -676,6 +676,8 @@ def start():
         'google_scraping_auto_fallback': _to_bool(request.form.get('google_scraping_auto_fallback'), False),
         'google_scraping_fallback_mode': request.form.get('google_scraping_fallback_mode', 'explicit_error'),
         'google_scraping_allow_ddg_fallback': _to_bool(request.form.get('google_scraping_allow_ddg_fallback'), False),
+        # PATCH TEMPORAL: se fuerza desde frontend en pestaña Estrategia.
+        'requireRealtime': _to_bool(request.form.get('requireRealtime'), False),
 
         # NUEVO: dominio objetivo (opcional)
         'target_domain': (request.form.get('target_domain') or '').strip().lower()
