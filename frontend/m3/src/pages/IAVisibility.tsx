@@ -15,6 +15,7 @@ import {
   IAVisibilityHistoryItemViewModel,
   mapIAVisibilityHistoryToViewModel,
 } from '../shared/api/mappers/iaVisibilityMapper';
+import { getApiErrorMessage } from '../shared/api/errorHandling';
 
 const IAVisibility: React.FC = () => {
   const { t } = useTranslation();
@@ -44,12 +45,12 @@ const IAVisibility: React.FC = () => {
   useSyncScheduleFormState(scheduleResponse?.schedule, setSchedule);
 
   const rows = useMemo(() => rowsResponse?.items || [], [rowsResponse?.items]);
-  const rowsError =
-    rowsQueryError instanceof Error
-      ? rowsQueryError.message
-      : rowsQueryError
-        ? 'No fue posible cargar resultados.'
-        : null;
+  const rowsError = rowsQueryError
+    ? getApiErrorMessage(rowsQueryError, 'No fue posible cargar resultados.')
+    : null;
+  const scheduleQueryErrorMessage = scheduleQueryError
+    ? getApiErrorMessage(scheduleQueryError, 'No fue posible cargar programación.')
+    : null;
   const history: IAVisibilityHistoryItemViewModel[] = useMemo(
     () => (historyResponse?.runs || []).map(mapIAVisibilityHistoryToViewModel),
     [historyResponse?.runs],
@@ -79,9 +80,7 @@ const IAVisibility: React.FC = () => {
       setSchedule(response.schedule);
       setScheduleError(null);
     } catch (error) {
-      setScheduleError(
-        error instanceof Error ? error.message : 'No fue posible guardar programación.',
-      );
+      setScheduleError(getApiErrorMessage(error, 'No fue posible guardar programación.'));
     }
   };
 
@@ -100,9 +99,7 @@ const IAVisibility: React.FC = () => {
       });
       setScheduleError(null);
     } catch (error) {
-      setScheduleError(
-        error instanceof Error ? error.message : 'No fue posible actualizar programación.',
-      );
+      setScheduleError(getApiErrorMessage(error, 'No fue posible actualizar programación.'));
     }
   };
 
@@ -240,11 +237,9 @@ const IAVisibility: React.FC = () => {
             </button>
           )}
         </div>
-        {(scheduleError ||
-          (scheduleQueryError instanceof Error ? scheduleQueryError.message : null)) && (
+        {(scheduleError || scheduleQueryErrorMessage) && (
           <p className="mt-2 text-xs text-rose-600">
-            {scheduleError ||
-              (scheduleQueryError instanceof Error ? scheduleQueryError.message : null)}
+            {scheduleError || scheduleQueryErrorMessage}
           </p>
         )}
       </div>

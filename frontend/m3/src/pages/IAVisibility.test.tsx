@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import IAVisibility from './IAVisibility';
+import { HttpClientError } from '../services/httpClient';
 
 const mockList = vi.fn();
 const mockGetSchedule = vi.fn();
@@ -97,6 +98,22 @@ describe('IAVisibility', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Fallo backend listado')).toBeTruthy();
+    });
+  });
+
+  it('renders translated message for known HTTP status errors', async () => {
+    mockList.mockRejectedValue(
+      new HttpClientError({
+        code: 'HTTP_404',
+        status: 404,
+        message: 'Not found backend',
+      }),
+    );
+
+    renderWithProviders();
+
+    await waitFor(() => {
+      expect(screen.getByText('No encontramos la información solicitada.')).toBeTruthy();
     });
   });
 });
