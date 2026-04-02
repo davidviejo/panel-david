@@ -91,3 +91,38 @@ Fuente de contratos en frontend:
 - El frontend aplica normalización defensiva de checklist (`normalizeChecklistStatus`) para tolerar estados legacy.
 - Mutaciones `update` y `bulkUpdate` invalidan query key del módulo para asegurar refetch post-escritura.
 - Durante transición, feature flag `seoChecklistBackendSource` controla fallback local para rollback rápido.
+
+## Portal Overview (P0 flujo login → proyectos → overview)
+
+Fuente de contratos en frontend:
+- `frontend/m3/src/shared/api/contracts/projectOverview.ts`
+- Mapper/validador: `frontend/m3/src/shared/api/mappers/projectOverviewMapper.ts`
+
+### Endpoint
+
+`GET /api/:slug/overview`
+
+### Response v1 (`portal.project-overview.v1`)
+
+- `contract.id: "portal.project-overview.v1"`
+- `contract.version: "1.0"`
+- `generated_at: string (ISO-8601 UTC)`
+- `project.slug: string`
+- `project.project_id: string`
+- `metrics.urls_tracked: number`
+- `metrics.urls_ok: number`
+- `metrics.health_score: number (0-100)`
+- `metrics.issues_open: number`
+- `recent_issues: Array<{ message: string; count: number }>`
+
+### Seguridad y errores
+
+- Roles permitidos: `project`, `clients_area`, `operator`.
+- Scope estricto para rol `project` (`scope === slug`), en caso contrario `403`.
+- Error payload estandarizado: `{ error, traceId, requestId }`.
+- Headers de trazabilidad: `x-trace-id`, `x-request-id`.
+
+### Versionado
+
+- Cambios no rompientes: añadir campos opcionales.
+- Cambios rompientes: publicar `portal.project-overview.v2` con compatibilidad por mapper en frontend.

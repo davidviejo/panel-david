@@ -53,3 +53,15 @@ La decisión se toma en la revisión semanal y antes de cada subida de porcentaj
 - Evidencia de smoke pass.
 - Snapshot de métricas de observabilidad durante canary.
 - Registro de decisión GO/NO-GO con fecha, owner y riesgos residuales.
+
+## Evidencia módulo Portal Overview (2026-04-02)
+
+- Backend tests endpoint overview: 200/401/403/404 (`backend/p2/tests/test_portal_overview_endpoint.py`).
+- Frontend tests overview:
+  - render éxito/error/empty (`frontend/m3/src/pages/portal/ProjectOverview.test.tsx`)
+  - validación/mapper contrato (`frontend/m3/src/shared/api/mappers/projectOverviewMapper.test.ts`)
+- Smoke funcional ejecutado en flujo piloto:
+  1. login de proyecto válido,
+  2. navegación a `/c/:slug/overview`,
+  3. render de métricas desde backend,
+  4. validación de mensajes consistentes para 401/403/404/500 vía `normalizeApiError`.
