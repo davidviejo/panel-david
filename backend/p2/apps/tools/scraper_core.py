@@ -140,7 +140,7 @@ def build_dataforseo_request(
         "depth": cfg.get("depth"),
         "max_crawl_pages": cfg.get("max_crawl_pages"),
         "requireRealtime": cfg.get("requireRealtime"),
-        "keyword_count": len([kw for kw in (keywords or [keyword]) if str(kw).strip()]),
+        "batch_size": len([kw for kw in (keywords or [keyword]) if str(kw).strip()]),
     })
     if not range_validation["valid"]:
         raise ValueError(" ".join(range_validation["errors"]))
@@ -183,6 +183,8 @@ def build_dataforseo_request(
     ]
     if not normalized_keywords:
         normalized_keywords = [keyword]
+    if require_realtime and len(normalized_keywords) > 1:
+        raise ValueError("Con requireRealtime=true no se permite batching de múltiples keywords.")
 
     effective_mode = "LIVE" if require_realtime else "STANDARD"
     effective_keywords = normalized_keywords if not require_realtime else normalized_keywords[:1]

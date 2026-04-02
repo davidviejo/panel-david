@@ -628,7 +628,7 @@ def start():
         'depth': depth,
         'max_crawl_pages': max_crawl_pages,
         'requireRealtime': _to_bool(request.form.get('requireRealtime'), False),
-        'keyword_count': len([kw for kw in request.form.get('keywords', '').split('\n') if str(kw).strip()]),
+        'batch_size': 1,
     })
     if not range_validation['valid']:
         return jsonify({'status': 'error', 'message': " ".join(range_validation['errors'])}), 400
