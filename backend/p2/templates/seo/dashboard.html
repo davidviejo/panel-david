@@ -587,11 +587,12 @@ function copyStructure(id){
 }
 
 function exportStrategyResults(){
+    const noDataMessage = 'No hay datos recolectados; ejecuta Estrategia primero';
     hideAlert();
     fetch('/seo/download')
         .then(async (response) => {
             if (!response.ok) {
-                let message = 'No hay datos recolectados; ejecuta Estrategia primero';
+                let message = noDataMessage;
                 try {
                     const errorData = await response.json();
                     if (errorData?.message) {
@@ -613,7 +614,7 @@ function exportStrategyResults(){
             window.URL.revokeObjectURL(url);
         })
         .catch(() => {
-            showAlert('No hay datos recolectados; ejecuta Estrategia primero');
+            showAlert(noDataMessage);
         });
 }
 
