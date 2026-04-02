@@ -276,6 +276,14 @@ function hideAlert() {
     alertBox.textContent = '';
 }
 
+function resetRunState(message) {
+    startBtn.disabled = false;
+    startBtn.innerText = 'INICIAR';
+    document.getElementById('progressPanel').style.display='none';
+    document.getElementById('configPanel').style.display='block';
+    if (message) showAlert(message);
+}
+
 // Guardar + validar + lanzar
 form.addEventListener('submit', e => {
     e.preventDefault();
@@ -314,14 +322,12 @@ form.addEventListener('submit', e => {
         .then(d=>{
             if(d.status==='ok') {
                 poll();
-            } else if (d.status === 'busy') {
-                showAlert('Ya hay un proceso en marcha. Espera a que termine antes de lanzar otro.');
             } else {
-                showAlert(d.message || 'Error inesperado al iniciar el proceso.');
+                resetRunState(d.message || 'Error inesperado al iniciar el proceso.');
             }
         })
-        .catch(()=>{
-            showAlert('No se ha podido conectar con el servidor.');
+        .catch((err)=>{
+            resetRunState(err?.message || 'No se ha podido conectar con el servidor.');
         });
 });
 
