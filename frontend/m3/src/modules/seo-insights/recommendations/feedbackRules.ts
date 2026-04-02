@@ -74,12 +74,15 @@ export function computeRecommendationDelta({
   const typedFeedback = feedbackForRecommendation.filter(
     (entry) => !insightType || !entry.insightType || entry.insightType === insightType,
   );
+  const typedOutcomes = outcomesForRecommendation.filter(
+    (entry) => !insightType || !entry.insightType || entry.insightType === insightType,
+  );
   const effectiveByInsightType = typedFeedback.filter(
     (entry) => entry.wasEffective === true || entry.rating >= 4,
-  ).length;
+  ).length + typedOutcomes.filter((entry) => entry.outcomeStatus === 'improved').length;
   const ineffectiveByInsightType = typedFeedback.filter(
     (entry) => entry.wasEffective === false || entry.rating <= 2,
-  ).length;
+  ).length + typedOutcomes.filter((entry) => entry.outcomeStatus === 'worsened').length;
 
   if (
     typedFeedback.length >= 2 &&
@@ -112,8 +115,10 @@ export function computeRecommendationDelta({
   const usageSignals =
     actionsForRecommendation.filter((entry) => entry.applied === true).length +
     feedbackForRecommendation.filter((entry) => entry.wasUsed === true).length;
+  const totalInteractionSignals =
+    actionsForRecommendation.length + feedbackForRecommendation.length + outcomesForRecommendation.length;
 
-  if (usageSignals < 2) {
+  if (totalInteractionSignals >= 2 && usageSignals < 2) {
     delta -= RECOMMENDATION_FEEDBACK_RULES.LOW_USAGE_OR_INEFFECTIVE_PENALTY * 0.6;
   }
 

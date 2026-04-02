@@ -184,4 +184,18 @@ describe('recommendationService', () => {
     expect(ranked[0].weight).toBeGreaterThanOrEqual(ranked[1].weight ?? 0);
     expect(ranked.some((entry) => entry.tested)).toBe(true);
   });
+
+  it('keeps base priority weight when there is no interaction history', () => {
+    const result = applyRecommendationFeedback({
+      recommendation: BASE_RECOMMENDATION,
+      insight: { analysisType: 'manual' },
+      feedbackLogs: [],
+      actionLogs: [],
+      outcomeLogs: [],
+    });
+
+    expect(result.weight).toBe(0.7);
+    expect(result.delta).toBe(0);
+    expect(result.tested).toBe(false);
+  });
 });
