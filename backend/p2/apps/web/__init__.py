@@ -93,6 +93,11 @@ def create_app(config_class=Config):
     app = Flask(__name__, template_folder='../../templates', static_folder='../../static')
     app.config.from_object(config_class)
 
+    if app.config.get('SESSION_COOKIE_SAMESITE') is None:
+        app.config['SESSION_COOKIE_SAMESITE'] = 'None' if str(app.config.get('FRONTEND_URL', '')).startswith('https://') else 'Lax'
+    if app.config.get('SESSION_COOKIE_SECURE') is None:
+        app.config['SESSION_COOKIE_SECURE'] = str(app.config.get('FRONTEND_URL', '')).startswith('https://')
+
     # --- SECURITY: Auto-hash passwords if plain text ---
     clients_pass = app.config.get('CLIENTS_AREA_PASSWORD')
     if clients_pass and not clients_pass.startswith('$2'):

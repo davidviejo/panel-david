@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../services/api';
+import { consumeAuthFlashMessage } from '../../services/authSession';
 import { ArrowLeft, Key } from 'lucide-react';
 import { PortalShell } from '../../components/shell/ShellVariants';
 import { Card } from '../../components/ui/Card';
@@ -13,6 +14,13 @@ const ProjectLogin: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const flashMessage = consumeAuthFlashMessage();
+    if (flashMessage) {
+      setError(flashMessage);
+    }
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!slug) return;
@@ -22,7 +30,7 @@ const ProjectLogin: React.FC = () => {
 
     try {
       const res = await api.authProject(slug, password);
-      if (res.token) {
+      if (res.authenticated) {
         navigate(`/c/${slug}/overview`);
       } else {
         setError('Contraseña incorrecta');

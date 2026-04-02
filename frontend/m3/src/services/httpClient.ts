@@ -1,5 +1,6 @@
 import { logApiError } from '../shared/api/apiErrorLogger';
 import { resolveApiUrl, resolveEngineUrl } from './apiUrlHelper';
+import { handleUnauthorizedSession } from './authSession';
 
 export type ServiceBase = 'api' | 'engine';
 
@@ -230,12 +231,6 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
 
     const shouldIncludeAuth = requestConfig.includeAuth ?? includeAuth;
 
-    if (shouldIncludeAuth) {
-      const token = sessionStorage.getItem('portal_token');
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-    }
 
     const endpoint = `${baseURL}/${trimLeadingSlash(path)}`;
 
@@ -246,10 +241,15 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
         ...fetchInit,
         headers,
         body: toRequestBody(body),
+        credentials: 'include',
         signal: controller.signal,
       });
 
       if (!response.ok) {
+        if (shouldIncludeAuth && response.status === 401) {
+          handleUnauthorizedSession();
+        }
+
         const payload = await parseErrorPayload(response);
         const normalizedError = normalizeHttpError(payload, response.status, response.headers);
         logApiError({

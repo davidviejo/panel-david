@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHttpClient } from './httpClient';
 
+const handleUnauthorizedSessionMock = vi.fn();
+vi.mock('./authSession', () => ({
+  handleUnauthorizedSession: () => handleUnauthorizedSessionMock(),
+}));
+
 describe('httpClient', () => {
   const fetchMock = vi.fn();
   const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -9,6 +14,7 @@ describe('httpClient', () => {
     vi.stubGlobal('fetch', fetchMock);
     sessionStorage.clear();
     consoleErrorSpy.mockClear();
+    handleUnauthorizedSessionMock.mockClear();
   });
 
   afterEach(() => {
@@ -18,8 +24,7 @@ describe('httpClient', () => {
     sessionStorage.clear();
   });
 
-  it('injects Authorization header from sessionStorage', async () => {
-    sessionStorage.setItem('portal_token', 'token-123');
+  it('always sends cookies with credentials include', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -29,16 +34,29 @@ describe('httpClient', () => {
     const client = createHttpClient({ service: 'api' });
     await client.post('api/test', { hello: 'world' });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringMatching(/\/api\/test$/),
-      expect.objectContaining({
-        headers: expect.any(Headers),
-      }),
-    );
-
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.credentials).toBe('include');
+
     const headers = new Headers(init.headers);
-    expect(headers.get('Authorization')).toBe('Bearer token-123');
+    expect(headers.get('Authorization')).toBeNull();
+  });
+
+  it('redirects uniformly on 401 auth failures', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      headers: new Headers(),
+      json: async () => ({ code: 'AUTH_SESSION_EXPIRED', message: 'Invalid or expired session' }),
+    });
+
+    const client = createHttpClient({ service: 'api' });
+
+    await expect(client.get('api/private')).rejects.toMatchObject({
+      status: 401,
+      code: 'AUTH_SESSION_EXPIRED',
+    });
+
+    expect(handleUnauthorizedSessionMock).toHaveBeenCalledTimes(1);
   });
 
   it('normalizes HTTP errors with unique error shape and traceability ids from headers', async () => {

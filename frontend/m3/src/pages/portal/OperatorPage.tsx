@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { consumeAuthFlashMessage } from '../../services/authSession';
 import { Terminal, Play } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -15,6 +16,13 @@ const OperatorPage: React.FC = () => {
   const [output, setOutput] = useState<string[]>([]);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const flashMessage = consumeAuthFlashMessage();
+    if (flashMessage) {
+      setError(flashMessage);
+    }
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -22,7 +30,7 @@ const OperatorPage: React.FC = () => {
 
     try {
       const res = await api.authOperator(password);
-      if (res.token) {
+      if (res.authenticated) {
         setIsAuthenticated(true);
       } else {
         setError('Acceso denegado');
@@ -51,9 +59,8 @@ const OperatorPage: React.FC = () => {
               <Terminal className="mr-2" /> Operator Console
             </h1>
             <button
-              onClick={() => {
-                api.logout();
-                navigate('/');
+              onClick={async () => {
+                await api.logout();
               }}
               className="text-sm text-slate-400 hover:text-white"
             >

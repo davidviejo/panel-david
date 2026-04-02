@@ -18,19 +18,36 @@ El cliente se crea con `createHttpClient(config)` en `frontend/m3/src/services/h
 Headers automáticos:
 
 - `Content-Type: application/json` cuando hay `body` serializable y no es `FormData`.
-- `Authorization: Bearer <token>` cuando existe token de sesión y `includeAuth` está activo.
+- `credentials: 'include'` en todas las requests para enviar cookie de sesión HttpOnly.
 
-## Auth token
+## Auth / Session (política unificada)
 
-El token se lee de `sessionStorage` usando la clave:
+### Decisión adoptada
 
-- `portal_token`
+Se adopta **Opción A (recomendada)**: cookie HttpOnly (`portal_auth_token`) + sesión Flask como fuente principal de autenticación.
 
-Si necesitas desactivar auth para una llamada puntual:
+- El frontend **no guarda ni lee tokens JWT** para autenticar requests.
+- El backend mantiene validación de cookie/sesión y conserva bearer header como compatibilidad legacy.
+- Login responde `authenticated`, `role`, `scope` (sin token legible), y setea cookie segura.
+- Logout (`POST /api/auth/logout`) limpia estado en backend (cookie + sesión).
 
-```ts
-client.get<MyType>('public/endpoint', { includeAuth: false });
-```
+### Trade-offs
+
+**Ventajas**
+- Menor exposición de credenciales (sin token en `sessionStorage/localStorage`).
+- Expiración y revocación centralizadas en backend.
+- Comportamiento consistente entre frontend y backend.
+
+**Costes / consideraciones**
+- Requiere `credentials: include` y CORS con `supports_credentials=True`.
+- CSRF debe evaluarse endpoint por endpoint cuando haya mutaciones sensibles cross-site.
+- Integraciones no navegador pueden seguir usando bearer como fallback temporal.
+
+### Flujos estandarizados
+
+1. Login (`clients-area`, `project/:slug`, `operator`): backend setea cookie + sesión.
+2. Expiración (`401`): `httpClient` aplica redirección uniforme por tipo de ruta y mensaje estándar de sesión expirada.
+3. Logout: frontend llama `POST /api/auth/logout`; backend invalida cookie/sesión.
 
 ## Métodos HTTP tipados
 
@@ -42,13 +59,6 @@ El cliente expone:
 - `patch<T>(path, body?, config?)`
 - `delete<T>(path, config?)`
 
-Ejemplo:
-
-```ts
-const httpClient = createHttpClient({ service: 'api' });
-const response = await httpClient.put<{ id: string; status: string }>('v1/items/1', { status: 'active' });
-```
-
 ## Errores normalizados
 
 Todos los errores (HTTP, red, timeout) se normalizan al mismo shape:
@@ -59,6 +69,7 @@ interface NormalizedHttpError {
   message: string;
   status?: number;
   traceId?: string;
+  requestId?: string;
   details?: unknown;
 }
 ```
@@ -67,44 +78,10 @@ interface NormalizedHttpError {
 
 Casos comunes:
 
-- HTTP error (`response.ok === false`):
-  - `code`: `payload.code` o fallback `HTTP_<status>`
-  - `message`: `payload.error` o `payload.message`
-  - `status`: status HTTP
-  - `traceId` y `details`: si vienen en payload
-- Timeout:
-  - `code`: `TIMEOUT_ERROR`
-  - `message`: `Request timeout after <ms>ms`
-- Network / fetch:
-  - `code`: `NETWORK_ERROR`
-  - `message`: mensaje original de fetch (si existe)
+- HTTP error (`response.ok === false`): `HTTP_<status>` o `payload.code`.
+- Timeout: `TIMEOUT_ERROR`.
+- Network / fetch: `NETWORK_ERROR`.
 
-Consumo recomendado:
-
-```ts
-try {
-  await httpClient.get<MyType>('v1/resource');
-} catch (error) {
-  const normalized = error as HttpClientError;
-  console.error(normalized.code, normalized.message, normalized.status, normalized.traceId, normalized.details);
-}
-```
-
-## Ejemplo real (IA Visibility)
-
-En `frontend/m3/src/services/iaVisibilityService.ts` se consume el cliente tipado para operaciones de IA Visibility:
-
-```ts
-export const iaVisibilityService = {
-  run: (payload: IAVisibilityRequest) =>
-    httpClient.post<IAVisibilityResponse>(endpoints.ai.visibilityRun(), payload),
-
-  getHistory: (clientId: string) =>
-    httpClient.get<IAVisibilityHistoryResponse>(endpoints.ai.visibilityHistory(clientId)),
-
-  saveConfig: (clientId: string, payload: IAVisibilityRequest) =>
-    httpClient.post<IAVisibilityConfigResponse>(endpoints.ai.visibilityConfig(clientId), payload),
-};
-```
+## Integración incremental por módulo
 
 Este patrón permite migraciones incrementales módulo por módulo sin romper funcionalidades existentes.

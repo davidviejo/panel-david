@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { consumeAuthFlashMessage } from '../../services/authSession';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { PortalShell } from '../../components/shell/ShellVariants';
 import { Card } from '../../components/ui/Card';
@@ -12,6 +13,13 @@ const ClientsLogin: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const flashMessage = consumeAuthFlashMessage();
+    if (flashMessage) {
+      setError(flashMessage);
+    }
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -19,7 +27,7 @@ const ClientsLogin: React.FC = () => {
 
     try {
       const res = await api.authClientsArea(password);
-      if (res.token) {
+      if (res.authenticated) {
         navigate('/clientes/dashboard');
       } else {
         setError('Contraseña incorrecta');

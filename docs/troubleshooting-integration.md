@@ -2,51 +2,55 @@
 
 ## Objetivo
 
-Este documento describe cómo correlacionar errores entre frontend (`frontend/m3`) y backend cuando la UI consume APIs como fuente de verdad.
+Diagnosticar errores `401/403` y correlacionarlos con backend usando `traceId/requestId`.
 
 ## Identificador de trazabilidad
 
-En errores API, frontend intenta resolver un identificador de trazabilidad en este orden:
+Frontend resuelve trazabilidad en este orden:
 
 1. Header `x-trace-id` / `trace-id`.
-2. Campos `traceId` / `trace_id` en payload de error (nivel raíz o anidado en `error`/`details`).
+2. `traceId|trace_id` en payload (`root`, `error`, `details`).
 3. Header `x-request-id` / `request-id`.
-4. Campos `requestId` / `request_id` en payload de error (nivel raíz o anidado en `error`/`details`).
+4. `requestId|request_id` en payload (`root`, `error`, `details`).
 
-El `HttpClientError` normalizado expone:
+`HttpClientError` expone `traceId` y `requestId`.
 
-- `traceId` (puede venir de trace o request id cuando no existe trace id explícito).
-- `requestId` (cuando backend lo provee).
+## Diagnóstico rápido de 401/403
 
-## Logging estructurado en frontend
+### 401 (AUTH_SESSION_EXPIRED)
 
-Ante error HTTP, timeout o red, frontend emite un log estructurado:
+1. Verifica request en DevTools:
+   - ¿la request lleva `credentials: include`?
+   - ¿existe cookie `portal_auth_token` vigente?
+2. Comprueba endpoint `GET /api/auth/session`.
+3. Revisa backend:
+   - expiración JWT,
+   - sesión Flask,
+   - configuración `SameSite/Secure` por entorno,
+   - CORS con `supports_credentials=True`.
+4. Correlaciona con `traceId/requestId` en logs.
 
-- `level`: `error`
-- `endpoint`: URL completa invocada
-- `status`: código HTTP (si aplica)
-- `traceId`: identificador de trazabilidad
-- `timestamp`: ISO-8601 UTC
-- `code` y `message`: error normalizado
+### 403 (AUTH_FORBIDDEN / AUTH_SCOPE_MISMATCH)
 
-Formato actual: `console.error('[api-error]', payload)`.
+1. Verifica rol actual (`clients_area|project|operator`).
+2. Para `project`, valida `scope` (slug) contra la ruta solicitada.
+3. Correlaciona evento en logs con `traceId/requestId`.
 
-## Correlación FE/BE paso a paso
+## Logging estructurado FE
 
-1. En UI, copiar el texto `ID de trazabilidad: <valor>` mostrado en estado de error.
-2. Buscar ese valor en logs de backend (`traceId` o `requestId`).
-3. Verificar el `endpoint` y `status` del log frontend para confirmar ruta y tipo de falla.
-4. Revisar payload backend asociado al mismo identificador para aislar causa raíz.
+Formato: `console.error('[api-error]', payload)`.
 
-## Módulo piloto (IA Visibility)
+Campos clave:
 
-- La lista del piloto usa backend por defecto y permite rollback controlado con `VITE_IA_VISIBILITY_DATA_SOURCE=legacy`.
-- Errores de carga de listado y programación muestran ID de trazabilidad cuando existe.
-- El ID se presenta en una línea separada y en formato monoespaciado para facilitar copia/pegado en soporte.
-- Esto permite soporte L1/L2 con correlación directa sin exponer payloads sensibles en UI.
+- `endpoint`
+- `status`
+- `code`
+- `traceId`
+- `requestId`
+- `timestamp`
 
-## Decisiones técnicas
+## Anti-patterns a evitar
 
-- **Fuente de verdad por flag:** `backend` es el valor por defecto del piloto para producción; `legacy` queda disponible solo como rollback operativo.
-- **Trazabilidad resiliente:** se soporta `traceId` y `requestId` desde headers o body para compatibilidad con diferentes middlewares backend.
-- **Observabilidad incremental:** logging estructurado agregado en `httpClient` para centralizar telemetría de errores API sin modificar cada pantalla.
+- Loggear tokens/cookies o secretos en cliente/servidor.
+- Reintentos ciegos sobre `401` (genera loops).
+- Redirecciones múltiples sin guardas de ruta login.

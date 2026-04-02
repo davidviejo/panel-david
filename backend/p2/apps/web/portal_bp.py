@@ -8,6 +8,10 @@ portal_bp = Blueprint('portal_bp', __name__)
 WEB_AUTH_COOKIE = 'portal_auth_token'
 
 
+def _auth_error(message, status, code):
+    return jsonify({'code': code, 'message': message, 'error': message}), status
+
+
 def _extract_bearer_token_from_header():
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith('Bearer '):
@@ -42,32 +46,32 @@ def _get_web_payload():
 
     return None
 
+
+def _get_api_payload():
+    """
+    Resolve auth payload for API routes.
+    Priority: Flask session payload -> JWT in session -> JWT in HttpOnly cookie -> Bearer header.
+    """
+    return _get_web_payload()
+
+
 def require_role(allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            token = _extract_bearer_token_from_header()
-            if not token:
-                return jsonify({'error': 'Missing or invalid Authorization header'}), 401
-
-            payload = _get_payload_from_token(token)
+            payload = _get_api_payload()
 
             if not payload:
-                return jsonify({'error': 'Invalid or expired token'}), 401
+                return _auth_error('Invalid or expired session', 401, 'AUTH_SESSION_EXPIRED')
 
             if payload.get('role') not in allowed_roles:
-                return jsonify({'error': 'Insufficient permissions'}), 403
-
-            # For project role, verify scope if applicable
-            if payload.get('role') == 'project':
-                # Assuming the route has a <slug> parameter, or we check against something else
-                # In this simple implementation, we might just pass the payload to the function
-                # or attach it to request.
-                pass
+                return _auth_error('Insufficient permissions', 403, 'AUTH_FORBIDDEN')
 
             request.user_payload = payload
             return f(*args, **kwargs)
+
         return decorated_function
+
     return decorator
 
 
@@ -90,10 +94,12 @@ def require_role_web(allowed_roles, login_endpoint='home'):
 
     return decorator
 
+
 @portal_bp.route('/api/clients', methods=['GET'])
 @require_role(['clients_area', 'operator'])
 def list_clients():
     return jsonify(get_safe_clients())
+
 
 @portal_bp.route('/api/public/clients', methods=['GET'])
 def list_public_clients():
@@ -101,32 +107,34 @@ def list_public_clients():
     response.headers['Cache-Control'] = 'public, max-age=60, stale-while-revalidate=300'
     return response
 
+
 @portal_bp.route('/api/<slug>/overview', methods=['GET'])
 @require_role(['project', 'clients_area', 'operator'])
 def project_overview(slug):
     # If role is project, ensure scope matches slug
     payload = request.user_payload
     if payload.get('role') == 'project' and payload.get('scope') != slug:
-        return jsonify({'error': 'Access denied for this project'}), 403
+        return _auth_error('Access denied for this project', 403, 'AUTH_SCOPE_MISMATCH')
 
     # Return mock data
     return jsonify({
-        "project": slug,
-        "traffic": "12.5K",
-        "keywords_top3": 45,
-        "health_score": 92,
-        "recent_issues": [
-            "Missing H1 on 3 pages",
-            "Slow LCP on homepage"
+        'project': slug,
+        'traffic': '12.5K',
+        'keywords_top3': 45,
+        'health_score': 92,
+        'recent_issues': [
+            'Missing H1 on 3 pages',
+            'Slow LCP on homepage'
         ]
     })
+
 
 @portal_bp.route('/api/tools/run/<tool>', methods=['POST'])
 @require_role(['operator'])
 def run_tool(tool):
     # Dummy endpoint
     return jsonify({
-        "status": "accepted",
-        "message": f"Tool {tool} execution queued (dummy)",
-        "tool": tool
+        'status': 'accepted',
+        'message': f'Tool {tool} execution queued (dummy)',
+        'tool': tool
     })

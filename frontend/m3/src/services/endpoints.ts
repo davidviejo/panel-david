@@ -5,6 +5,8 @@ export const endpoints = {
     clientsArea: () => 'api/auth/clients-area',
     project: (slug: string) => `api/auth/project/${encodePathParam(slug)}`,
     operator: () => 'api/auth/operator',
+    logout: () => 'api/auth/logout',
+    session: () => 'api/auth/session',
   },
   clients: {
     list: () => 'api/clients',

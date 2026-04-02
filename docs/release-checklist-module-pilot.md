@@ -1,55 +1,40 @@
-# Release Checklist — Módulo Piloto (IA Visibility)
+# Release Checklist — Módulo Piloto (IA Visibility + Auth/Session)
 
-Objetivo: asegurar un rollout/rollback predecible del piloto de migración FE/BE, con backend como fuente de verdad y sin improvisación operativa.
+Objetivo: asegurar rollout/rollback predecible del piloto FE/BE, con backend como fuente de verdad.
 
 ## Checklist previo a release
 
 ### 1) Contratos y datos
 - [ ] Contratos tipados del módulo vigentes y versionados.
-- [ ] Mapper FE ↔ BE validado con casos nominales y edge cases.
-- [ ] No existen mocks/seed locales en path de producción.
+- [ ] Contrato de auth/session estandarizado (`AUTH_*` codes) validado en FE/BE.
+- [ ] No existen mocks de sesión/token en path de producción.
 
 ### 2) Calidad técnica
 - [ ] `build` en verde.
 - [ ] `lint` en verde.
-- [ ] Suite de tests del módulo en verde (unit/integration).
-- [ ] Smoke test manual/automático completado en entorno objetivo.
+- [ ] Suite de tests FE/BE en verde (incluye login/logout/401/403).
+- [ ] Smoke test manual completado en entorno objetivo.
 
-### 3) Errores y observabilidad
-- [ ] Errores FE y BE unificados (código, mensaje y acción).
-- [ ] `traceId/requestId` propagado en llamadas críticas.
-- [ ] Dashboard/alertas con umbrales definidos (error rate, latencia, timeouts).
+### 3) Seguridad y observabilidad
+- [ ] `portal_auth_token` con `HttpOnly` + `SameSite` + `Secure` según entorno.
+- [ ] CORS permite credenciales solo para orígenes explícitos.
+- [ ] Sin datos sensibles en logs.
+- [ ] `traceId/requestId` propagado en errores críticos.
 
-### 4) Operación de rollout
-- [ ] Feature flag activo y verificable por entorno.
-- [ ] Plan de exposición gradual documentado (canary por porcentaje).
-- [ ] Criterios de rollback definidos y ensayados.
-- [ ] Owner de guardia identificado para ventana de release.
+### 4) UX y operación
+- [ ] Mensajes homogéneos para sesión expirada y permisos.
+- [ ] Redirecciones por 401 sin loops.
+- [ ] Logout invalida estado FE/BE de forma confiable.
+- [ ] Plan de rollback documentado.
 
 ## Go/No-Go
 
-La decisión se toma en la revisión semanal y antes de cada subida de porcentaje del flag.
+### GO
+- Consistencia de sesión validada en módulos clave.
+- 401/403 manejados de forma uniforme.
+- Logout fiable confirmado en smoke.
 
-### Criterios de **GO**
-- Readiness score del módulo **≥ 75/100**.
-- Todos los checks críticos en verde (contratos, integración real, observabilidad, QA/release).
-- Sin incidentes P1/P0 abiertos vinculados al módulo.
-- Rollback probado en entorno de staging/preproducción.
-
-### Criterios de **NO-GO**
-- Readiness score **< 75/100**.
-- Persistencia de mocks/fallback local en path productivo.
-- Falla en trazabilidad (`traceId/requestId`) o en alertado mínimo.
-- Smoke fallido o regresión funcional en flujo principal.
-
-### Plan de ejecución (por flag)
-1. Activar módulo en **5%** de tráfico elegible.
-2. Monitorear 30–60 min métricas y feedback de soporte.
-3. Escalar a **25% → 50% → 100%** solo si se mantienen umbrales.
-4. Ante degradación, ejecutar rollback inmediato a 0% y abrir postmortem.
-
-## Evidencia mínima requerida para cierre
-- Enlace a resultados de build/lint/tests.
-- Evidencia de smoke pass.
-- Snapshot de métricas de observabilidad durante canary.
-- Registro de decisión GO/NO-GO con fecha, owner y riesgos residuales.
+### NO-GO
+- Persisten flujos mixtos token + cookie en FE productivo.
+- Errores auth sin `code/message` consistente.
+- Loops de redirección o expiración no controlada.
