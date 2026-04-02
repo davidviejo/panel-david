@@ -15,7 +15,7 @@ import {
   IAVisibilityHistoryItemViewModel,
   mapIAVisibilityHistoryToViewModel,
 } from '../shared/api/mappers/iaVisibilityMapper';
-import { getApiErrorMessage, getApiErrorTraceabilityId } from '../shared/api/errorHandling';
+import { getUiApiErrorDisplay } from '../shared/api/errorHandling';
 
 const IAVisibility: React.FC = () => {
   const { t } = useTranslation();
@@ -45,18 +45,12 @@ const IAVisibility: React.FC = () => {
   useSyncScheduleFormState(scheduleResponse?.schedule, setSchedule);
 
   const rows = useMemo(() => rowsResponse?.items || [], [rowsResponse?.items]);
-  const rowsError = rowsQueryError
-    ? getApiErrorMessage(rowsQueryError, 'No fue posible cargar resultados.')
+  const rowsErrorDisplay = rowsQueryError
+    ? getUiApiErrorDisplay(rowsQueryError, 'No fue posible cargar resultados.')
     : null;
-  const rowsErrorTraceId = rowsQueryError
-    ? getApiErrorTraceabilityId(rowsQueryError, 'No fue posible cargar resultados.')
-    : undefined;
-  const scheduleQueryErrorMessage = scheduleQueryError
-    ? getApiErrorMessage(scheduleQueryError, 'No fue posible cargar programación.')
+  const scheduleQueryErrorDisplay = scheduleQueryError
+    ? getUiApiErrorDisplay(scheduleQueryError, 'No fue posible cargar programación.')
     : null;
-  const scheduleQueryTraceId = scheduleQueryError
-    ? getApiErrorTraceabilityId(scheduleQueryError, 'No fue posible cargar programación.')
-    : undefined;
   const history: IAVisibilityHistoryItemViewModel[] = useMemo(
     () => (historyResponse?.runs || []).map(mapIAVisibilityHistoryToViewModel),
     [historyResponse?.runs],
@@ -86,13 +80,7 @@ const IAVisibility: React.FC = () => {
       setSchedule(response.schedule);
       setScheduleError(null);
     } catch (error) {
-      const message = getApiErrorMessage(error, 'No fue posible guardar programación.');
-      const traceabilityId = getApiErrorTraceabilityId(error, 'No fue posible guardar programación.');
-      setScheduleError(
-        traceabilityId
-          ? `${message} (ID de trazabilidad: ${traceabilityId})`
-          : message,
-      );
+      setScheduleError(getUiApiErrorDisplay(error, 'No fue posible guardar programación.').fullMessage);
     }
   };
 
@@ -111,12 +99,8 @@ const IAVisibility: React.FC = () => {
       });
       setScheduleError(null);
     } catch (error) {
-      const message = getApiErrorMessage(error, 'No fue posible actualizar programación.');
-      const traceabilityId = getApiErrorTraceabilityId(error, 'No fue posible actualizar programación.');
       setScheduleError(
-        traceabilityId
-          ? `${message} (ID de trazabilidad: ${traceabilityId})`
-          : message,
+        getUiApiErrorDisplay(error, 'No fue posible actualizar programación.').fullMessage,
       );
     }
   };
@@ -255,12 +239,10 @@ const IAVisibility: React.FC = () => {
             </button>
           )}
         </div>
-        {(scheduleError || scheduleQueryErrorMessage) && (
+        {(scheduleError || scheduleQueryErrorDisplay) && (
           <p className="mt-2 text-xs text-rose-600">
             {scheduleError ||
-              (scheduleQueryTraceId
-                ? `${scheduleQueryErrorMessage} (ID de trazabilidad: ${scheduleQueryTraceId})`
-                : scheduleQueryErrorMessage)}
+              scheduleQueryErrorDisplay?.fullMessage}
           </p>
         )}
       </div>
@@ -270,13 +252,12 @@ const IAVisibility: React.FC = () => {
           {t('ia_visibility.results_title')}
         </h2>
         {isRowsLoading && <p className="text-sm text-slate-500 py-4">Cargando resultados...</p>}
-        {!isRowsLoading && rowsError && (
+        {!isRowsLoading && rowsErrorDisplay && (
           <p className="text-sm text-rose-600 py-4">
-            {rowsError}
-            {rowsErrorTraceId ? ` (ID de trazabilidad: ${rowsErrorTraceId})` : ''}
+            {rowsErrorDisplay.fullMessage}
           </p>
         )}
-        {!isRowsLoading && !rowsError && (
+        {!isRowsLoading && !rowsErrorDisplay && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

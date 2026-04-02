@@ -11,6 +11,12 @@ export interface UiApiError {
   originalError: unknown;
 }
 
+export interface UiApiErrorDisplay {
+  message: string;
+  traceabilityId?: string;
+  fullMessage: string;
+}
+
 const STATUS_UI_MESSAGES: Record<number, string> = {
   401: 'Tu sesión expiró. Inicia sesión nuevamente.',
   403: 'No tienes permisos para realizar esta acción.',
@@ -115,6 +121,22 @@ export const getApiErrorTraceabilityId = (
   error: unknown,
   fallbackMessage: string = DEFAULT_UI_ERROR_MESSAGE,
 ): string | undefined => normalizeApiError(error, fallbackMessage).traceId;
+
+export const getUiApiErrorDisplay = (
+  error: unknown,
+  fallbackMessage: string = DEFAULT_UI_ERROR_MESSAGE,
+): UiApiErrorDisplay => {
+  const normalizedError = normalizeApiError(error, fallbackMessage);
+  const traceabilityId = normalizedError.traceId;
+
+  return {
+    message: normalizedError.message,
+    traceabilityId,
+    fullMessage: traceabilityId
+      ? `${normalizedError.message} (ID de trazabilidad: ${traceabilityId})`
+      : normalizedError.message,
+  };
+};
 
 export const isApiErrorStatus = (error: unknown, status: number): boolean => {
   return normalizeApiError(error).status === status;
