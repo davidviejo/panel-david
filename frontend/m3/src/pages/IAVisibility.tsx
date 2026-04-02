@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Eye, Filter, History, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProject } from '../context/ProjectContext';
-import { iaVisibilityService, IAVisibilityResponse, IAVisibilitySchedule } from '../services/iaVisibilityService';
+import { iaVisibilityService, IAVisibilitySchedule } from '../services/iaVisibilityService';
+import { IAVisibilityHistoryItemViewModel, mapIAVisibilityHistoryToViewModel } from '../shared/api/mappers/iaVisibilityMapper';
 
 type VisibilityStatus = 'up' | 'stable' | 'down';
 
@@ -58,7 +59,7 @@ const IAVisibility: React.FC = () => {
     runMinute: 0,
     status: 'paused',
   });
-  const [history, setHistory] = useState<IAVisibilityResponse[]>([]);
+  const [history, setHistory] = useState<IAVisibilityHistoryItemViewModel[]>([]);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   const filteredRows = useMemo(() => {
@@ -91,7 +92,7 @@ const IAVisibility: React.FC = () => {
       });
 
     iaVisibilityService.getHistory(currentClientId)
-      .then((res) => setHistory(res.runs || []))
+      .then((res) => setHistory((res.runs || []).map(mapIAVisibilityHistoryToViewModel)))
       .catch(() => setHistory([]));
   }, [currentClientId]);
 
@@ -277,13 +278,13 @@ const IAVisibility: React.FC = () => {
           <h2 className="font-bold text-slate-900 dark:text-white">{t('ia_visibility.history_title')}</h2>
         </div>
         <ul className="space-y-3">
-          {history.map((entry, index) => (
+          {history.map((entry) => (
             <li
-              key={`${entry.clientId}-${index}`}
+              key={entry.id}
               className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-900"
             >
               <p className="text-xs text-slate-500 mb-1">
-                {entry.runTrigger || 'manual'} · {entry.providerUsed || 'n/a'} · v{entry.version || 1}
+                {entry.runTriggerLabel} · {entry.providerLabel} · {entry.versionLabel}
               </p>
               <p className="text-sm text-slate-700 dark:text-slate-200">
                 SOV: {entry.shareOfVoice} · Mentions: {entry.mentions} · Sentiment: {entry.sentiment}
