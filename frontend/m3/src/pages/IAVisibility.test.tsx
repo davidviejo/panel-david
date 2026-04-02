@@ -80,6 +80,15 @@ describe('IAVisibility', () => {
     expect(screen.getByText('/url-1')).toBeTruthy();
   });
 
+
+  it('renders loading state while list endpoint is pending', async () => {
+    mockList.mockImplementation(() => new Promise(() => undefined));
+
+    renderWithProviders();
+
+    expect(await screen.findByLabelText('Cargando resultados...')).toBeTruthy();
+  });
+
   it('renders empty state when list endpoint returns no items', async () => {
     mockList.mockResolvedValue({
       clientId: 'client-1',
@@ -101,6 +110,37 @@ describe('IAVisibility', () => {
     });
   });
 
+
+
+  it('retries list request when clicking retry action', async () => {
+    mockList
+      .mockRejectedValueOnce(new Error('Fallo backend listado'))
+      .mockResolvedValueOnce({
+        clientId: 'client-1',
+        items: [
+          {
+            id: 'row-2',
+            keyword: 'keyword retry',
+            url: '/retry',
+            position: 7,
+            change: -1,
+            status: 'down',
+            updatedAt: '2026-04-02',
+          },
+        ],
+      });
+
+    renderWithProviders();
+
+    expect(await screen.findByText('Fallo backend listado')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+
+    expect(await screen.findByText('keyword retry')).toBeTruthy();
+    await waitFor(() => {
+      expect(mockList).toHaveBeenCalledTimes(2);
+    });
+  });
 
   it('shows traceability identifier in error state', async () => {
     mockList.mockRejectedValue(

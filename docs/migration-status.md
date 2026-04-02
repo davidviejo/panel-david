@@ -24,9 +24,10 @@ Un módulo se considera **listo para producción** cuando cumple todos los crite
 
 1. **Sin mocks en producción**: el path productivo no depende de fixtures ni seeds locales.
 2. **Errores unificados**: taxonomía de errores FE/BE alineada (códigos + mensajes + acción sugerida).
-3. **Trazabilidad completa**: toda request relevante incluye y propaga `traceId`/`requestId`.
-4. **Calidad técnica verde**: `build`, `lint` y `tests` del módulo en estado OK.
-5. **Smoke validado**: happy path + fallo controlado verificados en entorno de release.
+3. **Estados asíncronos unificados**: `loading/error/empty` implementados con patrón shared y CTA de retry.
+4. **Trazabilidad completa**: toda request relevante incluye y propaga `traceId`/`requestId`.
+5. **Calidad técnica verde**: `build`, `lint` y `tests` del módulo en estado OK.
+6. **Smoke validado**: happy path + fallo controlado verificados en entorno de release.
 
 ## 3) Readiness score (0–100)
 
