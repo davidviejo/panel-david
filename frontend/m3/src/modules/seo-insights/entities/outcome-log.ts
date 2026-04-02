@@ -1,4 +1,5 @@
 import type { BaseEntity, Uuid } from './base';
+import type { OutcomeStatus } from '../enums/outcome-status';
 
 export interface OutcomeLog extends BaseEntity {
   projectId: Uuid;
@@ -9,4 +10,5 @@ export interface OutcomeLog extends BaseEntity {
   afterValue?: number;
   delta?: number;
   notes?: string;
+  outcomeStatus?: OutcomeStatus;
 }

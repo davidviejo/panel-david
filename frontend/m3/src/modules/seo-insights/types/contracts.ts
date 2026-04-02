@@ -1,9 +1,14 @@
 import type { AnalysisSource } from '../enums/analysis-source';
+import type { AnalysisType } from '../enums/analysis-type';
+import type { EntityType } from '../enums/entity-type';
+import type { Status } from '../enums/status';
 import type { IsoTimestamp, Uuid } from '../entities/base';
 
 export interface NormalizedInsight {
   id: Uuid;
   source: AnalysisSource;
+  analysisType?: AnalysisType;
+  entityType?: EntityType;
   keyword: string;
   pageUrl: string;
   metric: string;
@@ -13,6 +18,8 @@ export interface NormalizedInsight {
 
 export interface NormalizedInsightInput {
   source: AnalysisSource;
+  analysisType?: AnalysisType;
+  entityType?: EntityType;
   projectId: Uuid;
   keyword: string;
   pageUrl: string;
@@ -25,7 +32,7 @@ export interface NormalizedInsightInput {
 export interface InsightFilters {
   projectId: Uuid;
   source?: AnalysisSource;
-  status?: 'open' | 'in_progress' | 'resolved' | 'ignored';
+  status?: Status;
   keyword?: string;
   assignedTo?: Uuid;
   dateFrom?: IsoTimestamp;
