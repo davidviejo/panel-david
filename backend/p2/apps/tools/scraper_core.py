@@ -264,7 +264,15 @@ def parse_google_html(html_content: str) -> Union[List[Dict[str, str]], Dict[str
 
     return results
 
-def scrape_google_serp(keyword: str, num_results: int = 10, delay: Union[int, float] = 2, cookie: Optional[str] = None, tos: int = 15) -> Union[List[Dict[str, str]], str]:
+def scrape_google_serp(
+    keyword: str,
+    num_results: int = 10,
+    delay: Union[int, float] = 2,
+    cookie: Optional[str] = None,
+    tos: int = 15,
+    gl: str = "es",
+    hl: str = "es",
+) -> Union[List[Dict[str, str]], str]:
     """
     Realiza un scraping de la SERP de Google para una palabra clave dada.
 
@@ -274,19 +282,21 @@ def scrape_google_serp(keyword: str, num_results: int = 10, delay: Union[int, fl
         delay (int/float): Tiempo de espera antes de la petición para evitar bloqueos.
         cookie (str, optional): Cookie de sesión de Google.
         tos (int): Tiempo de espera máximo para la petición (timeout).
+        gl (str): Geolocalización de Google (country code).
+        hl (str): Idioma de la interfaz y resultados.
 
     Returns:
         list: Lista de resultados o cadena "BLOCKED" si se detecta bloqueo 429.
     """
     try:
         time.sleep(float(delay))
-        url = "https://www.google.es/search" # Forzamos .es para local
+        url = "https://www.google.com/search"
 
         params = {
             'q': keyword,
             'num': num_results + 5,
-            'hl': 'es',
-            'gl': 'es',
+            'hl': hl,
+            'gl': gl,
             'pws': '0',     # Desactivar personalización (historial)
             'filter': '0'   # Mostrar resultados omitidos
         }
@@ -557,7 +567,7 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     if mode in ['google_scraping', 'google_nuclear']:
          c = cfg.get('cookie')
          delay = cfg.get('delay', 2)
-         res = scrape_google_serp(keyword, num_results, delay, cookie=c)
+         res = scrape_google_serp(keyword, num_results, delay, cookie=c, gl=country, hl=lang)
          if isinstance(res, list):
             for r in res:
                 if 'snippet' not in r: r['snippet'] = ''
@@ -584,7 +594,7 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
         if provider == 'google_scraping':
              c = cfg.get('cookie')
              delay = cfg.get('delay', 2)
-             res = scrape_google_serp(keyword, num_results, delay, cookie=c)
+             res = scrape_google_serp(keyword, num_results, delay, cookie=c, gl=country, hl=lang)
              if isinstance(res, list):
                 for r in res:
                     if 'snippet' not in r: r['snippet'] = ''
