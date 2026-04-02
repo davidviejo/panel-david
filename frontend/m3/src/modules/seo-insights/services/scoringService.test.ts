@@ -3,6 +3,7 @@ import {
   computeConfidenceScore,
   computeFreshnessScore,
   computeImpactScore,
+  computeScoreComponents,
   computeSeverityScore,
   scoreInsight,
 } from './scoringService';
@@ -41,5 +42,22 @@ describe('scoringService', () => {
     expect(computeFreshnessScore(undefined)).toBe(SCORE_DEFAULT_COMPONENTS.freshness);
     expect(computeImpactScore(undefined)).toBe(SCORE_DEFAULT_COMPONENTS.impact);
     expect(computeConfidenceScore(undefined)).toBe(SCORE_DEFAULT_COMPONENTS.confidence);
+  });
+
+  it('returns component score breakdown for tuning', () => {
+    const components = computeScoreComponents({
+      severity: 'critical',
+      detectedAt: '2026-04-02T00:00:00.000Z',
+      value: 80,
+      confidence: 0.9,
+      now: new Date('2026-04-02T00:00:00.000Z'),
+    });
+
+    expect(components).toEqual({
+      severity: 1,
+      freshness: 1,
+      impact: 0.8,
+      confidence: 0.9,
+    });
   });
 });

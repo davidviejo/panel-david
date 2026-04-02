@@ -1,8 +1,10 @@
 import type { Severity } from '../enums/severity';
 import {
   SCORE_DEFAULT_COMPONENTS,
+  SCORE_WEIGHT_KEYS,
   SCORE_LIMITS,
   SCORE_WEIGHTS,
+  type ScoreWeightKey,
   SEVERITY_BASE_SCORES,
   type ScoreWeights,
 } from './weights';
@@ -22,18 +24,19 @@ function clamp01(value: number): number {
 }
 
 function normalizeWeight(weights: ScoreWeights): ScoreWeights {
-  const total = Object.values(weights).reduce((sum, value) => sum + value, 0);
+  const total = SCORE_WEIGHT_KEYS.reduce((sum, key) => sum + weights[key], 0);
 
   if (total === 0) {
     return SCORE_WEIGHTS;
   }
 
-  return {
-    severity: weights.severity / total,
-    freshness: weights.freshness / total,
-    impact: weights.impact / total,
-    confidence: weights.confidence / total,
-  };
+  return SCORE_WEIGHT_KEYS.reduce(
+    (normalized, key) => ({
+      ...normalized,
+      [key]: weights[key] / total,
+    }),
+    {} as ScoreWeights,
+  );
 }
 
 export function computeSeverityScore(severity: ScoreInsightInput['severity']): number {
@@ -84,24 +87,33 @@ export function computeConfidenceScore(confidence: ScoreInsightInput['confidence
   return clamp01(confidence);
 }
 
-export function scoreInsight(
-  input: ScoreInsightInput,
-  weights: ScoreWeights = SCORE_WEIGHTS,
-): number {
-  const normalizedWeights = normalizeWeight(weights);
+export interface ScoreComponents {
+  severity: number;
+  freshness: number;
+  impact: number;
+  confidence: number;
+}
 
-  const componentScores = {
+export function computeScoreComponents(input: ScoreInsightInput): ScoreComponents {
+  return {
     severity: computeSeverityScore(input.severity),
     freshness: computeFreshnessScore(input.detectedAt, input.now),
     impact: computeImpactScore(input.value),
     confidence: computeConfidenceScore(input.confidence),
   };
+}
 
-  const weightedTotal =
-    componentScores.severity * normalizedWeights.severity +
-    componentScores.freshness * normalizedWeights.freshness +
-    componentScores.impact * normalizedWeights.impact +
-    componentScores.confidence * normalizedWeights.confidence;
+export function scoreInsight(
+  input: ScoreInsightInput,
+  weights: ScoreWeights = SCORE_WEIGHTS,
+): number {
+  const normalizedWeights = normalizeWeight(weights);
+  const componentScores = computeScoreComponents(input);
+
+  const weightedTotal = SCORE_WEIGHT_KEYS.reduce(
+    (total, key: ScoreWeightKey) => total + componentScores[key] * normalizedWeights[key],
+    0,
+  );
 
   const scaled = weightedTotal * SCORE_LIMITS.max;
 

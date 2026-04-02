@@ -5,6 +5,8 @@ export const SCORE_WEIGHTS = {
   confidence: 0.1,
 } as const;
 
+export const SCORE_WEIGHT_KEYS = ['severity', 'freshness', 'impact', 'confidence'] as const;
+
 export const SCORE_LIMITS = {
   min: 0,
   max: 100,
@@ -27,3 +29,4 @@ export const SEVERITY_BASE_SCORES = {
 } as const;
 
 export type ScoreWeights = typeof SCORE_WEIGHTS;
+export type ScoreWeightKey = (typeof SCORE_WEIGHT_KEYS)[number];

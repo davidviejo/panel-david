@@ -13,5 +13,6 @@ export {
   computeConfidenceScore,
   computeFreshnessScore,
   computeImpactScore,
+  computeScoreComponents,
   computeSeverityScore,
 } from './scoringService';
