@@ -105,7 +105,7 @@ def normalize_serp_config(config: Optional[Dict[str, Any]] = None) -> Dict[str, 
     return normalized
 
 
-def get_optimized_headers(cookie: Optional[str] = None) -> Dict[str, str]:
+def get_optimized_headers(cookie: Optional[str] = None, user_agent: Optional[str] = None) -> Dict[str, str]:
     """
     Genera cabeceras HTTP optimizadas para simular un navegador real.
 
@@ -116,7 +116,7 @@ def get_optimized_headers(cookie: Optional[str] = None) -> Dict[str, str]:
         dict: Diccionario de cabeceras incluyendo User-Agent y cookies.
     """
     headers = {
-        'User-Agent': random.choice(Config.USER_AGENTS),
+        'User-Agent': user_agent or random.choice(Config.USER_AGENTS),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Accept-Encoding': 'gzip, deflate, br',
@@ -272,6 +272,7 @@ def scrape_google_serp(
     tos: int = 15,
     gl: str = "es",
     hl: str = "es",
+    user_agent: Optional[str] = None,
 ) -> Union[List[Dict[str, str]], str]:
     """
     Realiza un scraping de la SERP de Google para una palabra clave dada.
@@ -307,7 +308,12 @@ def scrape_google_serp(
             params['gbv'] = '1'
 
         mode = "with_cookie" if cookie else "gbv_legacy"
-        response = requests.get(url, params=params, headers=get_optimized_headers(cookie), timeout=int(tos))
+        response = requests.get(
+            url,
+            params=params,
+            headers=get_optimized_headers(cookie, user_agent=user_agent),
+            timeout=int(tos)
+        )
 
         if response.status_code == 429:
             logging.warning(
@@ -351,6 +357,86 @@ def scrape_google_serp(
         logging.error("Request failed during Google SERP scrape", exc_info=True)
 
     return []
+
+
+def search_ddg(keyword: str, num_results: int = 10, lang: str = 'es') -> List[Dict[str, Any]]:
+    results: List[Dict[str, Any]] = []
+    try:
+        from ddgs import DDGS
+        with DDGS() as ddgs:
+            region = "es-es" if "es" in lang.lower() else "us-en"
+            for r in ddgs.text(keyword, region=region, max_results=num_results + 5):
+                results.append({
+                    'url': r.get('href'),
+                    'title': r.get('title'),
+                    'snippet': r.get('body', ''),
+                    'rank': len(results) + 1
+                })
+                if len(results) >= num_results:
+                    break
+    except Exception as e:
+        logging.error(f"Smart Search DDG Fallback Error: {e}")
+        return []
+    return results[:num_results]
+
+
+def _run_google_scraping_with_policy(
+    keyword: str,
+    cfg: Dict[str, Any],
+    num_results: int,
+    lang: str,
+    country: str
+) -> Dict[str, Any]:
+    cookie = cfg.get('cookie')
+    delay = cfg.get('delay', 2)
+    primary_ua = random.choice(Config.USER_AGENTS)
+    res = scrape_google_serp(keyword, num_results, delay, cookie=cookie, gl=country, hl=lang, user_agent=primary_ua)
+
+    if isinstance(res, list):
+        for r in res:
+            if 'snippet' not in r:
+                r['snippet'] = ''
+        return {"status": "ok" if res else "empty", "results": res, "provider": "google_scraping"}
+
+    if res != "BLOCKED":
+        return {"status": "error", "results": [], "provider": "google_scraping"}
+
+    ux_msg = "Google bloqueó la consulta, prueba cookie o mayor delay"
+    logging.warning("%s | keyword=%s", ux_msg, sanitize_log_message(keyword))
+
+    auto_fallback = bool(cfg.get('google_scraping_auto_fallback', Config.GOOGLE_SCRAPING_AUTO_FALLBACK))
+    fallback_mode = (cfg.get('google_scraping_fallback_mode') or Config.GOOGLE_SCRAPING_FALLBACK_MODE or 'explicit_error').lower()
+    allow_ddg = bool(cfg.get('google_scraping_allow_ddg_fallback', Config.ENABLE_DDG_FALLBACK))
+
+    if auto_fallback and fallback_mode == 'retry':
+        min_jitter = float(cfg.get('google_scraping_retry_min_jitter', Config.GOOGLE_SCRAPING_RETRY_MIN_JITTER))
+        max_jitter = float(cfg.get('google_scraping_retry_max_jitter', Config.GOOGLE_SCRAPING_RETRY_MAX_JITTER))
+        jitter = random.uniform(min_jitter, max_jitter)
+        time.sleep(jitter)
+        alternative_uas = [ua for ua in Config.USER_AGENTS if ua != primary_ua]
+        retry_ua = random.choice(alternative_uas) if alternative_uas else primary_ua
+        retry_res = scrape_google_serp(
+            keyword,
+            num_results,
+            0,
+            cookie=cookie,
+            gl=country,
+            hl=lang,
+            user_agent=retry_ua
+        )
+        if isinstance(retry_res, list):
+            for r in retry_res:
+                if 'snippet' not in r:
+                    r['snippet'] = ''
+            return {"status": "ok" if retry_res else "empty", "results": retry_res, "provider": "google_scraping_retry"}
+
+    if auto_fallback and fallback_mode == 'ddg' and allow_ddg:
+        ddg_results = search_ddg(keyword, num_results=num_results, lang=lang)
+        if ddg_results:
+            return {"status": "ok", "results": ddg_results, "provider": "ddg_fallback"}
+        return {"status": "empty", "results": [], "provider": "ddg_fallback"}
+
+    raise GoogleSERPBlockedError(ux_msg)
 
 # --- GOOGLE API OFICIAL ---
 def search_google_official(keyword: str, api_key: str, cx: str, num_results: int = 10, gl: str = 'es', hl: str = 'es', raise_on_error: bool = False) -> List[Dict[str, Any]]:
@@ -499,7 +585,7 @@ def search_serpapi(keyword: str, api_key: str, num_results: int = 10, gl: str = 
     return results[:num_results]
 
 # --- UNIFIED SMART SEARCH ---
-def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: int = 10, lang: str = 'es', country: str = 'es') -> List[Dict[str, Any]]:
+def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: int = 10, lang: str = 'es', country: str = 'es') -> Union[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Función de búsqueda unificada que selecciona el mejor proveedor disponible.
     Prioriza DataForSEO si está configurado globalmente, o respeta el modo explícito.
@@ -550,55 +636,55 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     cfg = normalize_serp_config(cfg)
     mode = cfg.get('mode')
     provider = cfg.get('serp_provider')
+    return_diagnostics = bool(cfg.get('return_diagnostics'))
+
+    def _return(results: List[Dict[str, Any]], status: str = 'ok', provider_name: Optional[str] = None):
+        if return_diagnostics:
+            return {
+                "status": status,
+                "results": results,
+                "provider": provider_name
+            }
+        return results
 
     # --- 1. MODO EXPLÍCITO (Prioridad Máxima por argumento) ---
     if mode == 'serpapi' and cfg.get('serpapi_key'):
-        return search_serpapi(keyword, cfg['serpapi_key'], num_results, gl=country, hl=lang)
+        return _return(search_serpapi(keyword, cfg['serpapi_key'], num_results, gl=country, hl=lang), provider_name='serpapi')
 
     if mode == 'dataforseo' and cfg.get('dataforseo_login') and cfg.get('dataforseo_password'):
-        return search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country)
+        return _return(search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country), provider_name='dataforseo')
 
     if mode == 'google_official':
          api_key = cfg.get('google_cse_key')
          cx = cfg.get('google_cse_cx')
          if api_key and cx:
-            return search_google_official(keyword, api_key, cx, num_results, gl=country, hl=lang)
+            return _return(search_google_official(keyword, api_key, cx, num_results, gl=country, hl=lang), provider_name='google_official')
 
     if mode in ['google_scraping', 'google_nuclear']:
-         c = cfg.get('cookie')
-         delay = cfg.get('delay', 2)
-         res = scrape_google_serp(keyword, num_results, delay, cookie=c, gl=country, hl=lang)
-         if isinstance(res, list):
-            for r in res:
-                if 'snippet' not in r: r['snippet'] = ''
-            return res
+         handled = _run_google_scraping_with_policy(keyword, cfg, num_results, lang, country)
+         return _return(handled['results'], status=handled['status'], provider_name=handled.get('provider'))
 
     # --- 2. SELECTOR DE PROVEEDOR GLOBAL (Si no hay modo explícito) ---
     if not mode or mode == 'auto':
         # SerpApi Preference
         if provider == 'serpapi' and cfg.get('serpapi_key'):
-            return search_serpapi(keyword, cfg['serpapi_key'], num_results, gl=country, hl=lang)
+            return _return(search_serpapi(keyword, cfg['serpapi_key'], num_results, gl=country, hl=lang), provider_name='serpapi')
 
         # DataForSEO Preference
         if provider == 'dataforseo' and cfg.get('dataforseo_login') and cfg.get('dataforseo_password'):
-             return search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country)
+             return _return(search_dataforseo(keyword, cfg['dataforseo_login'], cfg['dataforseo_password'], num_results, lang, country), provider_name='dataforseo')
 
         # Google Official Preference
         if provider == 'google_official':
              api_key = cfg.get('google_cse_key')
              cx = cfg.get('google_cse_cx')
              if api_key and cx:
-                return search_google_official(keyword, api_key, cx, num_results, gl=country, hl=lang)
+                return _return(search_google_official(keyword, api_key, cx, num_results, gl=country, hl=lang), provider_name='google_official')
 
         # Google Scraping Preference
         if provider == 'google_scraping':
-             c = cfg.get('cookie')
-             delay = cfg.get('delay', 2)
-             res = scrape_google_serp(keyword, num_results, delay, cookie=c, gl=country, hl=lang)
-             if isinstance(res, list):
-                for r in res:
-                    if 'snippet' not in r: r['snippet'] = ''
-                return res
+             handled = _run_google_scraping_with_policy(keyword, cfg, num_results, lang, country)
+             return _return(handled['results'], status=handled['status'], provider_name=handled.get('provider'))
 
     # --- 3. FALLBACKS AUTOMÁTICOS (Legacy logic) ---
 
@@ -607,34 +693,21 @@ def smart_serp_search(keyword: str, config: Optional[Dict] = None, num_results: 
     dfs_pass = cfg.get('dataforseo_password') or Config.DATAFORSEO_PASSWORD
 
     if dfs_login and dfs_pass:
-        return search_dataforseo(keyword, dfs_login, dfs_pass, num_results, lang, country)
+        return _return(search_dataforseo(keyword, dfs_login, dfs_pass, num_results, lang, country), provider_name='dataforseo')
 
     # 3.2 Google API Oficial
     api_key = cfg.get('google_cse_key')
     cx = cfg.get('google_cse_cx')
 
     if api_key and cx:
-        return search_google_official(keyword, api_key, cx, num_results, gl=country, hl=lang)
+        return _return(search_google_official(keyword, api_key, cx, num_results, gl=country, hl=lang), provider_name='google_official')
 
     # 3.3 DuckDuckGo (Fallback final)
     try:
-        from ddgs import DDGS
-        with DDGS() as ddgs:
-            region = "es-es" if "es" in lang.lower() else "us-en"
-            ddg_results = []
-            # Pedimos más para filtrar
-            for r in ddgs.text(keyword, region=region, max_results=num_results+5):
-                ddg_results.append({
-                    'url': r.get('href'),
-                    'title': r.get('title'),
-                    'snippet': r.get('body', ''),
-                    'rank': len(ddg_results)+1
-                })
-                if len(ddg_results) >= num_results: break
-            return ddg_results
+        return _return(search_ddg(keyword, num_results=num_results, lang=lang), provider_name='ddg')
     except Exception as e:
         logging.error(f"Smart Search DDG Fallback Error: {e}")
-        return []
+        return _return([], status='error')
 
 
 # --- BROWSER MANAGEMENT ---

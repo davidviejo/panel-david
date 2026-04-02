@@ -7,7 +7,7 @@ from difflib import SequenceMatcher
 from collections import Counter
 
 from apps.core_monitor import update_global, reset_global
-from apps.tools.scraper_core import smart_serp_search
+from apps.tools.scraper_core import smart_serp_search, GoogleSERPBlockedError
 from apps.tools.credentials import (
     MISSING_DFS_CREDENTIALS_MESSAGE,
     resolve_dataforseo_credentials,
@@ -191,21 +191,37 @@ def dispatcher(kw, cfg):
                     'title': item.get('title'),
                     'rank': i + 1
                 })
-            return results
+            return {'status': 'ok' if results else 'empty', 'results': results, 'error': None}
         except Exception as e:
             if "SerpApi Error" in str(e):
-                raise e
-            return []
+                return {'status': 'error', 'results': [], 'error': str(e)}
+            return {'status': 'error', 'results': [], 'error': str(e)}
 
     # 2. Unified Smart Search (DataForSEO, Google, Scraping, DDG)
     # Mapeo de parámetros
-    return smart_serp_search(
-        keyword=kw,
-        config=cfg,
-        num_results=cfg.get('top_n', 10),
-        lang=cfg.get('hl', 'es'),
-        country=cfg.get('gl', 'es')
-    )
+    smart_cfg = dict(cfg)
+    smart_cfg['return_diagnostics'] = True
+    try:
+        resp = smart_serp_search(
+            keyword=kw,
+            config=smart_cfg,
+            num_results=cfg.get('top_n', 10),
+            lang=cfg.get('hl', 'es'),
+            country=cfg.get('gl', 'es')
+        )
+        if isinstance(resp, dict):
+            return {
+                'status': resp.get('status', 'ok'),
+                'results': resp.get('results', []),
+                'error': None,
+                'provider': resp.get('provider')
+            }
+        results = resp if isinstance(resp, list) else []
+        return {'status': 'ok' if results else 'empty', 'results': results, 'error': None}
+    except GoogleSERPBlockedError as e:
+        return {'status': 'blocked', 'results': [], 'error': str(e), 'provider': 'google_scraping'}
+    except Exception as e:
+        return {'status': 'error', 'results': [], 'error': str(e)}
 
 
 # --- HISTÓRICO DESDE EXCEL ---
@@ -406,13 +422,19 @@ def worker(kws, file, cfg):
             update_status(progress=current_pct, current_action=msg)
             update_global("Cluster SEO", current_pct, msg)
 
-            res = dispatcher(ckw, cfg)
+            dispatch_result = dispatcher(ckw, cfg)
+            status = dispatch_result.get('status')
+            res = dispatch_result.get('results', [])
+            err = dispatch_result.get('error')
 
-            if res == "BLOCKED":
-                append_log("⛔ BLOQUEO DETECTADO (429).")
+            if status == 'blocked':
+                append_log("⛔ Google bloqueó la consulta, prueba cookie o mayor delay")
+                new_data[ckw] = []
+            elif status == 'error':
+                append_log(f"⛔ Error técnico en SERP ({ckw}): {err or 'Error desconocido'}")
                 new_data[ckw] = []
             elif not res:
-                append_log(f"⚠️ 0 resultados: {ckw}")
+                append_log(f"⚠️ 0 resultados reales: {ckw}")
                 new_data[ckw] = []
             else:
                 append_log(f"✅ {ckw}: {len(res)} URLs")
@@ -529,6 +551,11 @@ def start():
     if job_status['active']:
         return jsonify({'status': 'busy'})
 
+    def _to_bool(value, default=False):
+        if value is None:
+            return default
+        return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
+
     cfg = {
         'mode': request.form.get('mode'),
         'gl': request.form.get('gl'),
@@ -547,6 +574,9 @@ def start():
         'tos': int(request.form.get('tos', 15)),
         'top_n': int(request.form.get('top_n', 10)),
         'strict': int(request.form.get('strict', 3)),
+        'google_scraping_auto_fallback': _to_bool(request.form.get('google_scraping_auto_fallback'), False),
+        'google_scraping_fallback_mode': request.form.get('google_scraping_fallback_mode', 'explicit_error'),
+        'google_scraping_allow_ddg_fallback': _to_bool(request.form.get('google_scraping_allow_ddg_fallback'), False),
 
         # NUEVO: dominio objetivo (opcional)
         'target_domain': (request.form.get('target_domain') or '').strip().lower()
