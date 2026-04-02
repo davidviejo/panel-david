@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  computeConfidenceScore,
   computeFreshnessScore,
   computeImpactScore,
   computeSeverityScore,
   scoreInsight,
 } from './scoringService';
+import { SCORE_DEFAULT_COMPONENTS } from '../scoring/weights';
 
 describe('scoringService', () => {
   it('scores a critical and fresh insight with high value above medium', () => {
@@ -32,5 +34,12 @@ describe('scoringService', () => {
   it('normalizes severity and impact scores', () => {
     expect(computeSeverityScore('high')).toBe(0.75);
     expect(computeImpactScore(150)).toBe(1);
+  });
+
+  it('uses neutral defaults when factors are missing', () => {
+    expect(computeSeverityScore(undefined)).toBe(SCORE_DEFAULT_COMPONENTS.severity);
+    expect(computeFreshnessScore(undefined)).toBe(SCORE_DEFAULT_COMPONENTS.freshness);
+    expect(computeImpactScore(undefined)).toBe(SCORE_DEFAULT_COMPONENTS.impact);
+    expect(computeConfidenceScore(undefined)).toBe(SCORE_DEFAULT_COMPONENTS.confidence);
   });
 });

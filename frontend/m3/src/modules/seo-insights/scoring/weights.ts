@@ -12,6 +12,13 @@ export const SCORE_LIMITS = {
   impactCap: 100,
 } as const;
 
+export const SCORE_DEFAULT_COMPONENTS = {
+  severity: 0.5,
+  freshness: 0.5,
+  impact: 0.5,
+  confidence: 0.5,
+} as const;
+
 export const SEVERITY_BASE_SCORES = {
   low: 0.25,
   medium: 0.5,
