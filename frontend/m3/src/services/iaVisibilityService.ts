@@ -1,7 +1,16 @@
 import { createHttpClient } from './httpClient';
 import { endpoints } from './endpoints';
 import { featureFlags } from '../config/featureFlags';
-import { getLegacyIAVisibilityList } from './iaVisibilityLegacySource';
+import {
+  getLegacyIAVisibilityConfig,
+  getLegacyIAVisibilityHistory,
+  getLegacyIAVisibilityList,
+  getLegacyIAVisibilitySchedule,
+  runLegacyIAVisibility,
+  saveLegacyIAVisibilityConfig,
+  saveLegacyIAVisibilitySchedule,
+  toggleLegacyIAVisibilitySchedule,
+} from './iaVisibilityLegacySource';
 import {
   IAVisibilityConfigResponseContract,
   IAVisibilityHistoryResponseContract,
@@ -37,34 +46,63 @@ export interface IAVisibilityListResponse {
   items: IAVisibilityListItem[];
 }
 
+const useBackendSource = featureFlags.iaVisibilityBackendSource;
 
 export const iaVisibilityService = {
   list: (clientId: string): Promise<IAVisibilityListResponse> => {
-    if (featureFlags.iaVisibilityBackendSource) {
+    if (useBackendSource) {
       return httpClient.get<IAVisibilityListResponse>(endpoints.ai.visibilityList(clientId));
     }
 
     return getLegacyIAVisibilityList(clientId);
   },
 
-  run: (payload: IAVisibilityRequest) =>
-    httpClient.post<IAVisibilityResponse>(endpoints.ai.visibilityRun(), payload),
+  run: (payload: IAVisibilityRequest) => {
+    if (useBackendSource) {
+      return httpClient.post<IAVisibilityResponse>(endpoints.ai.visibilityRun(), payload);
+    }
+    return runLegacyIAVisibility(payload);
+  },
 
-  getHistory: (clientId: string) =>
-    httpClient.get<IAVisibilityHistoryResponse>(endpoints.ai.visibilityHistory(clientId)),
+  getHistory: (clientId: string) => {
+    if (useBackendSource) {
+      return httpClient.get<IAVisibilityHistoryResponse>(endpoints.ai.visibilityHistory(clientId));
+    }
+    return getLegacyIAVisibilityHistory(clientId);
+  },
 
-  getConfig: (clientId: string) =>
-    httpClient.get<IAVisibilityConfigResponse>(endpoints.ai.visibilityConfig(clientId)),
+  getConfig: (clientId: string) => {
+    if (useBackendSource) {
+      return httpClient.get<IAVisibilityConfigResponse>(endpoints.ai.visibilityConfig(clientId));
+    }
+    return getLegacyIAVisibilityConfig(clientId);
+  },
 
-  saveConfig: (clientId: string, payload: IAVisibilityRequest) =>
-    httpClient.post<IAVisibilityConfigResponse>(endpoints.ai.visibilityConfig(clientId), payload),
+  saveConfig: (clientId: string, payload: IAVisibilityRequest) => {
+    if (useBackendSource) {
+      return httpClient.post<IAVisibilityConfigResponse>(endpoints.ai.visibilityConfig(clientId), payload);
+    }
+    return saveLegacyIAVisibilityConfig(clientId, payload);
+  },
 
-  getSchedule: (clientId: string) =>
-    httpClient.get<IAVisibilityScheduleResponse>(endpoints.ai.visibilitySchedule(clientId)),
+  getSchedule: (clientId: string) => {
+    if (useBackendSource) {
+      return httpClient.get<IAVisibilityScheduleResponse>(endpoints.ai.visibilitySchedule(clientId));
+    }
+    return getLegacyIAVisibilitySchedule(clientId);
+  },
 
-  saveSchedule: (clientId: string, payload: Partial<IAVisibilitySchedule>) =>
-    httpClient.post<IAVisibilityScheduleResponse>(endpoints.ai.visibilitySchedule(clientId), payload),
+  saveSchedule: (clientId: string, payload: Partial<IAVisibilitySchedule>) => {
+    if (useBackendSource) {
+      return httpClient.post<IAVisibilityScheduleResponse>(endpoints.ai.visibilitySchedule(clientId), payload);
+    }
+    return saveLegacyIAVisibilitySchedule(clientId, payload);
+  },
 
-  toggleSchedule: (clientId: string, action: 'pause' | 'resume') =>
-    httpClient.post<IAVisibilityScheduleResponse>(endpoints.ai.visibilityScheduleAction(clientId, action), {}),
+  toggleSchedule: (clientId: string, action: 'pause' | 'resume') => {
+    if (useBackendSource) {
+      return httpClient.post<IAVisibilityScheduleResponse>(endpoints.ai.visibilityScheduleAction(clientId, action), {});
+    }
+    return toggleLegacyIAVisibilitySchedule(clientId, action);
+  },
 };
