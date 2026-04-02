@@ -1,23 +1,26 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Eye, Filter, History, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProject } from '../context/ProjectContext';
+import { IAVisibilitySchedule, IAVisibilityStatus } from '../services/iaVisibilityService';
 import {
-  iaVisibilityService,
-  IAVisibilityListItem,
-  IAVisibilitySchedule,
-  IAVisibilityStatus,
-} from '../services/iaVisibilityService';
-import { IAVisibilityHistoryItemViewModel, mapIAVisibilityHistoryToViewModel } from '../shared/api/mappers/iaVisibilityMapper';
+  useIAVisibilityHistoryQuery,
+  useIAVisibilityListQuery,
+  useIAVisibilityScheduleQuery,
+  useSaveIAVisibilityScheduleMutation,
+  useSyncScheduleFormState,
+  useToggleIAVisibilityScheduleMutation,
+} from '../hooks/useIAVisibilityData';
+import {
+  IAVisibilityHistoryItemViewModel,
+  mapIAVisibilityHistoryToViewModel,
+} from '../shared/api/mappers/iaVisibilityMapper';
 
 const IAVisibility: React.FC = () => {
   const { t } = useTranslation();
   const { clients = [], currentClientId, switchClient, currentClient } = useProject();
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | IAVisibilityStatus>('all');
-  const [rows, setRows] = useState<IAVisibilityListItem[]>([]);
-  const [isRowsLoading, setIsRowsLoading] = useState(false);
-  const [rowsError, setRowsError] = useState<string | null>(null);
   const [schedule, setSchedule] = useState<IAVisibilitySchedule>({
     frequency: 'daily',
     timezone: 'UTC',
@@ -25,8 +28,32 @@ const IAVisibility: React.FC = () => {
     runMinute: 0,
     status: 'paused',
   });
-  const [history, setHistory] = useState<IAVisibilityHistoryItemViewModel[]>([]);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
+
+  const {
+    data: rowsResponse,
+    isLoading: isRowsLoading,
+    error: rowsQueryError,
+  } = useIAVisibilityListQuery(currentClientId);
+  const { data: scheduleResponse, error: scheduleQueryError } =
+    useIAVisibilityScheduleQuery(currentClientId);
+  const { data: historyResponse } = useIAVisibilityHistoryQuery(currentClientId);
+  const saveScheduleMutation = useSaveIAVisibilityScheduleMutation(currentClientId);
+  const toggleScheduleMutation = useToggleIAVisibilityScheduleMutation(currentClientId);
+
+  useSyncScheduleFormState(scheduleResponse?.schedule, setSchedule);
+
+  const rows = useMemo(() => rowsResponse?.items || [], [rowsResponse?.items]);
+  const rowsError =
+    rowsQueryError instanceof Error
+      ? rowsQueryError.message
+      : rowsQueryError
+        ? 'No fue posible cargar resultados.'
+        : null;
+  const history: IAVisibilityHistoryItemViewModel[] = useMemo(
+    () => (historyResponse?.runs || []).map(mapIAVisibilityHistoryToViewModel),
+    [historyResponse?.runs],
+  );
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -45,61 +72,38 @@ const IAVisibility: React.FC = () => {
     return t('ia_visibility.filters.stable');
   };
 
-  useEffect(() => {
-    if (!currentClientId) return;
-
-    setIsRowsLoading(true);
-    setRowsError(null);
-
-    iaVisibilityService.list(currentClientId)
-      .then((response) => {
-        setRows(response.items || []);
-      })
-      .catch((error) => {
-        setRows([]);
-        setRowsError(error instanceof Error ? error.message : 'No fue posible cargar resultados.');
-      })
-      .finally(() => {
-        setIsRowsLoading(false);
-      });
-
-    iaVisibilityService.getSchedule(currentClientId)
-      .then((res) => {
-        setSchedule(res.schedule);
-        setScheduleError(null);
-      })
-      .catch((err) => {
-        setScheduleError(err instanceof Error ? err.message : 'No fue posible cargar programación.');
-      });
-
-    iaVisibilityService.getHistory(currentClientId)
-      .then((res) => setHistory((res.runs || []).map(mapIAVisibilityHistoryToViewModel)))
-      .catch(() => setHistory([]));
-  }, [currentClientId]);
-
   const saveSchedule = async () => {
     if (!currentClientId) return;
     try {
-      const response = await iaVisibilityService.saveSchedule(currentClientId, schedule);
+      const response = await saveScheduleMutation.mutateAsync(schedule);
       setSchedule(response.schedule);
       setScheduleError(null);
     } catch (error) {
-      setScheduleError(error instanceof Error ? error.message : 'No fue posible guardar programación.');
+      setScheduleError(
+        error instanceof Error ? error.message : 'No fue posible guardar programación.',
+      );
     }
   };
 
   const toggleSchedule = async (action: 'pause' | 'resume') => {
     if (!currentClientId) return;
-    const response = await iaVisibilityService.toggleSchedule(currentClientId, action);
-    setSchedule({
-      frequency: response.schedule.frequency,
-      timezone: response.schedule.timezone,
-      runHour: response.schedule.runHour,
-      runMinute: response.schedule.runMinute,
-      status: response.schedule.status,
-      lastRunAt: response.schedule.lastRunAt,
-      updatedAt: response.schedule.updatedAt,
-    });
+    try {
+      const response = await toggleScheduleMutation.mutateAsync(action);
+      setSchedule({
+        frequency: response.schedule.frequency,
+        timezone: response.schedule.timezone,
+        runHour: response.schedule.runHour,
+        runMinute: response.schedule.runMinute,
+        status: response.schedule.status,
+        lastRunAt: response.schedule.lastRunAt,
+        updatedAt: response.schedule.updatedAt,
+      });
+      setScheduleError(null);
+    } catch (error) {
+      setScheduleError(
+        error instanceof Error ? error.message : 'No fue posible actualizar programación.',
+      );
+    }
   };
 
   return (
@@ -140,7 +144,10 @@ const IAVisibility: React.FC = () => {
               {t('ia_visibility.filters.keyword')}
             </label>
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -155,7 +162,10 @@ const IAVisibility: React.FC = () => {
               {t('ia_visibility.filters.status')}
             </label>
             <div className="relative">
-              <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Filter
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as 'all' | IAVisibilityStatus)}
@@ -180,7 +190,9 @@ const IAVisibility: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <select
             value={schedule.frequency}
-            onChange={(e) => setSchedule((prev) => ({ ...prev, frequency: e.target.value as 'daily' | 'weekly' }))}
+            onChange={(e) =>
+              setSchedule((prev) => ({ ...prev, frequency: e.target.value as 'daily' | 'weekly' }))
+            }
             className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm"
           >
             <option value="daily">Diaria</option>
@@ -201,27 +213,46 @@ const IAVisibility: React.FC = () => {
             }}
             className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm"
           />
-          <button onClick={saveSchedule} className="rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm">
+          <button
+            onClick={saveSchedule}
+            className="rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm"
+          >
             Guardar
           </button>
         </div>
         <div className="mt-3 flex items-center gap-3">
-          <span className="text-xs text-slate-500">Estado: <strong>{schedule.status}</strong></span>
+          <span className="text-xs text-slate-500">
+            Estado: <strong>{schedule.status}</strong>
+          </span>
           {schedule.status === 'active' ? (
-            <button onClick={() => toggleSchedule('pause')} className="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700">
+            <button
+              onClick={() => toggleSchedule('pause')}
+              className="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-700"
+            >
               Pausar
             </button>
           ) : (
-            <button onClick={() => toggleSchedule('resume')} className="text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-700">
+            <button
+              onClick={() => toggleSchedule('resume')}
+              className="text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-700"
+            >
               Reanudar
             </button>
           )}
         </div>
-        {scheduleError && <p className="mt-2 text-xs text-rose-600">{scheduleError}</p>}
+        {(scheduleError ||
+          (scheduleQueryError instanceof Error ? scheduleQueryError.message : null)) && (
+          <p className="mt-2 text-xs text-rose-600">
+            {scheduleError ||
+              (scheduleQueryError instanceof Error ? scheduleQueryError.message : null)}
+          </p>
+        )}
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm mb-6">
-        <h2 className="font-bold text-slate-900 dark:text-white mb-4">{t('ia_visibility.results_title')}</h2>
+        <h2 className="font-bold text-slate-900 dark:text-white mb-4">
+          {t('ia_visibility.results_title')}
+        </h2>
         {isRowsLoading && <p className="text-sm text-slate-500 py-4">Cargando resultados...</p>}
         {!isRowsLoading && rowsError && <p className="text-sm text-rose-600 py-4">{rowsError}</p>}
         {!isRowsLoading && !rowsError && (
@@ -241,11 +272,17 @@ const IAVisibility: React.FC = () => {
                   <tr key={row.id} className="border-b border-slate-100 dark:border-slate-700/50">
                     <td className="py-3 pr-4 text-slate-800 dark:text-slate-200">{row.keyword}</td>
                     <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{row.url}</td>
-                    <td className="py-3 pr-4 text-slate-800 dark:text-slate-200">#{row.position}</td>
-                    <td className={`py-3 pr-4 font-semibold ${row.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <td className="py-3 pr-4 text-slate-800 dark:text-slate-200">
+                      #{row.position}
+                    </td>
+                    <td
+                      className={`py-3 pr-4 font-semibold ${row.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}
+                    >
                       {row.change > 0 ? `+${row.change}` : row.change}
                     </td>
-                    <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{getStatusLabel(row.status)}</td>
+                    <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">
+                      {getStatusLabel(row.status)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -260,7 +297,9 @@ const IAVisibility: React.FC = () => {
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <History size={18} className="text-slate-500" />
-          <h2 className="font-bold text-slate-900 dark:text-white">{t('ia_visibility.history_title')}</h2>
+          <h2 className="font-bold text-slate-900 dark:text-white">
+            {t('ia_visibility.history_title')}
+          </h2>
         </div>
         <ul className="space-y-3">
           {history.map((entry) => (
@@ -272,11 +311,14 @@ const IAVisibility: React.FC = () => {
                 {entry.runTriggerLabel} · {entry.providerLabel} · {entry.versionLabel}
               </p>
               <p className="text-sm text-slate-700 dark:text-slate-200">
-                SOV: {entry.shareOfVoice} · Mentions: {entry.mentions} · Sentiment: {entry.sentiment}
+                SOV: {entry.shareOfVoice} · Mentions: {entry.mentions} · Sentiment:{' '}
+                {entry.sentiment}
               </p>
             </li>
           ))}
-          {history.length === 0 && <li className="text-sm text-slate-500">Sin historial todavía.</li>}
+          {history.length === 0 && (
+            <li className="text-sm text-slate-500">Sin historial todavía.</li>
+          )}
         </ul>
       </div>
     </div>

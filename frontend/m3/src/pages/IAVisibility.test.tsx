@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import IAVisibility from './IAVisibility';
 
 const mockList = vi.fn();
@@ -37,6 +38,18 @@ const scheduleResponse = {
   },
 };
 
+const renderWithProviders = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <IAVisibility />
+    </QueryClientProvider>,
+  );
+};
+
 describe('IAVisibility', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,7 +73,7 @@ describe('IAVisibility', () => {
       ],
     });
 
-    render(<IAVisibility />);
+    renderWithProviders();
 
     expect(await screen.findByText('keyword principal')).toBeTruthy();
     expect(screen.getByText('/url-1')).toBeTruthy();
@@ -72,7 +85,7 @@ describe('IAVisibility', () => {
       items: [],
     });
 
-    render(<IAVisibility />);
+    renderWithProviders();
 
     expect(await screen.findByText('ia_visibility.no_results')).toBeTruthy();
   });
@@ -80,7 +93,7 @@ describe('IAVisibility', () => {
   it('renders error state when list endpoint fails', async () => {
     mockList.mockRejectedValue(new Error('Fallo backend listado'));
 
-    render(<IAVisibility />);
+    renderWithProviders();
 
     await waitFor(() => {
       expect(screen.getByText('Fallo backend listado')).toBeTruthy();
