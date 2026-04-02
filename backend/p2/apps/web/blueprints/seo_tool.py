@@ -820,15 +820,17 @@ def analyze_bulk():
 @seo_bp.route('/download')
 def download():
     data = job_status.get('results') or []
-    if len(data) == 0:
+    valid_clusters = [cluster for cluster in data if isinstance(cluster, dict) and cluster.get('parent')]
+
+    if len(valid_clusters) == 0:
         return jsonify({
             'status': 'error',
-            'message': 'No hay datos recolectados; ejecuta Estrategia primero'
+            'message': 'No hay clusters para exportar; ejecuta Estrategia primero y espera a que finalice.'
         }), 400
 
     r1, r2 = [], []
 
-    for c in data:
+    for c in valid_clusters:
         an = c.get('analyzed', False)
         r1.append({
             'Cluster ID': c.get('id'),
@@ -866,6 +868,12 @@ def download():
                 'URL': u.get('url'),
                 'Título': u.get('title')
             })
+
+    if not r1:
+        return jsonify({
+            'status': 'error',
+            'message': 'No hay datos recolectados para exportar; ejecuta Estrategia primero.'
+        }), 400
 
     o = io.BytesIO()
     with pd.ExcelWriter(o, engine='openpyxl') as w:

@@ -152,7 +152,7 @@ def test_seo_download_returns_400_when_no_results(client):
 
         data = response.get_json()
         assert data['status'] == 'error'
-        assert data['message'] == 'No hay datos recolectados; ejecuta Estrategia primero'
+        assert data['message'] == 'No hay clusters para exportar; ejecuta Estrategia primero y espera a que finalice.'
     finally:
         job_status.clear()
         job_status.update(previous)
