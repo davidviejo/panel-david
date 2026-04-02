@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createHttpClient, HttpClientError } from './httpClient';
+import { createHttpClient } from './httpClient';
 
 describe('httpClient', () => {
   const fetchMock = vi.fn();
@@ -39,20 +39,22 @@ describe('httpClient', () => {
     expect(headers.get('Authorization')).toBe('Bearer token-123');
   });
 
-  it('throws normalized error with payload when request fails', async () => {
+  it('normalizes HTTP errors with unique error shape', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 500,
-      json: async () => ({ error: 'backend exploded', traceId: 'abc-1' }),
+      json: async () => ({ error: 'backend exploded', traceId: 'abc-1', details: { reason: 'test' } }),
     });
 
     const client = createHttpClient({ service: 'api' });
 
     await expect(client.get('api/fail')).rejects.toMatchObject({
       name: 'HttpClientError',
+      code: 'HTTP_500',
       message: 'backend exploded',
       status: 500,
-      payload: { error: 'backend exploded', traceId: 'abc-1' },
+      traceId: 'abc-1',
+      details: { reason: 'test' },
     });
   });
 
@@ -70,12 +72,37 @@ describe('httpClient', () => {
     const request = client.get('api/slow');
     const assertion = expect(request).rejects.toMatchObject({
       name: 'HttpClientError',
+      code: 'TIMEOUT_ERROR',
       message: 'Request timeout after 10ms',
       isTimeout: true,
     });
 
     await vi.advanceTimersByTimeAsync(20);
     await assertion;
+  });
+
+  it('supports put/patch/delete typed methods', async () => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: '1', status: 'updated' }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: '1', partial: true }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ ok: true }) });
+
+    const client = createHttpClient({ service: 'api' });
+    const putResponse = await client.put<{ id: string; status: string }>('api/item/1', { name: 'new' });
+    const patchResponse = await client.patch<{ id: string; partial: boolean }>('api/item/1', { enabled: true });
+    const deleteResponse = await client.delete<{ ok: boolean }>('api/item/1');
+
+    expect(putResponse.status).toBe('updated');
+    expect(patchResponse.partial).toBe(true);
+    expect(deleteResponse.ok).toBe(true);
+
+    const [, putInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [, patchInit] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const [, deleteInit] = fetchMock.mock.calls[2] as [string, RequestInit];
+
+    expect(putInit.method).toBe('PUT');
+    expect(patchInit.method).toBe('PATCH');
+    expect(deleteInit.method).toBe('DELETE');
   });
 
   it('uses a longer default timeout for engine requests', async () => {
@@ -100,6 +127,7 @@ describe('httpClient', () => {
 
     await vi.advanceTimersByTimeAsync(78001);
     await expect(request).rejects.toMatchObject({
+      code: 'TIMEOUT_ERROR',
       message: 'Request timeout after 90000ms',
       isTimeout: true,
     });

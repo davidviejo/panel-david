@@ -16,25 +16,39 @@ export interface HttpRequestConfig extends Omit<RequestInit, 'body'> {
 }
 
 export interface HttpClientErrorPayload {
+  code?: string;
   error?: string;
   message?: string;
+  traceId?: string;
+  details?: unknown;
   [key: string]: unknown;
 }
 
-export class HttpClientError extends Error {
+export interface NormalizedHttpError {
+  code: string;
+  message: string;
   status?: number;
-  payload?: HttpClientErrorPayload;
-  isTimeout?: boolean;
+  traceId?: string;
+  details?: unknown;
+}
 
-  constructor(
-    message: string,
-    options: { status?: number; payload?: HttpClientErrorPayload; isTimeout?: boolean } = {},
-  ) {
-    super(message);
+export class HttpClientError extends Error implements NormalizedHttpError {
+  code: string;
+  status?: number;
+  traceId?: string;
+  details?: unknown;
+
+  constructor(normalized: NormalizedHttpError) {
+    super(normalized.message);
     this.name = 'HttpClientError';
-    this.status = options.status;
-    this.payload = options.payload;
-    this.isTimeout = options.isTimeout;
+    this.code = normalized.code;
+    this.status = normalized.status;
+    this.traceId = normalized.traceId;
+    this.details = normalized.details;
+  }
+
+  get isTimeout(): boolean {
+    return this.code === 'TIMEOUT_ERROR';
   }
 }
 
@@ -96,6 +110,32 @@ const resolveErrorMessage = (payload?: HttpClientErrorPayload): string => {
   return DEFAULT_ERROR_MESSAGE;
 };
 
+const normalizeHttpError = (
+  payload: HttpClientErrorPayload | undefined,
+  status?: number,
+): NormalizedHttpError => ({
+  code:
+    typeof payload?.code === 'string' && payload.code.trim()
+      ? payload.code
+      : status
+        ? `HTTP_${status}`
+        : 'HTTP_ERROR',
+  message: resolveErrorMessage(payload),
+  status,
+  traceId: typeof payload?.traceId === 'string' ? payload.traceId : undefined,
+  details: payload?.details,
+});
+
+const normalizeTimeoutError = (timeoutMs: number): NormalizedHttpError => ({
+  code: 'TIMEOUT_ERROR',
+  message: `Request timeout after ${timeoutMs}ms`,
+});
+
+const normalizeNetworkError = (error: unknown): NormalizedHttpError => ({
+  code: 'NETWORK_ERROR',
+  message: (error as Error)?.message || DEFAULT_ERROR_MESSAGE,
+});
+
 export const createHttpClient = (config: HttpClientConfig = {}) => {
   const baseURL = normalizeBaseUrl(config);
   const includeAuth = config.includeAuth !== false;
@@ -135,10 +175,7 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
 
       if (!response.ok) {
         const payload = await parseErrorPayload(response);
-        throw new HttpClientError(resolveErrorMessage(payload), {
-          status: response.status,
-          payload,
-        });
+        throw new HttpClientError(normalizeHttpError(payload, response.status));
       }
 
       if (response.status === 204) {
@@ -153,10 +190,10 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
       }
 
       if (error instanceof DOMException && error.name === 'AbortError') {
-        throw new HttpClientError(`Request timeout after ${timeoutMs}ms`, { isTimeout: true });
+        throw new HttpClientError(normalizeTimeoutError(timeoutMs));
       }
 
-      throw new HttpClientError((error as Error)?.message || DEFAULT_ERROR_MESSAGE);
+      throw new HttpClientError(normalizeNetworkError(error));
     } finally {
       window.clearTimeout(timeoutId);
     }
@@ -169,5 +206,11 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
       request<T>(path, { ...requestConfig, method: 'GET' }),
     post: <T>(path: string, body?: unknown, requestConfig: Omit<HttpRequestConfig, 'method' | 'body'> = {}) =>
       request<T>(path, { ...requestConfig, method: 'POST', body }),
+    put: <T>(path: string, body?: unknown, requestConfig: Omit<HttpRequestConfig, 'method' | 'body'> = {}) =>
+      request<T>(path, { ...requestConfig, method: 'PUT', body }),
+    patch: <T>(path: string, body?: unknown, requestConfig: Omit<HttpRequestConfig, 'method' | 'body'> = {}) =>
+      request<T>(path, { ...requestConfig, method: 'PATCH', body }),
+    delete: <T>(path: string, requestConfig: Omit<HttpRequestConfig, 'method' | 'body'> = {}) =>
+      request<T>(path, { ...requestConfig, method: 'DELETE' }),
   };
 };
