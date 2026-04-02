@@ -21,6 +21,7 @@ from apps.web.blueprints.image_audit import scan_imgs
 from apps.web.blueprints.readability_tool import analyze_text_visual
 from apps.web.blueprints.kw_intent import classify_keyword
 from apps.web.blueprints.seo_tool import scrape_page, text_similarity, dispatcher, classify_intent, cluster_serp_results, get_domain
+from apps.web.blueprints.seo_limits_policy import apply_seo_limits_policy
 from apps.core.database import get_user_settings
 from apps.web.blueprints.schema_tool import analyze_structured_data_detailed
 
@@ -61,6 +62,14 @@ def run_orchestrated_checklist(
     text_content = soup.get_text(" ", strip=True) if soup else ""
 
     # --- CONFIG & GUARDRAILS (Advanced Analysis) ---
+    def _safe_int(value, default=None):
+        if value is None:
+            return default
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
+
     try:
         user_settings = get_user_settings()
     except Exception as exc:
@@ -71,6 +80,7 @@ def run_orchestrated_checklist(
     advanced_blocked_reason = None
     serp_cfg = {}
     applied_limits = {}
+    policy_warnings = []
     provider_used = None
     request_serp_section = (analysis_config or {}).get('serp', {}) if analysis_config else {}
     request_dfs_login = request_serp_section.get('dataforseoLogin')
@@ -116,10 +126,36 @@ def run_orchestrated_checklist(
                 serp_cfg['maxKeywordsPerUrl'] = final_kw
                 serp_cfg['maxCompetitorsPerKeyword'] = final_comp
 
+                requested_top_n = _safe_int(serp_section.get('topN', serp_section.get('top_n', 10)), 10)
+                requested_depth = serp_section.get('depth')
+                requested_depth = _safe_int(requested_depth, None)
+                requested_max_crawl_pages = serp_section.get('max_crawl_pages')
+                requested_max_crawl_pages = _safe_int(requested_max_crawl_pages, None)
+
+                policy_result = apply_seo_limits_policy(
+                    top_n=requested_top_n,
+                    depth=requested_depth,
+                    max_crawl_pages=requested_max_crawl_pages,
+                    enforcement_mode='autocorrect',
+                    source='api_engine/seo_checklist_orchestrator'
+                )
+                serp_cfg['topN'] = policy_result['top_n']
+                serp_cfg['depth'] = policy_result['depth']
+                serp_cfg['max_crawl_pages'] = policy_result['max_crawl_pages']
+                policy_warnings = policy_result['warnings']
+
                 applied_limits = {
                     'maxKeywordsPerUrl': final_kw,
-                    'maxCompetitorsPerKeyword': final_comp
+                    'maxCompetitorsPerKeyword': final_comp,
+                    'topN': policy_result['top_n'],
+                    'depth': policy_result['depth'],
+                    'max_crawl_pages': policy_result['max_crawl_pages']
                 }
+                if policy_warnings:
+                    logging.info(
+                        "[seo_checklist_orchestrator] Limits policy warnings applied: %s",
+                        policy_warnings
+                    )
             else:
                 advanced_blocked_reason = f"Provider '{provider}' credentials missing."
         else:
@@ -136,13 +172,32 @@ def run_orchestrated_checklist(
             serp_cfg = {
                 'provider': serp_provider or 'dataforseo',
                 'maxKeywordsPerUrl': min(10, max_kw_env),
-                'maxCompetitorsPerKeyword': min(3, max_comp_env)
+                'maxCompetitorsPerKeyword': min(3, max_comp_env),
+                'topN': 10
             }
             provider_used = serp_cfg['provider']
+            policy_result = apply_seo_limits_policy(
+                top_n=serp_cfg['topN'],
+                depth=None,
+                max_crawl_pages=None,
+                enforcement_mode='autocorrect',
+                source='api_engine/seo_checklist_orchestrator_legacy'
+            )
+            serp_cfg['depth'] = policy_result['depth']
+            serp_cfg['max_crawl_pages'] = policy_result['max_crawl_pages']
+            policy_warnings = policy_result['warnings']
             applied_limits = {
                 'maxKeywordsPerUrl': serp_cfg['maxKeywordsPerUrl'],
-                'maxCompetitorsPerKeyword': serp_cfg['maxCompetitorsPerKeyword']
+                'maxCompetitorsPerKeyword': serp_cfg['maxCompetitorsPerKeyword'],
+                'topN': serp_cfg['topN'],
+                'depth': serp_cfg['depth'],
+                'max_crawl_pages': serp_cfg['max_crawl_pages']
             }
+            if policy_warnings:
+                logging.info(
+                    "[seo_checklist_orchestrator] Legacy limits policy warnings applied: %s",
+                    policy_warnings
+                )
 
     # 2. Run specialized tools in parallel
     results = {}
@@ -235,7 +290,9 @@ def run_orchestrated_checklist(
                         'serpapi_key': resolved_serpapi_key,
                         'dfs_login': resolved_dfs_login,
                         'dfs_pass': resolved_dfs_pass,
-                        'top_n': limit_comp + 2 # Fetch a bit more
+                        'top_n': min(limit_comp + 2, int(serp_cfg.get('topN', limit_comp + 2))),
+                        'depth': serp_cfg.get('depth'),
+                        'max_crawl_pages': serp_cfg.get('max_crawl_pages')
                     }
                     serp_res = dispatcher(kwPrincipal, cfg)
                     if isinstance(serp_res, list):
@@ -767,6 +824,7 @@ def run_orchestrated_checklist(
         "advancedExecuted": advanced_mode,
         "advancedBlockedReason": advanced_blocked_reason,
         "appliedLimits": applied_limits,
+        "warnings": policy_warnings,
         "providerUsed": provider_used,
         "CLUSTER": cluster_res,
         "GEOLOCALIZACION": geo_res,

@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import time, io, threading, re, urllib.parse
+import logging
 from difflib import SequenceMatcher
 from collections import Counter
 
@@ -12,6 +13,7 @@ from apps.tools.credentials import (
     MISSING_DFS_CREDENTIALS_MESSAGE,
     resolve_dataforseo_credentials,
 )
+from apps.web.blueprints.seo_limits_policy import apply_seo_limits_policy
 
 seo_bp = Blueprint('seo', __name__, url_prefix='/seo')
 
@@ -597,6 +599,49 @@ def start():
             return default
         return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
 
+    def _to_int(value, default, field_name):
+        raw = default if value is None or str(value).strip() == '' else value
+        try:
+            return int(raw), None
+        except (TypeError, ValueError):
+            return None, f"El campo '{field_name}' debe ser un número entero válido."
+
+    top_n, top_n_err = _to_int(request.form.get('top_n', 10), 10, 'top_n')
+    if top_n_err:
+        return jsonify({'status': 'error', 'message': top_n_err}), 400
+
+    depth, depth_err = _to_int(request.form.get('depth', 10), 10, 'depth')
+    if depth_err:
+        return jsonify({'status': 'error', 'message': depth_err}), 400
+
+    max_crawl_pages, max_crawl_pages_err = _to_int(
+        request.form.get('max_crawl_pages', 1),
+        1,
+        'max_crawl_pages'
+    )
+    if max_crawl_pages_err:
+        return jsonify({'status': 'error', 'message': max_crawl_pages_err}), 400
+
+    limits_policy = apply_seo_limits_policy(
+        top_n=top_n,
+        depth=depth,
+        max_crawl_pages=max_crawl_pages,
+        enforcement_mode='block',
+        source='/seo/start'
+    )
+    if limits_policy['blocked']:
+        logging.info(
+            "[seo/start] request blocked by limits policy: topN=%s depth=%s max_crawl_pages=%s reason=%s",
+            top_n,
+            depth,
+            max_crawl_pages,
+            limits_policy['block_reason']
+        )
+        return jsonify({
+            'status': 'error',
+            'message': limits_policy['block_reason']
+        }), 400
+
     cfg = {
         'mode': request.form.get('mode'),
         'gl': request.form.get('gl'),
@@ -613,7 +658,9 @@ def start():
 
         'delay': float(request.form.get('delay', 3)),
         'tos': int(request.form.get('tos', 15)),
-        'top_n': int(request.form.get('top_n', 10)),
+        'top_n': limits_policy['top_n'],
+        'depth': limits_policy['depth'],
+        'max_crawl_pages': limits_policy['max_crawl_pages'],
         'strict': int(request.form.get('strict', 3)),
         'google_scraping_auto_fallback': _to_bool(request.form.get('google_scraping_auto_fallback'), False),
         'google_scraping_fallback_mode': request.form.get('google_scraping_fallback_mode', 'explicit_error'),
@@ -644,7 +691,10 @@ def start():
     )
     t.start()
 
-    return jsonify({'status': 'ok'})
+    response = {'status': 'ok'}
+    if limits_policy['warnings']:
+        response['warning'] = " ".join(limits_policy['warnings'])
+    return jsonify(response)
 
 
 @seo_bp.route('/status')
