@@ -61,7 +61,21 @@ def test_build_dataforseo_request_rejects_invalid_depth():
 def test_build_dataforseo_request_defaults_to_standard_endpoint():
     req = build_dataforseo_request({}, "test keyword", 10, "es", "es")
     assert req["endpoint_url"].endswith("/task_post")
-    assert req["payload"][0]["depth"] == 100
+    assert req["payload"][0]["depth"] == 10
+
+
+def test_build_dataforseo_request_payload_uses_top10_policy_defaults():
+    req = build_dataforseo_request(
+        {"topN": 10, "max_crawl_pages": 1, "requireRealtime": True},
+        "test keyword",
+        10,
+        "es",
+        "es",
+    )
+
+    assert req["payload"][0]["depth"] == 10
+    assert req["max_crawl_pages"] == 1
+    assert req["require_realtime"] is True
 
 
 def test_build_dataforseo_request_uses_live_when_require_realtime():

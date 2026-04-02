@@ -170,7 +170,13 @@ def build_dataforseo_request(
     except (TypeError, ValueError):
         requested_depth = None
 
-    effective_depth = requested_depth if requested_depth is not None else max(100, requested_top_n + 20)
+    top10_policy_applies = requested_top_n <= 10
+    if requested_depth is not None:
+        effective_depth = requested_depth
+    elif top10_policy_applies:
+        effective_depth = 10
+    else:
+        effective_depth = max(100, requested_top_n + 20)
 
     normalized_keywords = [
         str(kw).strip() for kw in (keywords or [keyword]) if str(kw).strip()
@@ -191,6 +197,7 @@ def build_dataforseo_request(
     return {
         "endpoint_url": endpoint_url,
         "require_realtime": require_realtime,
+        "max_crawl_pages": cfg.get("max_crawl_pages"),
         "payload": payload,
         "batch_size": len(payload),
         "batching_applied": batching_applied,
