@@ -10,6 +10,8 @@ export interface HttpClientConfig {
   includeAuth?: boolean;
 }
 
+export type AuthErrorHandler = (error: NormalizedHttpError) => void;
+
 export interface HttpRequestConfig extends Omit<RequestInit, 'body'> {
   timeoutMs?: number;
   body?: unknown;
@@ -212,6 +214,13 @@ const normalizeNetworkError = (error: unknown): NormalizedHttpError => ({
   message: (error as Error)?.message || DEFAULT_ERROR_MESSAGE,
 });
 
+
+let authErrorHandler: AuthErrorHandler | undefined;
+
+export const registerAuthErrorHandler = (handler: AuthErrorHandler | undefined): void => {
+  authErrorHandler = handler;
+};
+
 export const createHttpClient = (config: HttpClientConfig = {}) => {
   const baseURL = normalizeBaseUrl(config);
   const includeAuth = config.includeAuth !== false;
@@ -230,11 +239,8 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
 
     const shouldIncludeAuth = requestConfig.includeAuth ?? includeAuth;
 
-    if (shouldIncludeAuth) {
-      const token = sessionStorage.getItem('portal_token');
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
+    if (!shouldIncludeAuth) {
+      headers.delete('Authorization');
     }
 
     const endpoint = `${baseURL}/${trimLeadingSlash(path)}`;
@@ -245,6 +251,7 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
       const response = await fetch(endpoint, {
         ...fetchInit,
         headers,
+        credentials: fetchInit.credentials ?? 'include',
         body: toRequestBody(body),
         signal: controller.signal,
       });
@@ -260,6 +267,9 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
           traceId: normalizedError.traceId,
           requestId: normalizedError.requestId,
         });
+        if (normalizedError.status === 401 && shouldIncludeAuth) {
+          authErrorHandler?.(normalizedError);
+        }
         throw new HttpClientError(normalizedError);
       }
 
@@ -284,6 +294,9 @@ export const createHttpClient = (config: HttpClientConfig = {}) => {
           traceId: normalizedError.traceId,
           requestId: normalizedError.requestId,
         });
+        if (normalizedError.status === 401 && shouldIncludeAuth) {
+          authErrorHandler?.(normalizedError);
+        }
         throw new HttpClientError(normalizedError);
       }
 

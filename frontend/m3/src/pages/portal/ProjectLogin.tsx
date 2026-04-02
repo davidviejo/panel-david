@@ -22,7 +22,7 @@ const ProjectLogin: React.FC = () => {
 
     try {
       const res = await api.authProject(slug, password);
-      if (res.token) {
+      if (res.authenticated) {
         navigate(`/c/${slug}/overview`);
       } else {
         setError('Contraseña incorrecta');

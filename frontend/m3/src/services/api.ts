@@ -1,49 +1,50 @@
-import { createHttpClient } from './httpClient';
+import { redirectToLoginForExpiredSession } from './authSession';
 import { endpoints } from './endpoints';
+import { registerAuthErrorHandler, createHttpClient } from './httpClient';
 
 interface AuthResponse {
-  token: string;
+  authenticated: boolean;
   role: string;
   scope?: string;
+  session?: {
+    strategy: 'httpOnlyCookie';
+    expiresInSeconds: number;
+  };
   error?: string;
+}
+
+interface SessionResponse {
+  authenticated: boolean;
+  role: string;
+  scope?: string;
 }
 
 const httpClient = createHttpClient({ service: 'api' });
 
+registerAuthErrorHandler(() => {
+  redirectToLoginForExpiredSession();
+});
+
 export const api = {
-  authClientsArea: async (password: string): Promise<AuthResponse> => {
-    const data = await httpClient.post<AuthResponse>(endpoints.auth.clientsArea(), { password }, { includeAuth: false });
-    if (data.token) {
-      sessionStorage.setItem('portal_token', data.token);
-      sessionStorage.setItem('portal_role', data.role);
-    }
-    return data;
-  },
+  authClientsArea: async (password: string): Promise<AuthResponse> =>
+    httpClient.post<AuthResponse>(endpoints.auth.clientsArea(), { password }, { includeAuth: false }),
 
-  authProject: async (slug: string, password: string): Promise<AuthResponse> => {
-    const data = await httpClient.post<AuthResponse>(endpoints.auth.project(slug), { password }, { includeAuth: false });
-    if (data.token) {
-      sessionStorage.setItem('portal_token', data.token);
-      sessionStorage.setItem('portal_role', data.role);
-      sessionStorage.setItem('portal_scope', data.scope || '');
-    }
-    return data;
-  },
+  authProject: async (slug: string, password: string): Promise<AuthResponse> =>
+    httpClient.post<AuthResponse>(endpoints.auth.project(slug), { password }, { includeAuth: false }),
 
-  authOperator: async (password: string): Promise<AuthResponse> => {
-    const data = await httpClient.post<AuthResponse>(endpoints.auth.operator(), { password }, { includeAuth: false });
-    if (data.token) {
-      sessionStorage.setItem('portal_token', data.token);
-      sessionStorage.setItem('portal_role', data.role);
-    }
-    return data;
-  },
+  authOperator: async (password: string): Promise<AuthResponse> =>
+    httpClient.post<AuthResponse>(endpoints.auth.operator(), { password }, { includeAuth: false }),
 
-  logout: () => {
-    sessionStorage.removeItem('portal_token');
-    sessionStorage.removeItem('portal_role');
-    sessionStorage.removeItem('portal_scope');
-    window.location.href = '/';
+  getSession: async (): Promise<SessionResponse> =>
+    httpClient.get<SessionResponse>('api/auth/session'),
+
+  logout: async () => {
+    try {
+      await httpClient.post<{ ok: boolean }>('api/auth/logout', undefined, { includeAuth: false });
+    } finally {
+      window.sessionStorage.removeItem('portal_auth_message');
+      window.location.assign('/');
+    }
   },
 
   getClients: async () => httpClient.get(endpoints.clients.list()),

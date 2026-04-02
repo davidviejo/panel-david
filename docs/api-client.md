@@ -2,109 +2,50 @@
 
 Este documento define el uso del cliente HTTP tipado para unificar consumo de backend como fuente de verdad.
 
+## Auth/Sesión unificada (decisión)
+
+**Estrategia elegida: Opción A (cookie HttpOnly + sesión backend).**
+
+- El frontend **no depende de tokens legibles** en `sessionStorage` para autenticar requests.
+- El backend emite `portal_auth_token` como cookie `HttpOnly` y mantiene estado de sesión en Flask.
+- `httpClient` usa `credentials: 'include'` por defecto para enviar cookie en cada request autenticada.
+
+### Tradeoffs
+
+- ✅ Menor superficie de exposición XSS (no hay bearer token accesible por JS).
+- ✅ Política única FE/BE para login/expiración/logout.
+- ⚠️ Requiere CORS con `supports_credentials=true` y orígenes explícitos.
+- ⚠️ Si el frontend y backend están en distintos dominios, hay que validar `SameSite`/`Secure` por entorno.
+
 ## Configuración base (baseURL / headers / timeout)
 
 El cliente se crea con `createHttpClient(config)` en `frontend/m3/src/services/httpClient.ts`.
 
 - `service`: `'api' | 'engine'`
-  - `'api'` usa `resolveApiUrl()`.
-  - `'engine'` usa `resolveEngineUrl()`.
-- `baseURL` (opcional): sobreescribe la URL base resuelta.
-- `timeoutMs` (opcional): timeout por defecto para todas las requests del cliente.
-  - default API: `12000ms`
-  - default Engine: `90000ms`
-- `includeAuth` (opcional): `true` por defecto.
+- `baseURL` (opcional)
+- `timeoutMs` (opcional)
+- `includeAuth` (opcional, `true` por defecto)
 
 Headers automáticos:
 
-- `Content-Type: application/json` cuando hay `body` serializable y no es `FormData`.
-- `Authorization: Bearer <token>` cuando existe token de sesión y `includeAuth` está activo.
+- `Content-Type: application/json` cuando aplica.
+- Para auth se usa cookie HttpOnly (no header `Authorization` inyectado por defecto).
 
-## Auth token
+## Flujo estándar de autenticación
 
-El token se lee de `sessionStorage` usando la clave:
+- `POST /api/auth/clients-area`
+- `POST /api/auth/project/:slug`
+- `POST /api/auth/operator`
+- `GET /api/auth/session` (estado de sesión actual)
+- `POST /api/auth/logout` (invalidación FE/BE)
 
-- `portal_token`
-
-Si necesitas desactivar auth para una llamada puntual:
-
-```ts
-client.get<MyType>('public/endpoint', { includeAuth: false });
-```
-
-## Métodos HTTP tipados
-
-El cliente expone:
-
-- `get<T>(path, config?)`
-- `post<T>(path, body?, config?)`
-- `put<T>(path, body?, config?)`
-- `patch<T>(path, body?, config?)`
-- `delete<T>(path, config?)`
-
-Ejemplo:
-
-```ts
-const httpClient = createHttpClient({ service: 'api' });
-const response = await httpClient.put<{ id: string; status: string }>('v1/items/1', { status: 'active' });
-```
+En `api.ts`, el `registerAuthErrorHandler` redirige de forma uniforme ante `401` usando `redirectToLoginForExpiredSession()`.
 
 ## Errores normalizados
 
-Todos los errores (HTTP, red, timeout) se normalizan al mismo shape:
+`HttpClientError` conserva contrato único: `code`, `message`, `status`, `traceId`, `requestId`, `details`.
 
-```ts
-interface NormalizedHttpError {
-  code: string;
-  message: string;
-  status?: number;
-  traceId?: string;
-  details?: unknown;
-}
-```
+- `401`: sesión inválida/expirada → redirección uniforme y mensaje UX consistente.
+- `403`: falta de permisos/alcance (scope) → mensaje de permisos.
 
-`HttpClientError` implementa ese contrato.
-
-Casos comunes:
-
-- HTTP error (`response.ok === false`):
-  - `code`: `payload.code` o fallback `HTTP_<status>`
-  - `message`: `payload.error` o `payload.message`
-  - `status`: status HTTP
-  - `traceId` y `details`: si vienen en payload
-- Timeout:
-  - `code`: `TIMEOUT_ERROR`
-  - `message`: `Request timeout after <ms>ms`
-- Network / fetch:
-  - `code`: `NETWORK_ERROR`
-  - `message`: mensaje original de fetch (si existe)
-
-Consumo recomendado:
-
-```ts
-try {
-  await httpClient.get<MyType>('v1/resource');
-} catch (error) {
-  const normalized = error as HttpClientError;
-  console.error(normalized.code, normalized.message, normalized.status, normalized.traceId, normalized.details);
-}
-```
-
-## Ejemplo real (IA Visibility)
-
-En `frontend/m3/src/services/iaVisibilityService.ts` se consume el cliente tipado para operaciones de IA Visibility:
-
-```ts
-export const iaVisibilityService = {
-  run: (payload: IAVisibilityRequest) =>
-    httpClient.post<IAVisibilityResponse>(endpoints.ai.visibilityRun(), payload),
-
-  getHistory: (clientId: string) =>
-    httpClient.get<IAVisibilityHistoryResponse>(endpoints.ai.visibilityHistory(clientId)),
-
-  saveConfig: (clientId: string, payload: IAVisibilityRequest) =>
-    httpClient.post<IAVisibilityConfigResponse>(endpoints.ai.visibilityConfig(clientId), payload),
-};
-```
-
-Este patrón permite migraciones incrementales módulo por módulo sin romper funcionalidades existentes.
+Este patrón permite migraciones incrementales por módulo sin romper funcionalidades existentes.

@@ -22,7 +22,7 @@ const OperatorPage: React.FC = () => {
 
     try {
       const res = await api.authOperator(password);
-      if (res.token) {
+      if (res.authenticated) {
         setIsAuthenticated(true);
       } else {
         setError('Acceso denegado');
@@ -52,8 +52,7 @@ const OperatorPage: React.FC = () => {
             </h1>
             <button
               onClick={() => {
-                api.logout();
-                navigate('/');
+                void api.logout();
               }}
               className="text-sm text-slate-400 hover:text-white"
             >

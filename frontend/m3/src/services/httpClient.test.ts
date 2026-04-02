@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createHttpClient } from './httpClient';
+import { createHttpClient, registerAuthErrorHandler } from './httpClient';
 
 describe('httpClient', () => {
   const fetchMock = vi.fn();
@@ -18,8 +18,7 @@ describe('httpClient', () => {
     sessionStorage.clear();
   });
 
-  it('injects Authorization header from sessionStorage', async () => {
-    sessionStorage.setItem('portal_token', 'token-123');
+  it('uses HttpOnly-cookie strategy by default (credentials include, no Authorization injection)', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -29,16 +28,11 @@ describe('httpClient', () => {
     const client = createHttpClient({ service: 'api' });
     await client.post('api/test', { hello: 'world' });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringMatching(/\/api\/test$/),
-      expect.objectContaining({
-        headers: expect.any(Headers),
-      }),
-    );
-
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const headers = new Headers(init.headers);
-    expect(headers.get('Authorization')).toBe('Bearer token-123');
+
+    expect(init.credentials).toBe('include');
+    expect(headers.get('Authorization')).toBeNull();
   });
 
   it('normalizes HTTP errors with unique error shape and traceability ids from headers', async () => {
@@ -154,6 +148,29 @@ describe('httpClient', () => {
     );
   });
 
+
+
+  it('notifies auth handler on 401 responses when auth is enabled', async () => {
+    const authHandler = vi.fn();
+    registerAuthErrorHandler(authHandler);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      headers: new Headers(),
+      json: async () => ({ error: 'Session expired or invalid', code: 'AUTH_SESSION_INVALID' }),
+    });
+
+    const client = createHttpClient({ service: 'api' });
+    await expect(client.get('api/protected')).rejects.toMatchObject({ status: 401 });
+
+    expect(authHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'AUTH_SESSION_INVALID',
+        status: 401,
+      }),
+    );
+  });
   it('supports put/patch/delete typed methods', async () => {
     fetchMock
       .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: '1', status: 'updated' }) })
