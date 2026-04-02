@@ -7,3 +7,11 @@ export interface SeoInsightsService {
 
 export type { ToolRoutingInput } from './toolRoutingService';
 export { mapInsightToTool } from './toolRoutingService';
+
+export {
+  scoreInsight,
+  computeConfidenceScore,
+  computeFreshnessScore,
+  computeImpactScore,
+  computeSeverityScore,
+} from './scoringService';
