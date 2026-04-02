@@ -185,6 +185,42 @@ describe('recommendationService', () => {
     expect(ranked.some((entry) => entry.tested)).toBe(true);
   });
 
+  it('prioritizes effective tool signals by insight type from outcomes', () => {
+    const result = applyRecommendationFeedback({
+      recommendation: BASE_RECOMMENDATION,
+      insight: { analysisType: 'manual' },
+      outcomeLogs: [
+        {
+          id: 'o4',
+          createdAt: '2026-03-06T00:00:00.000Z',
+          updatedAt: '2026-03-06T00:00:00.000Z',
+          projectId: 'project-1',
+          measuredAt: '2026-03-06T00:00:00.000Z',
+          metric: 'ctr',
+          recommendationId: 'insight-1Actualizar schema de producto',
+          toolKey: 'schema_tool',
+          insightType: 'manual',
+          outcomeStatus: 'improved',
+        },
+        {
+          id: 'o5',
+          createdAt: '2026-03-07T00:00:00.000Z',
+          updatedAt: '2026-03-07T00:00:00.000Z',
+          projectId: 'project-1',
+          measuredAt: '2026-03-07T00:00:00.000Z',
+          metric: 'ctr',
+          recommendationId: 'insight-1Actualizar schema de producto',
+          toolKey: 'schema_tool',
+          insightType: 'manual',
+          outcomeStatus: 'improved',
+        },
+      ],
+    });
+
+    expect(result.delta).toBeGreaterThan(0);
+    expect(result.weight).toBeGreaterThan(0.7);
+  });
+
   it('keeps base priority weight when there is no interaction history', () => {
     const result = applyRecommendationFeedback({
       recommendation: BASE_RECOMMENDATION,

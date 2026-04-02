@@ -15,5 +15,8 @@ export interface OutcomeLog extends BaseEntity {
   toolKey?: string;
   insightType?: string;
   sectorId?: Uuid;
+  wasUsed?: boolean;
+  wasEffective?: boolean;
+  clientIgnoredPattern?: boolean;
   similarCasesResolved?: number;
 }
