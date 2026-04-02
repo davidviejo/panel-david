@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from apps.tools.credentials import resolve_dataforseo_credentials
-from apps.tools.scraper_core import normalize_serp_config, smart_serp_search
+from apps.tools.scraper_core import build_dataforseo_request, normalize_serp_config, smart_serp_search
 
 
 def test_normalize_serp_config_accepts_legacy_aliases():
@@ -20,6 +20,33 @@ def test_normalize_serp_config_accepts_legacy_aliases():
     assert cfg["dataforseo_password"] == "legacy-pass"
     assert cfg["google_cse_key"] == "legacy-key"
     assert cfg["google_cse_cx"] == "legacy-cx"
+
+
+def test_normalize_serp_config_accepts_dataforseo_internal_contract_fields():
+    cfg = normalize_serp_config({
+        "requireRealtime": True,
+        "topN": 15,
+        "depth": 120,
+        "maxCrawlPages": 7,
+    })
+
+    assert cfg["requireRealtime"] is True
+    assert cfg["topN"] == 15
+    assert cfg["depth"] == 120
+    assert cfg["max_crawl_pages"] == 7
+
+
+def test_build_dataforseo_request_defaults_to_standard_endpoint():
+    req = build_dataforseo_request({}, "test keyword", 10, "es", "es")
+    assert req["endpoint_url"].endswith("/task_post")
+    assert req["payload"][0]["depth"] == 100
+
+
+def test_build_dataforseo_request_uses_live_when_require_realtime():
+    req = build_dataforseo_request({"requireRealtime": True, "depth": 55}, "test keyword", 10, "en", "us")
+    assert req["endpoint_url"].endswith("/live/advanced")
+    assert req["payload"][0]["location_name"] == "United States"
+    assert req["payload"][0]["depth"] == 55
 
 
 @patch("apps.tools.scraper_core.search_google_official")
@@ -51,12 +78,22 @@ def test_smart_serp_search_prefers_canonical_dataforseo_keys(mock_dfs):
     )
 
     assert len(result) == 1
-    mock_dfs.assert_called_once_with("test keyword", "canonical-login", "canonical-password", 1, "es", "es")
+    mock_dfs.assert_called_once()
+    args, kwargs = mock_dfs.call_args
+    assert args[:6] == ("test keyword", "canonical-login", "canonical-password", 1, "es", "es")
+    assert kwargs["config"]["mode"] == "dataforseo"
+    assert kwargs["config"]["requireRealtime"] is False
 
 
 @patch("apps.tools.scraper_core.scrape_google_serp")
 def test_smart_serp_search_google_scraping_passes_gl_hl(mock_scrape):
-    mock_scrape.return_value = [{"url": "https://example.com", "title": "ok"}]
+    mock_scrape.return_value = {
+        "results": [{"url": "https://example.com", "title": "ok"}],
+        "http_status": 200,
+        "blocked": False,
+        "mode": "gbv_legacy",
+        "elapsed_ms": 20,
+    }
 
     result = smart_serp_search(
         "test keyword",
@@ -67,14 +104,12 @@ def test_smart_serp_search_google_scraping_passes_gl_hl(mock_scrape):
     )
 
     assert len(result) == 1
-    mock_scrape.assert_called_once_with(
-        "test keyword",
-        1,
-        2,
-        cookie=None,
-        gl="us",
-        hl="en",
-    )
+    mock_scrape.assert_called_once()
+    args, kwargs = mock_scrape.call_args
+    assert args == ("test keyword", 1, 2)
+    assert kwargs["cookie"] is None
+    assert kwargs["gl"] == "us"
+    assert kwargs["hl"] == "en"
 
 
 def test_resolve_dataforseo_credentials_supports_canonical_override():
