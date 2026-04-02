@@ -848,7 +848,7 @@ def search_dataforseo(
                     posted_task_id = str(task.get("id")) if task.get("id") is not None else None
                     for kw, info in keyword_status.items():
                         if posted_task_id and info.get("task_id") == posted_task_id:
-                            info["state"] = "ready"
+                            info["state"] = "ready_with_results" if all_task_results else "ready_empty"
                             info["results"] = len(all_task_results)
                             full_results_by_keyword[kw] = all_task_results
                             break
@@ -884,22 +884,23 @@ def search_dataforseo(
                         if task_get_response is None:
                             continue
                         task_get_data = task_get_response.json()
-                        task_has_items = False
+                        task_recovered = False
                         for task in (task_get_data.get("tasks") or []):
                             if str(task.get("id")) != task_id:
                                 continue
+                            task_recovered = True
                             all_task_results = _parse_dataforseo_task_results(task)
                             task_results = all_task_results[:max(0, num_results - len(results))]
                             results.extend(task_results)
-                            task_has_items = len(all_task_results) > 0
+                            state = "ready_with_results" if all_task_results else "ready_empty"
                             for kw, info in keyword_status.items():
                                 if info.get("task_id") == task_id:
-                                    info["state"] = "ready"
+                                    info["state"] = state
                                     info["results"] = len(all_task_results)
                                     full_results_by_keyword[kw] = all_task_results
                                     break
                             break
-                        if task_has_items:
+                        if task_recovered:
                             pending.discard(task_id)
                         if len(results) >= num_results:
                             pending.clear()

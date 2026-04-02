@@ -294,7 +294,7 @@ def test_search_dataforseo_standard_polls_tasks_ready_and_task_get(mock_post, mo
 @patch("apps.tools.scraper_core.time.sleep")
 @patch("apps.tools.scraper_core.requests.get")
 @patch("apps.tools.scraper_core.requests.post")
-def test_search_dataforseo_standard_polls_until_task_get_has_items_when_tasks_ready_uses_nested_ids(mock_post, mock_get, _mock_sleep):
+def test_search_dataforseo_standard_marks_ready_empty_without_timeout_when_task_get_has_no_items(mock_post, mock_get, _mock_sleep):
     task_post_response = MagicMock()
     task_post_response.status_code = 200
     task_post_response.json.return_value = {
@@ -311,7 +311,7 @@ def test_search_dataforseo_standard_polls_until_task_get_has_items_when_tasks_re
             }],
         }],
     }
-    mock_post.side_effect = [task_post_response, tasks_ready_response, tasks_ready_response]
+    mock_post.side_effect = [task_post_response, tasks_ready_response]
 
     first_task_get_response = MagicMock()
     first_task_get_response.status_code = 200
@@ -319,24 +319,7 @@ def test_search_dataforseo_standard_polls_until_task_get_has_items_when_tasks_re
         "status_code": 20000,
         "tasks": [{"id": "task-1", "result": [{"items": []}]}],
     }
-    second_task_get_response = MagicMock()
-    second_task_get_response.status_code = 200
-    second_task_get_response.json.return_value = {
-        "status_code": 20000,
-        "tasks": [{
-            "id": "task-1",
-            "result": [{
-                "items": [{
-                    "type": "organic",
-                    "url": "https://later.example.com",
-                    "title": "Later",
-                    "snippet": "Loaded later",
-                    "rank_group": 1,
-                }],
-            }],
-        }],
-    }
-    mock_get.side_effect = [first_task_get_response, second_task_get_response]
+    mock_get.return_value = first_task_get_response
 
     response = search_dataforseo(
         "kw",
@@ -347,6 +330,8 @@ def test_search_dataforseo_standard_polls_until_task_get_has_items_when_tasks_re
         return_meta=True,
     )
 
-    assert response["results"][0]["url"] == "https://later.example.com"
+    assert response["results"] == []
+    assert response["full_results"] == []
+    assert response["full_results_by_keyword"]["kw"] == []
     assert response["diagnostics"]["timed_out"] is False
-    assert mock_get.call_count == 2
+    assert mock_get.call_count == 1
