@@ -81,3 +81,7 @@ def test_parse_google_html_edge():
     # The logic filters 'google.' URLs
     results = parse_google_html(html_blocked)
     assert len(results) == 0
+
+def test_parse_google_html_captcha_signal():
+    html_blocked = "<html><body>Our systems have detected unusual traffic from your computer network. Sorry...</body></html>"
+    assert parse_google_html(html_blocked) == {"status": "blocked"}
