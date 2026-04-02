@@ -119,8 +119,20 @@ Fuente de contratos en frontend:
 
 - Roles permitidos: `project`, `clients_area`, `operator`.
 - Scope estricto para rol `project` (`scope === slug`), en caso contrario `403`.
-- Error payload estandarizado: `{ error, traceId, requestId }`.
+- Errores auth estandarizados en endpoints protegidos:
+  - `401`: `{ code: "AUTH_UNAUTHORIZED", error, traceId, requestId }`
+  - `403`: `{ code: "AUTH_FORBIDDEN", error, traceId, requestId }`
 - Headers de trazabilidad: `x-trace-id`, `x-request-id`.
+
+## Contrato de sesión portal
+
+### `GET /api/auth/session`
+- `200`: `{ authenticated: true, role, scope }`
+- `401`: `{ authenticated: false, role: null, scope: null }`
+
+### `POST /api/auth/logout`
+- `200`: `{ status: "ok" }`
+- Efecto: invalida sesión Flask y cookie `portal_auth_token`.
 
 ### Versionado
 

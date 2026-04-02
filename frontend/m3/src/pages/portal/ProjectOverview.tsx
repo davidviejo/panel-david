@@ -109,7 +109,7 @@ const ProjectOverview: React.FC = () => {
                 <span className="font-mono text-xs text-slate-500">Overview Dashboard</span>
               </div>
             </div>
-            <Button onClick={() => api.logout()} variant="ghost" className="text-slate-500">
+            <Button onClick={() => void api.logout('/clientes')} variant="ghost" className="text-slate-500">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>

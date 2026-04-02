@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { Terminal, Play } from 'lucide-react';
@@ -15,6 +15,21 @@ const OperatorPage: React.FC = () => {
   const [output, setOutput] = useState<string[]>([]);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const hydrateSession = async () => {
+      try {
+        const session = await api.getSession();
+        if (session.authenticated && session.role === 'operator') {
+          setIsAuthenticated(true);
+        }
+      } catch {
+        setIsAuthenticated(false);
+      }
+    };
+
+    void hydrateSession();
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -22,7 +37,7 @@ const OperatorPage: React.FC = () => {
 
     try {
       const res = await api.authOperator(password);
-      if (res.token) {
+      if (res.role === 'operator') {
         setIsAuthenticated(true);
       } else {
         setError('Acceso denegado');
@@ -52,8 +67,8 @@ const OperatorPage: React.FC = () => {
             </h1>
             <button
               onClick={() => {
-                api.logout();
-                navigate('/');
+                void api.logout('/operator');
+                navigate('/operator');
               }}
               className="text-sm text-slate-400 hover:text-white"
             >

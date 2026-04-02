@@ -50,3 +50,22 @@ Formato actual: `console.error('[api-error]', payload)`.
 - **Fuente de verdad por flag:** `backend` es el valor por defecto del piloto para producción; `legacy` queda disponible solo como rollback operativo.
 - **Trazabilidad resiliente:** se soporta `traceId` y `requestId` desde headers o body para compatibilidad con diferentes middlewares backend.
 - **Observabilidad incremental:** logging estructurado agregado en `httpClient` para centralizar telemetría de errores API sin modificar cada pantalla.
+
+
+## Diagnóstico rápido de 401/403 (Portal)
+
+1. Confirmar `traceId/requestId` en el error de UI o en logs `[api-error]`.
+2. Verificar respuesta backend:
+   - `401 + AUTH_UNAUTHORIZED`: sesión expirada, token inválido o cookie ausente.
+   - `403 + AUTH_FORBIDDEN`: sesión válida pero rol/scope sin permisos.
+3. Ejecutar `GET /api/auth/session` en el navegador:
+   - `200 authenticated=true`: revisar autorización (rol/scope).
+   - `401 authenticated=false`: usuario debe reautenticarse.
+4. Validar cookie `portal_auth_token`:
+   - `SameSite=Lax` por defecto.
+   - `Secure=true` en entornos HTTPS productivos.
+5. Revisar redirecciones:
+   - `httpClient` redirige a login con `reason=session-expired` en 401 para rutas protegidas.
+   - Si la pantalla ya es login, no redirige para evitar loops.
+
+**Nota de seguridad:** evitar loggear passwords/tokens en frontend y backend; usar únicamente `traceId/requestId` para soporte.

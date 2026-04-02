@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import { ArrowLeft, Key } from 'lucide-react';
 import { PortalShell } from '../../components/shell/ShellVariants';
@@ -11,7 +11,9 @@ const ProjectLogin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const sessionExpired = searchParams.get('reason') === 'session-expired';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +24,7 @@ const ProjectLogin: React.FC = () => {
 
     try {
       const res = await api.authProject(slug, password);
-      if (res.token) {
+      if (res.role) {
         navigate(`/c/${slug}/overview`);
       } else {
         setError('Contraseña incorrecta');
@@ -45,6 +47,9 @@ const ProjectLogin: React.FC = () => {
           <p className="text-slate-500 mt-2">
             Proyecto: <span className="font-semibold text-slate-700">{slug}</span>
           </p>
+          {sessionExpired && (
+            <p className="mt-2 text-sm text-amber-600">Tu sesión expiró. Inicia sesión nuevamente.</p>
+          )}
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">

@@ -1,9 +1,21 @@
 from flask import Blueprint, request, jsonify, current_app, session, make_response
-from apps.auth_utils import check_global_password, create_token, check_password_hash
+from apps.auth_utils import check_global_password, create_token, check_password_hash, verify_token
 from apps.web.clients_store import find_client_by_slug
 from apps.web.portal_bp import WEB_AUTH_COOKIE
 
 auth_bp = Blueprint('auth_bp', __name__)
+
+
+def _cookie_settings():
+    same_site = current_app.config.get('PORTAL_AUTH_COOKIE_SAMESITE', 'Lax')
+    secure = bool(current_app.config.get('PORTAL_AUTH_COOKIE_SECURE', current_app.config.get('SESSION_COOKIE_SECURE', False)))
+    max_age = int(current_app.config.get('PORTAL_AUTH_MAX_AGE_SECONDS', 24 * 60 * 60))
+    return {
+        'httponly': True,
+        'samesite': same_site,
+        'secure': secure,
+        'max_age': max_age,
+    }
 
 
 def _build_auth_response(token, role, scope=None):
@@ -15,14 +27,7 @@ def _build_auth_response(token, role, scope=None):
     session['auth_payload'] = {'role': role, 'scope': scope}
 
     response = make_response(jsonify(payload))
-    response.set_cookie(
-        WEB_AUTH_COOKIE,
-        token,
-        httponly=True,
-        samesite='Lax',
-        secure=bool(current_app.config.get('SESSION_COOKIE_SECURE', False)),
-        max_age=24 * 60 * 60,
-    )
+    response.set_cookie(WEB_AUTH_COOKIE, token, **_cookie_settings())
     return response
 
 @auth_bp.route('/api/auth/clients-area', methods=['POST'])
@@ -77,3 +82,32 @@ def auth_operator():
         return _build_auth_response(token, 'operator')
 
     return jsonify({'error': 'Invalid password'}), 401
+
+
+@auth_bp.route('/api/auth/session', methods=['GET'])
+def auth_session():
+    token = session.get('auth_token') or request.cookies.get(WEB_AUTH_COOKIE)
+    payload = verify_token(token) if token else None
+
+    if not payload:
+        session.pop('auth_token', None)
+        session.pop('auth_payload', None)
+        return jsonify({'authenticated': False, 'role': None, 'scope': None}), 401
+
+    session['auth_payload'] = payload
+    return jsonify({
+        'authenticated': True,
+        'role': payload.get('role'),
+        'scope': payload.get('scope'),
+    })
+
+
+@auth_bp.route('/api/auth/logout', methods=['POST'])
+def auth_logout():
+    session.pop('auth_token', None)
+    session.pop('auth_payload', None)
+    response = make_response(jsonify({'status': 'ok'}), 200)
+    cookie_settings = _cookie_settings()
+    cookie_settings['max_age'] = 0
+    response.set_cookie(WEB_AUTH_COOKIE, '', expires=0, **cookie_settings)
+    return response

@@ -54,7 +54,7 @@ const ProjectsList: React.FC = () => {
               </div>
               <span className="text-lg font-bold text-slate-900">Portal de Clientes</span>
             </div>
-            <Button onClick={() => api.logout()} variant="ghost" className="text-slate-600">
+            <Button onClick={() => void api.logout('/clientes')} variant="ghost" className="text-slate-600">
               <LogOut className="h-4 w-4" /> Cerrar Sesión
             </Button>
           </div>

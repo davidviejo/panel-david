@@ -18,13 +18,21 @@ El cliente se crea con `createHttpClient(config)` en `frontend/m3/src/services/h
 Headers automáticos:
 
 - `Content-Type: application/json` cuando hay `body` serializable y no es `FormData`.
-- `Authorization: Bearer <token>` cuando existe token de sesión y `includeAuth` está activo.
+- `credentials: 'include'` por defecto para enviar cookie HttpOnly de sesión (`portal_auth_token`).
 
-## Auth token
+## Auth/session unificada (decisión técnica)
 
-El token se lee de `sessionStorage` usando la clave:
+Se estandarizó **Opción A**: cookie HttpOnly + sesión Flask como fuente principal.
 
-- `portal_token`
+- El frontend **no depende de `portal_token` en `sessionStorage`** para autenticación.
+- El backend firma JWT con expiración y lo guarda en cookie HttpOnly (`portal_auth_token`).
+- `GET /api/auth/session` expone estado de sesión (`authenticated`, `role`, `scope`) para hidratación de UI cuando aplica.
+- `POST /api/auth/logout` limpia estado de backend (cookie + sesión Flask).
+
+Tradeoffs:
+- ✅ Menor exposición de secretos en frontend (mitiga exfiltración por XSS de token legible).
+- ✅ Política de expiración única en backend.
+- ⚠️ Requiere `credentials: include` y revisar CORS/SameSite al separar dominios FE/BE.
 
 Si necesitas desactivar auth para una llamada puntual:
 
