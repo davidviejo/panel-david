@@ -69,6 +69,8 @@ const defaultEngineBaseURL = resolveEngineUrl();
 
 const TRACE_ID_HEADERS = ['x-trace-id', 'trace-id'];
 const REQUEST_ID_HEADERS = ['x-request-id', 'request-id'];
+const TRACE_ID_PAYLOAD_KEYS = ['traceId', 'trace_id', 'traceID'];
+const REQUEST_ID_PAYLOAD_KEYS = ['requestId', 'request_id', 'requestID'];
 
 const normalizeBaseUrl = (config: HttpClientConfig): string => {
   if (config.baseURL && config.baseURL.trim()) {
@@ -128,10 +130,39 @@ const resolveHeaderValue = (headers: Headers, headerCandidates: string[]): strin
   return undefined;
 };
 
-const resolveTraceability = (payload: HttpClientErrorPayload | undefined, headers?: Headers) => {
-  const payloadTraceId = typeof payload?.traceId === 'string' && payload.traceId.trim() ? payload.traceId : undefined;
+const resolvePayloadString = (payload: unknown, keyCandidates: string[]): string | undefined => {
+  if (!payload || typeof payload !== 'object') {
+    return undefined;
+  }
+
+  for (const key of keyCandidates) {
+    const value = (payload as Record<string, unknown>)[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
+const resolvePayloadTraceability = (payload: HttpClientErrorPayload | undefined) => {
+  const payloadTraceId =
+    resolvePayloadString(payload, TRACE_ID_PAYLOAD_KEYS) ||
+    resolvePayloadString(payload?.error, TRACE_ID_PAYLOAD_KEYS) ||
+    resolvePayloadString(payload?.details, TRACE_ID_PAYLOAD_KEYS);
   const payloadRequestId =
-    typeof payload?.requestId === 'string' && payload.requestId.trim() ? payload.requestId : undefined;
+    resolvePayloadString(payload, REQUEST_ID_PAYLOAD_KEYS) ||
+    resolvePayloadString(payload?.error, REQUEST_ID_PAYLOAD_KEYS) ||
+    resolvePayloadString(payload?.details, REQUEST_ID_PAYLOAD_KEYS);
+
+  return {
+    payloadTraceId,
+    payloadRequestId,
+  };
+};
+
+const resolveTraceability = (payload: HttpClientErrorPayload | undefined, headers?: Headers) => {
+  const { payloadTraceId, payloadRequestId } = resolvePayloadTraceability(payload);
 
   if (!headers) {
     return {

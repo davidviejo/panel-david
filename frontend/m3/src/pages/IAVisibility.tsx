@@ -15,7 +15,7 @@ import {
   IAVisibilityHistoryItemViewModel,
   mapIAVisibilityHistoryToViewModel,
 } from '../shared/api/mappers/iaVisibilityMapper';
-import { getUiApiErrorDisplay } from '../shared/api/errorHandling';
+import { UiApiErrorDisplay, getUiApiErrorDisplay } from '../shared/api/errorHandling';
 
 const IAVisibility: React.FC = () => {
   const { t } = useTranslation();
@@ -29,7 +29,7 @@ const IAVisibility: React.FC = () => {
     runMinute: 0,
     status: 'paused',
   });
-  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [scheduleError, setScheduleError] = useState<UiApiErrorDisplay | null>(null);
 
   const {
     data: rowsResponse,
@@ -73,6 +73,17 @@ const IAVisibility: React.FC = () => {
     return t('ia_visibility.filters.stable');
   };
 
+  const renderErrorNotice = (errorDisplay: { message: string; traceabilityId?: string }) => (
+    <div className="py-4">
+      <p className="text-sm text-rose-600">{errorDisplay.message}</p>
+      {errorDisplay.traceabilityId && (
+        <p className="text-xs text-slate-500 mt-1">
+          ID de trazabilidad: <span className="font-mono">{errorDisplay.traceabilityId}</span>
+        </p>
+      )}
+    </div>
+  );
+
   const saveSchedule = async () => {
     if (!currentClientId) return;
     try {
@@ -80,7 +91,7 @@ const IAVisibility: React.FC = () => {
       setSchedule(response.schedule);
       setScheduleError(null);
     } catch (error) {
-      setScheduleError(getUiApiErrorDisplay(error, 'No fue posible guardar programación.').fullMessage);
+      setScheduleError(getUiApiErrorDisplay(error, 'No fue posible guardar programación.'));
     }
   };
 
@@ -99,9 +110,7 @@ const IAVisibility: React.FC = () => {
       });
       setScheduleError(null);
     } catch (error) {
-      setScheduleError(
-        getUiApiErrorDisplay(error, 'No fue posible actualizar programación.').fullMessage,
-      );
+      setScheduleError(getUiApiErrorDisplay(error, 'No fue posible actualizar programación.'));
     }
   };
 
@@ -240,10 +249,15 @@ const IAVisibility: React.FC = () => {
           )}
         </div>
         {(scheduleError || scheduleQueryErrorDisplay) && (
-          <p className="mt-2 text-xs text-rose-600">
-            {scheduleError ||
-              scheduleQueryErrorDisplay?.fullMessage}
-          </p>
+          <div className="mt-2">
+            {scheduleError && renderErrorNotice(scheduleError)}
+            {!scheduleError &&
+              scheduleQueryErrorDisplay &&
+              renderErrorNotice({
+                message: scheduleQueryErrorDisplay.message,
+                traceabilityId: scheduleQueryErrorDisplay.traceabilityId,
+              })}
+          </div>
         )}
       </div>
 
@@ -253,9 +267,7 @@ const IAVisibility: React.FC = () => {
         </h2>
         {isRowsLoading && <p className="text-sm text-slate-500 py-4">Cargando resultados...</p>}
         {!isRowsLoading && rowsErrorDisplay && (
-          <p className="text-sm text-rose-600 py-4">
-            {rowsErrorDisplay.fullMessage}
-          </p>
+          renderErrorNotice(rowsErrorDisplay)
         )}
         {!isRowsLoading && !rowsErrorDisplay && (
           <div className="overflow-x-auto">
