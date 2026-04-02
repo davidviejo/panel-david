@@ -35,6 +35,10 @@ export const endpoints = {
     visibilityScheduleAction: (clientId: string, action: 'pause' | 'resume') =>
       `api/ai/visibility/schedule/${encodePathParam(clientId)}/${action}`,
   },
+  trendsMedia: {
+    news: () => 'api/trends/media/news',
+  },
+
   engine: {
     capabilities: () => 'api/capabilities',
     analyze: () => 'api/analyze',

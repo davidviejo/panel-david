@@ -53,3 +53,13 @@ La decisión se toma en la revisión semanal y antes de cada subida de porcentaj
 - Evidencia de smoke pass.
 - Snapshot de métricas de observabilidad durante canary.
 - Registro de decisión GO/NO-GO con fecha, owner y riesgos residuales.
+
+
+## Sección Trends Media — evidencia de migración
+
+- [x] Build FE del módulo Trends Media (`npm run build`)
+- [ ] Lint FE del módulo (`npm run lint`) — pendiente por errores preexistentes fuera del alcance de Trends Media
+- [x] Tests Trends Media (mapper + servicio) en verde
+- [x] Test backend endpoint `/api/trends/media/news` en verde
+- [x] Smoke: estado `loading/error/empty` del pipeline mantenido
+- [x] Verificada ausencia de fallback silencioso a mocks en producción (flag `VITE_TRENDS_MEDIA_DATA_SOURCE=legacy` + `PROD=true` => error explícito).

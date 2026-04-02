@@ -12,9 +12,11 @@ import time
 import sqlite3
 import uuid
 import os
+import requests
 from urllib.parse import urljoin
 
 from apps.web.blueprints.trends_provider import fetch_trends_strategy
+from apps.core.database import get_user_settings
 from apps.tools.credentials import (
     MISSING_DFS_CREDENTIALS_MESSAGE,
     resolve_dataforseo_credentials,
@@ -252,3 +254,140 @@ def get_status():
         return jsonify(status)
     else:
         return jsonify({"error": "Job not found"}), 404
+
+
+
+def _json_with_trace(payload, status=200, request_id=None):
+    rid = request_id or str(uuid.uuid4())
+    merged = {
+        **payload,
+        'requestId': payload.get('requestId') or rid,
+        'traceId': payload.get('traceId') or rid,
+    }
+    response = jsonify(merged)
+    response.status_code = status
+    response.headers['X-Request-Id'] = merged['requestId']
+    response.headers['X-Trace-Id'] = merged['traceId']
+    return response
+
+
+def _resolve_news_provider(provider=None):
+    explicit = (provider or '').strip().lower()
+    if explicit in ('serpapi', 'dataforseo'):
+        return explicit
+
+    settings = get_user_settings('default') or {}
+    configured = (settings.get('serp_provider') or os.getenv('SERP_PROVIDER') or 'dataforseo').strip().lower()
+    return configured if configured in ('serpapi', 'dataforseo') else 'dataforseo'
+
+
+def _fetch_news_serpapi(query, max_results, language, country):
+    api_key = (os.getenv('SERPAPI_KEY') or '').strip()
+    if not api_key:
+        raise ValueError('Falta SERPAPI_KEY en backend.')
+
+    response = requests.get(
+        'https://serpapi.com/search.json',
+        params={
+            'engine': 'google_news',
+            'q': query,
+            'api_key': api_key,
+            'hl': language,
+            'gl': country,
+            'num': max_results,
+        },
+        timeout=20,
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    rows = []
+    for index, item in enumerate(data.get('news_results') or [], start=1):
+        rows.append({
+            'title': item.get('title', ''),
+            'url': item.get('link', ''),
+            'sourceName': (item.get('source') or {}).get('name') if isinstance(item.get('source'), dict) else (item.get('source') or 'Desconocido'),
+            'publishedAt': item.get('date') or '',
+            'thumbnailUrl': item.get('thumbnail'),
+            'position': index,
+            'keyword': query,
+            'snippet': item.get('snippet') or '',
+        })
+    return rows
+
+
+def _fetch_news_dataforseo(query, max_results, language, country):
+    credentials = resolve_dataforseo_credentials({})
+    if not credentials.get('login') or not credentials.get('password'):
+        raise ValueError(MISSING_DFS_CREDENTIALS_MESSAGE)
+
+    payload = [{
+        'keyword': query,
+        'language_code': language,
+        'location_code': 2724 if country.lower() == 'es' else 2840,
+        'depth': max_results,
+    }]
+    response = requests.post(
+        'https://api.dataforseo.com/v3/serp/google/news/live/advanced',
+        auth=(credentials['login'], credentials['password']),
+        json=payload,
+        timeout=30,
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    rows = []
+    tasks = data.get('tasks') or []
+    for task in tasks:
+        for result in task.get('result') or []:
+            for index, item in enumerate(result.get('items') or [], start=1):
+                rows.append({
+                    'title': item.get('title', ''),
+                    'url': item.get('url', ''),
+                    'sourceName': item.get('source') or 'Desconocido',
+                    'publishedAt': item.get('timestamp') or '',
+                    'thumbnailUrl': item.get('thumbnail'),
+                    'position': index,
+                    'keyword': query,
+                    'snippet': item.get('description') or '',
+                })
+    return rows
+
+
+@trends_bp.route('/trends/media/news', methods=['POST'])
+@trends_bp.route('/api/trends/media/news', methods=['POST'])
+def trends_media_news():
+    request_id = str(uuid.uuid4())
+    body = request.get_json(silent=True) or {}
+    queries = body.get('queries') or []
+
+    if not isinstance(queries, list) or not queries:
+        return _json_with_trace({'code': 'BAD_REQUEST', 'message': 'queries es obligatorio.'}, status=400, request_id=request_id)
+
+    normalized_queries = [str(q).strip() for q in queries if str(q).strip()]
+    if not normalized_queries:
+        return _json_with_trace({'code': 'BAD_REQUEST', 'message': 'queries no puede estar vacío.'}, status=400, request_id=request_id)
+
+    provider = _resolve_news_provider(body.get('provider'))
+    language = (body.get('language') or 'es').strip().lower()
+    country = (body.get('country') or 'es').strip().lower()
+    max_results = int(body.get('maxResults') or 20)
+    max_results = max(1, min(max_results, 100))
+
+    items = []
+    try:
+        for query in normalized_queries:
+            if provider == 'serpapi':
+                items.extend(_fetch_news_serpapi(query, max_results, language, country))
+            else:
+                items.extend(_fetch_news_dataforseo(query, max_results, language, country))
+    except ValueError as exc:
+        return _json_with_trace({'code': 'CONFIG_ERROR', 'message': str(exc)}, status=400, request_id=request_id)
+    except requests.RequestException as exc:
+        logging.exception('Trends media provider request failed')
+        return _json_with_trace({'code': 'PROVIDER_ERROR', 'message': f'Error consultando proveedor: {exc}'}, status=502, request_id=request_id)
+    except Exception as exc:
+        logging.exception('Unexpected error in trends media news endpoint')
+        return _json_with_trace({'code': 'INTERNAL_ERROR', 'message': str(exc)}, status=500, request_id=request_id)
+
+    return _json_with_trace({'items': items, 'provider': provider}, status=200, request_id=request_id)

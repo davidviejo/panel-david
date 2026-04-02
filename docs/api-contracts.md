@@ -91,3 +91,30 @@ Fuente de contratos en frontend:
 - El frontend aplica normalización defensiva de checklist (`normalizeChecklistStatus`) para tolerar estados legacy.
 - Mutaciones `update` y `bulkUpdate` invalidan query key del módulo para asegurar refetch post-escritura.
 - Durante transición, feature flag `seoChecklistBackendSource` controla fallback local para rollback rápido.
+
+
+## Trends Media (migración FE/BE)
+
+Fuente de contratos en frontend:
+- `frontend/m3/src/shared/api/contracts/trendsMedia.ts`
+- Mapper backend -> UI: `frontend/m3/src/features/trends-media/services/trendsMediaMapper.ts`
+
+### Endpoint
+
+`POST /api/trends/media/news`
+
+Request:
+- `queries: string[]` (obligatorio)
+- `provider?: "serpapi" | "dataforseo"`
+- `maxResults?: number`
+- `language?: string`
+- `country?: string`
+- `timePeriod?: "h" | "d" | "w" | "m"`
+
+Response:
+- `items: TrendsMediaNewsItemContract[]`
+- `provider: "serpapi" | "dataforseo"`
+- `traceId?: string`
+- `requestId?: string`
+
+Regla de producción: en módulo Trends Media no se permite fallback silencioso a mocks cuando `trendsMediaBackendSource` está activo.

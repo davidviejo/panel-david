@@ -108,3 +108,19 @@ export const iaVisibilityService = {
 ```
 
 Este patrón permite migraciones incrementales módulo por módulo sin romper funcionalidades existentes.
+
+
+## Ejemplo real (Trends Media)
+
+```ts
+import { fetchTrendsMediaNews } from "../features/trends-media/services/trendsMediaApi";
+
+const articles = await fetchTrendsMediaNews({
+  searchQueries: ["economia valencia", "puerto valencia"],
+  targetSources: [],
+});
+```
+
+- El cliente usa `httpClient` unificado y `endpoints.trendsMedia.news()`.
+- Errores se normalizan con `normalizeApiError` y se muestran con ID de trazabilidad (`traceId/requestId`) cuando existe.
+- El fallback legacy (mock) solo puede usarse en dev/test cuando el flag de Trends Media apunta a `legacy`; en producción lanza error explícito.

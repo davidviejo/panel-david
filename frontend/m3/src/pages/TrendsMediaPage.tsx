@@ -49,6 +49,20 @@ const TrendsMediaPage: React.FC = () => {
       setStatusMessage('Procesando: deduplicando y calculando scores...');
       const processedClusters = processNews(rawArticles);
 
+      if (processedClusters.length === 0) {
+        setNewsClusters([]);
+        setPipelineStatus('done');
+        setStatusMessage('No encontramos noticias para los filtros actuales.');
+        setStats((previous) => ({
+          ...previous,
+          sourcesScanned: previous.sourcesScanned + rawArticles.length,
+          itemsFound: 0,
+          highPriority: 0,
+          duplicatesRemoved: rawArticles.length,
+        }));
+        return;
+      }
+
       setPipelineStatus('analyzing');
       setStatusMessage(`Analizando ${processedClusters.length} temas con Gemini AI...`);
       const analyzedClusters = await analyzeNewsWithGemini(
