@@ -2,49 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Eye, Filter, History, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProject } from '../context/ProjectContext';
-import { iaVisibilityService, IAVisibilityResponse, IAVisibilitySchedule } from '../services/iaVisibilityService';
+import { iaVisibilityService, IAVisibilityResponse, IAVisibilityResultRow, IAVisibilitySchedule } from '../services/iaVisibilityService';
 
 type VisibilityStatus = 'up' | 'stable' | 'down';
-
-interface VisibilityRow {
-  id: string;
-  keyword: string;
-  url: string;
-  position: number;
-  change: number;
-  status: VisibilityStatus;
-  updatedAt: string;
-}
-
-const seedRows: VisibilityRow[] = [
-  {
-    id: '1',
-    keyword: 'seo para medios digitales',
-    url: '/guias/seo-medios',
-    position: 5,
-    change: 3,
-    status: 'up',
-    updatedAt: '2026-03-30',
-  },
-  {
-    id: '2',
-    keyword: 'indexacion google news',
-    url: '/noticias/google-news-indexacion',
-    position: 12,
-    change: 0,
-    status: 'stable',
-    updatedAt: '2026-03-30',
-  },
-  {
-    id: '3',
-    keyword: 'clusterizacion semantica',
-    url: '/seo/clusterizacion-semantica',
-    position: 18,
-    change: -4,
-    status: 'down',
-    updatedAt: '2026-03-29',
-  },
-];
 
 const IAVisibility: React.FC = () => {
   const { t } = useTranslation();
@@ -59,10 +19,13 @@ const IAVisibility: React.FC = () => {
     status: 'paused',
   });
   const [history, setHistory] = useState<IAVisibilityResponse[]>([]);
+  const [rows, setRows] = useState<IAVisibilityResultRow[]>([]);
+  const [rowsLoading, setRowsLoading] = useState(false);
+  const [rowsError, setRowsError] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   const filteredRows = useMemo(() => {
-    return seedRows.filter((row) => {
+    return rows.filter((row) => {
       const matchesQuery =
         !query ||
         row.keyword.toLowerCase().includes(query.toLowerCase()) ||
@@ -70,7 +33,7 @@ const IAVisibility: React.FC = () => {
       const matchesStatus = statusFilter === 'all' || row.status === statusFilter;
       return matchesQuery && matchesStatus;
     });
-  }, [query, statusFilter]);
+  }, [rows, query, statusFilter]);
 
   const getStatusLabel = (status: VisibilityStatus) => {
     if (status === 'up') return t('ia_visibility.filters.up');
@@ -80,6 +43,9 @@ const IAVisibility: React.FC = () => {
 
   useEffect(() => {
     if (!currentClientId) return;
+
+    setRowsLoading(true);
+    setRowsError(null);
 
     iaVisibilityService.getSchedule(currentClientId)
       .then((res) => {
@@ -93,6 +59,17 @@ const IAVisibility: React.FC = () => {
     iaVisibilityService.getHistory(currentClientId)
       .then((res) => setHistory(res.runs || []))
       .catch(() => setHistory([]));
+
+    iaVisibilityService.getResultRows(currentClientId)
+      .then((resultRows) => {
+        setRows(resultRows);
+        setRowsError(null);
+      })
+      .catch((err) => {
+        setRows([]);
+        setRowsError(err instanceof Error ? err.message : 'No fue posible cargar resultados.');
+      })
+      .finally(() => setRowsLoading(false));
   }, [currentClientId]);
 
   const saveSchedule = async () => {
@@ -265,7 +242,9 @@ const IAVisibility: React.FC = () => {
               ))}
             </tbody>
           </table>
-          {filteredRows.length === 0 && (
+          {rowsLoading && <p className="text-sm text-slate-500 py-4">Cargando resultados...</p>}
+          {!rowsLoading && rowsError && <p className="text-sm text-rose-600 py-4">{rowsError}</p>}
+          {!rowsLoading && !rowsError && filteredRows.length === 0 && (
             <p className="text-sm text-slate-500 py-4">{t('ia_visibility.no_results')}</p>
           )}
         </div>
