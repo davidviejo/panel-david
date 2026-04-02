@@ -138,3 +138,41 @@ Fuente de contratos en frontend:
 
 - Cambios no rompientes: añadir campos opcionales.
 - Cambios rompientes: publicar `portal.project-overview.v2` con compatibilidad por mapper en frontend.
+
+## Trends Media (migración backend source-of-truth)
+
+Fuente de contratos en frontend:
+- `frontend/m3/src/shared/api/contracts/trendsMedia.ts`
+- Mapper backend → UI: `frontend/m3/src/shared/api/mappers/trendsMediaMapper.ts`
+
+### Endpoint
+
+`POST /trends/media/news` (alias disponible también en `/api/v1/trends/media/news`)
+
+### Request (`TrendsMediaNewsRequestContract`)
+
+- `queries: string[]` (**obligatorio**)
+- `provider?: 'serpapi' | 'dataforseo' | 'auto'` (default backend: `serpapi`)
+- `country?: string` (default `es`)
+- `language?: string` (default `es`)
+- `maxResults?: number` (1-100, default 100)
+
+### Response (`TrendsMediaNewsResponseContract`)
+
+- `articles: TrendsMediaNewsArticleContract[]`
+  - `id?: string`
+  - `title: string`
+  - `url: string`
+  - `source: string`
+  - `publishedAt?: string`
+  - `thumbnailUrl?: string`
+  - `position: number`
+  - `keyword: string`
+  - `snippet?: string`
+- `providerUsed: string`
+
+### Errores y trazabilidad
+
+- Errores estandarizados: `{ code, error, traceId, requestId }`.
+- Headers en error y éxito: `x-trace-id`, `x-request-id`.
+- Sin fallback silencioso a mocks en producción para Trends Media.
