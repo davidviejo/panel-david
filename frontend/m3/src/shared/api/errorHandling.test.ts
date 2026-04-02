@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { HttpClientError } from '../../services/httpClient';
 import {
   getApiErrorMessage,
+  getApiErrorTraceabilityId,
   isApiErrorStatus,
   isUnauthorizedApiError,
   normalizeApiError,
@@ -39,6 +40,7 @@ describe('errorHandling', () => {
       code: 'RULE_VALIDATION',
       message: 'La programación no cumple reglas',
       status: 403,
+      requestId: 'req-123',
     };
 
     const normalized = normalizeApiError(backendError);
@@ -46,7 +48,20 @@ describe('errorHandling', () => {
     expect(normalized.isBusinessError).toBe(true);
     expect(normalized.code).toBe('RULE_VALIDATION');
     expect(normalized.message).toBe('La programación no cumple reglas');
+    expect(normalized.traceId).toBe('req-123');
     expect(isApiErrorStatus(backendError, 403)).toBe(true);
+  });
+
+  it('resuelve traceability id desde HttpClientError', () => {
+    const error = new HttpClientError({
+      code: 'HTTP_500',
+      status: 500,
+      message: 'Error backend',
+      traceId: 'trace-500',
+      requestId: 'request-500',
+    });
+
+    expect(getApiErrorTraceabilityId(error)).toBe('trace-500');
   });
 
   it('devuelve fallback para errores desconocidos', () => {

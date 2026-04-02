@@ -3,10 +3,12 @@ import { createHttpClient } from './httpClient';
 
 describe('httpClient', () => {
   const fetchMock = vi.fn();
+  const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
   beforeEach(() => {
     vi.stubGlobal('fetch', fetchMock);
     sessionStorage.clear();
+    consoleErrorSpy.mockClear();
   });
 
   afterEach(() => {
@@ -39,11 +41,15 @@ describe('httpClient', () => {
     expect(headers.get('Authorization')).toBe('Bearer token-123');
   });
 
-  it('normalizes HTTP errors with unique error shape', async () => {
+  it('normalizes HTTP errors with unique error shape and traceability ids from headers', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 500,
-      json: async () => ({ error: 'backend exploded', traceId: 'abc-1', details: { reason: 'test' } }),
+      headers: new Headers({
+        'x-trace-id': 'hdr-trace-1',
+        'x-request-id': 'hdr-request-1',
+      }),
+      json: async () => ({ error: 'backend exploded', traceId: 'payload-trace', details: { reason: 'test' } }),
     });
 
     const client = createHttpClient({ service: 'api' });
@@ -53,8 +59,35 @@ describe('httpClient', () => {
       code: 'HTTP_500',
       message: 'backend exploded',
       status: 500,
-      traceId: 'abc-1',
+      traceId: 'hdr-trace-1',
+      requestId: 'hdr-request-1',
       details: { reason: 'test' },
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[api-error]',
+      expect.objectContaining({
+        level: 'error',
+        endpoint: expect.stringMatching(/\/api\/fail$/),
+        status: 500,
+        traceId: 'hdr-trace-1',
+      }),
+    );
+  });
+
+  it('uses payload requestId as fallback traceId', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      headers: new Headers(),
+      json: async () => ({ error: 'bad request', requestId: 'req-44' }),
+    });
+
+    const client = createHttpClient({ service: 'api' });
+
+    await expect(client.get('api/fail-request-id')).rejects.toMatchObject({
+      traceId: 'req-44',
+      requestId: 'req-44',
     });
   });
 
@@ -79,6 +112,14 @@ describe('httpClient', () => {
 
     await vi.advanceTimersByTimeAsync(20);
     await assertion;
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[api-error]',
+      expect.objectContaining({
+        level: 'error',
+        endpoint: expect.stringMatching(/\/api\/slow$/),
+        code: 'TIMEOUT_ERROR',
+      }),
+    );
   });
 
   it('supports put/patch/delete typed methods', async () => {

@@ -101,6 +101,24 @@ describe('IAVisibility', () => {
     });
   });
 
+
+  it('shows traceability identifier in error state', async () => {
+    mockList.mockRejectedValue(
+      new HttpClientError({
+        code: 'HTTP_500',
+        status: 500,
+        message: 'Error interno backend',
+        traceId: 'trace-ia-500',
+      }),
+    );
+
+    renderWithProviders();
+
+    await waitFor(() => {
+      expect(screen.getByText('Ocurrió un error interno. Intenta nuevamente en unos minutos. (ID de trazabilidad: trace-ia-500)')).toBeTruthy();
+    });
+  });
+
   it('renders translated message for known HTTP status errors', async () => {
     mockList.mockRejectedValue(
       new HttpClientError({
