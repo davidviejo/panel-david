@@ -115,7 +115,10 @@ describe('IAVisibility', () => {
     renderWithProviders();
 
     await waitFor(() => {
-      expect(screen.getByText('Ocurrió un error interno. Intenta nuevamente en unos minutos. (ID de trazabilidad: trace-ia-500)')).toBeTruthy();
+      expect(
+        screen.getByText('Ocurrió un error interno. Intenta nuevamente en unos minutos.'),
+      ).toBeTruthy();
+      expect(screen.getByText('trace-ia-500')).toBeTruthy();
     });
   });
 

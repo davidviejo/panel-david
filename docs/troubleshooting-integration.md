@@ -9,9 +9,9 @@ Este documento describe cómo correlacionar errores entre frontend (`frontend/m3
 En errores API, frontend intenta resolver un identificador de trazabilidad en este orden:
 
 1. Header `x-trace-id` / `trace-id`.
-2. Campo `traceId` en payload de error.
+2. Campos `traceId` / `trace_id` en payload de error (nivel raíz o anidado en `error`/`details`).
 3. Header `x-request-id` / `request-id`.
-4. Campo `requestId` en payload de error.
+4. Campos `requestId` / `request_id` en payload de error (nivel raíz o anidado en `error`/`details`).
 
 El `HttpClientError` normalizado expone:
 
@@ -42,6 +42,7 @@ Formato actual: `console.error('[api-error]', payload)`.
 
 - La lista del piloto ya no usa fallback local para datos de producción/desarrollo.
 - Errores de carga de listado y programación muestran ID de trazabilidad cuando existe.
+- El ID se presenta en una línea separada y en formato monoespaciado para facilitar copia/pegado en soporte.
 - Esto permite soporte L1/L2 con correlación directa sin exponer payloads sensibles en UI.
 
 ## Decisiones técnicas

@@ -91,6 +91,38 @@ describe('httpClient', () => {
     });
   });
 
+  it('captures traceability ids from nested payload fields using snake_case', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      headers: new Headers(),
+      json: async () => ({
+        error: {
+          message: 'gateway failure',
+          trace_id: 'trace-snake-1',
+          request_id: 'request-snake-1',
+        },
+      }),
+    });
+
+    const client = createHttpClient({ service: 'api' });
+
+    await expect(client.get('api/fail-nested-trace')).rejects.toMatchObject({
+      code: 'HTTP_502',
+      traceId: 'trace-snake-1',
+      requestId: 'request-snake-1',
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[api-error]',
+      expect.objectContaining({
+        endpoint: expect.stringMatching(/\/api\/fail-nested-trace$/),
+        status: 502,
+        traceId: 'trace-snake-1',
+      }),
+    );
+  });
+
   it('aborts on timeout with a standard timeout message', async () => {
     vi.useFakeTimers();
 
