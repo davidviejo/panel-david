@@ -16,3 +16,11 @@ export {
   computeScoreComponents,
   computeSeverityScore,
 } from './scoringService';
+
+
+export {
+  applyRecommendationFeedback,
+  computeRecommendationWeights,
+  type RecommendationFeedbackInput,
+  type RecommendationWeightInput,
+} from './recommendationService';

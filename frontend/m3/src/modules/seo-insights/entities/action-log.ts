@@ -7,4 +7,9 @@ export interface ActionLog extends BaseEntity {
   actionType: string;
   notes?: string;
   happenedAt: string;
+  recommendationId?: Uuid;
+  toolKey?: string;
+  insightType?: string;
+  patternIgnored?: boolean;
+  applied?: boolean;
 }
