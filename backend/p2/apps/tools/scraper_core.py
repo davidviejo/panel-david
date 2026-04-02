@@ -280,6 +280,67 @@ def _canonicalize_result_url(raw_href: str) -> str:
     return canonical
 
 
+def _normalize_dataforseo_organic_item(item: Dict[str, Any], default_rank: int) -> Dict[str, Any]:
+    return {
+        "url": item.get("url"),
+        "title": item.get("title", "Sin título"),
+        "snippet": item.get("description") or item.get("snippet") or "",
+        "rank": item.get("rank_group") or item.get("rank_absolute") or default_rank,
+    }
+
+
+def _parse_dataforseo_task_results(task: Dict[str, Any], limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    parsed_results: List[Dict[str, Any]] = []
+    rank_counter = 1
+    for result_block in task.get("result") or []:
+        for item in result_block.get("items") or []:
+            if item.get("type") != "organic":
+                continue
+            parsed_results.append(_normalize_dataforseo_organic_item(item, rank_counter))
+            rank_counter += 1
+            if limit is not None and len(parsed_results) >= limit:
+                return parsed_results
+    return parsed_results
+
+
+def _dataforseo_request_with_retries(
+    method: str,
+    url: str,
+    headers: Dict[str, str],
+    *,
+    json_payload: Optional[Any] = None,
+    request_timeout_s: int = 30,
+    max_retries: int = 3,
+    retry_backoff_s: float = 1.5,
+) -> Optional[requests.Response]:
+    last_exception: Optional[Exception] = None
+    normalized_method = method.strip().lower()
+    for attempt in range(max_retries):
+        try:
+            if normalized_method == "post":
+                return requests.post(url, json=json_payload, headers=headers, timeout=request_timeout_s)
+            if normalized_method == "get":
+                return requests.get(url, headers=headers, timeout=request_timeout_s)
+            raise ValueError(f"Método HTTP no soportado para DFS: {method}")
+        except Exception as exc:
+            last_exception = exc
+            if attempt + 1 >= max_retries:
+                break
+            sleep_s = retry_backoff_s * (attempt + 1)
+            logging.warning(
+                "DFS_REQUEST_RETRY method=%s attempt=%s/%s wait_s=%.2f error=%s",
+                normalized_method.upper(),
+                attempt + 1,
+                max_retries,
+                sleep_s,
+                sanitize_log_message(str(exc)),
+            )
+            time.sleep(sleep_s)
+    if last_exception:
+        logging.error("DFS_REQUEST_FAILED url=%s error=%s", url, sanitize_log_message(str(last_exception)))
+    return None
+
+
 def parse_google_html(html_content: str) -> Union[List[Dict[str, str]], Dict[str, str]]:
     """
     Analiza el HTML de una página de resultados de Google (SERP) para extraer URLs y títulos.
@@ -673,6 +734,8 @@ def search_dataforseo(
         "keywords_processed": [keyword],
         "effective_mode": "STANDARD",
         "cost_estimate": None,
+        "task_ids": [],
+        "timed_out": False,
     }
     try:
         start_time = time.time()
@@ -703,22 +766,133 @@ def search_dataforseo(
             'Content-Type': 'application/json'
         }
 
-        response = requests.post(url, json=payload, headers=headers, timeout=60)
+        cfg = normalize_serp_config(config)
+        request_timeout_s = int(cfg.get("dfs_request_timeout_s") or 30)
+        max_retries = int(cfg.get("dfs_max_retries") or 3)
+        retry_backoff_s = float(cfg.get("dfs_retry_backoff_s") or 1.5)
+        poll_timeout_s = int(cfg.get("dfs_poll_timeout_s") or 120)
+        poll_interval_s = float(cfg.get("dfs_poll_interval_s") or 2)
+
+        response = _dataforseo_request_with_retries(
+            "post",
+            url,
+            headers,
+            json_payload=payload,
+            request_timeout_s=request_timeout_s,
+            max_retries=max_retries,
+            retry_backoff_s=retry_backoff_s,
+        )
+        if response is None:
+            raise RuntimeError("No se pudo completar task_post en DataForSEO tras reintentos.")
         diagnostics["http_status"] = getattr(response, "status_code", None)
         data = response.json()
 
         if data.get('status_code') == 20000:
-            for task in data.get('tasks', []):
-                if task.get('result') and task['result'][0].get('items'):
-                    for item in task['result'][0]['items']:
-                        if item.get('type') == 'organic':
-                            results.append({
-                                'url': item.get('url'),
-                                'title': item.get('title', 'Sin título'),
-                                'snippet': item.get('description', ''),
-                                'rank': item.get('rank_group', 0)
-                            })
-                            if len(results) >= num_results: break
+            posted_tasks = data.get('tasks', []) or []
+            task_ids: List[str] = [str(task.get("id")) for task in posted_tasks if task.get("id") is not None]
+            diagnostics["task_ids"] = task_ids
+            keyword_status = {}
+            for idx, kw in enumerate(diagnostics.get("keywords_processed") or []):
+                task_id = task_ids[idx] if idx < len(task_ids) else None
+                keyword_status[kw] = {
+                    "task_id": task_id,
+                    "state": "posted",
+                    "results": 0,
+                }
+
+            if request_config.get("require_realtime"):
+                for task in posted_tasks:
+                    task_results = _parse_dataforseo_task_results(task, limit=num_results - len(results))
+                    results.extend(task_results)
+                    if len(results) >= num_results:
+                        break
+            else:
+                pending = set(task_ids)
+                ready_url = "https://api.dataforseo.com/v3/serp/google/organic/tasks_ready"
+                task_get_base = "https://api.dataforseo.com/v3/serp/google/organic/task_get/advanced"
+                deadline = time.time() + max(1, poll_timeout_s)
+
+                # Compatibilidad: algunos mocks/tests devuelven resultados directos en task_post.
+                for task in posted_tasks:
+                    if not task.get("result"):
+                        continue
+                    task_results = _parse_dataforseo_task_results(task, limit=num_results - len(results))
+                    results.extend(task_results)
+                    posted_task_id = str(task.get("id")) if task.get("id") is not None else None
+                    for kw, info in keyword_status.items():
+                        if posted_task_id and info.get("task_id") == posted_task_id:
+                            info["state"] = "ready"
+                            info["results"] = len(task_results)
+                            break
+                    if len(results) >= num_results:
+                        pending.clear()
+                        break
+
+                while pending and time.time() < deadline:
+                    ready_response = _dataforseo_request_with_retries(
+                        "post",
+                        ready_url,
+                        headers,
+                        json_payload=[{}],
+                        request_timeout_s=request_timeout_s,
+                        max_retries=max_retries,
+                        retry_backoff_s=retry_backoff_s,
+                    )
+                    if ready_response is None:
+                        break
+                    ready_data = ready_response.json()
+                    ready_ids = {
+                        str(task.get("id"))
+                        for task in (ready_data.get("tasks") or [])
+                        if task.get("id") is not None
+                    }
+                    for task_id in list(pending):
+                        if task_id not in ready_ids:
+                            continue
+                        task_get_response = _dataforseo_request_with_retries(
+                            "get",
+                            f"{task_get_base}/{task_id}",
+                            headers,
+                            request_timeout_s=request_timeout_s,
+                            max_retries=max_retries,
+                            retry_backoff_s=retry_backoff_s,
+                        )
+                        if task_get_response is None:
+                            continue
+                        task_get_data = task_get_response.json()
+                        for task in (task_get_data.get("tasks") or []):
+                            if str(task.get("id")) != task_id:
+                                continue
+                            task_results = _parse_dataforseo_task_results(task, limit=num_results - len(results))
+                            results.extend(task_results)
+                            for kw, info in keyword_status.items():
+                                if info.get("task_id") == task_id:
+                                    info["state"] = "ready"
+                                    info["results"] = len(task_results)
+                                    break
+                            break
+                        pending.discard(task_id)
+                        if len(results) >= num_results:
+                            pending.clear()
+                            break
+                    if pending:
+                        time.sleep(max(0.1, poll_interval_s))
+
+                if pending:
+                    diagnostics["timed_out"] = True
+                    for kw, info in keyword_status.items():
+                        if info.get("task_id") in pending:
+                            info["state"] = "timeout"
+
+            for kw, info in keyword_status.items():
+                logging.info(
+                    "DFS_KEYWORD keyword=%s task_id=%s state=%s total_ms=%s results=%s",
+                    kw,
+                    info.get("task_id"),
+                    info.get("state"),
+                    int((time.time() - start_time) * 1000),
+                    info.get("results", 0),
+                )
         else:
             logging.error(f"DataForSEO Error: {data.get('status_message')}")
 

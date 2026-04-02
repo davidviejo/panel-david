@@ -1,7 +1,13 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from apps.tools.credentials import resolve_dataforseo_credentials
-from apps.tools.scraper_core import build_dataforseo_request, normalize_serp_config, smart_serp_search
+from apps.tools.scraper_core import (
+    _parse_dataforseo_task_results,
+    build_dataforseo_request,
+    normalize_serp_config,
+    search_dataforseo,
+    smart_serp_search,
+)
 
 
 def test_normalize_serp_config_accepts_legacy_aliases():
@@ -200,3 +206,70 @@ def test_resolve_dataforseo_credentials_supports_canonical_override():
 
     assert creds["login"] == "canonical-login"
     assert creds["password"] == "canonical-password"
+
+
+def test_parse_dataforseo_task_results_normalizes_live_and_standard_fields():
+    task = {
+        "result": [{
+            "items": [
+                {"type": "organic", "url": "https://one.test", "title": "One", "description": "Desc", "rank_group": 1},
+                {"type": "organic", "url": "https://two.test", "title": "Two", "snippet": "Snippet", "rank_absolute": 2},
+            ]
+        }]
+    }
+    results = _parse_dataforseo_task_results(task)
+    assert results == [
+        {"url": "https://one.test", "title": "One", "snippet": "Desc", "rank": 1},
+        {"url": "https://two.test", "title": "Two", "snippet": "Snippet", "rank": 2},
+    ]
+
+
+@patch("apps.tools.scraper_core.time.sleep")
+@patch("apps.tools.scraper_core.requests.get")
+@patch("apps.tools.scraper_core.requests.post")
+def test_search_dataforseo_standard_polls_tasks_ready_and_task_get(mock_post, mock_get, _mock_sleep):
+    task_post_response = MagicMock()
+    task_post_response.status_code = 200
+    task_post_response.json.return_value = {
+        "status_code": 20000,
+        "tasks": [{"id": "task-1"}],
+    }
+    tasks_ready_response = MagicMock()
+    tasks_ready_response.status_code = 200
+    tasks_ready_response.json.return_value = {
+        "status_code": 20000,
+        "tasks": [{"id": "task-1"}],
+    }
+    mock_post.side_effect = [task_post_response, tasks_ready_response]
+
+    task_get_response = MagicMock()
+    task_get_response.status_code = 200
+    task_get_response.json.return_value = {
+        "status_code": 20000,
+        "tasks": [{
+            "id": "task-1",
+            "result": [{
+                "items": [{
+                    "type": "organic",
+                    "url": "https://example.com",
+                    "title": "Example",
+                    "description": "Example snippet",
+                    "rank_group": 1,
+                }]
+            }],
+        }],
+    }
+    mock_get.return_value = task_get_response
+
+    response = search_dataforseo(
+        "kw",
+        "login",
+        "pass",
+        num_results=10,
+        config={"requireRealtime": False, "dfs_poll_timeout_s": 5, "dfs_poll_interval_s": 0.1},
+        return_meta=True,
+    )
+
+    assert response["results"][0]["url"] == "https://example.com"
+    assert response["diagnostics"]["task_ids"] == ["task-1"]
+    assert response["diagnostics"]["timed_out"] is False
