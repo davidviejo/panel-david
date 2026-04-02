@@ -8,9 +8,10 @@ import random
 import time
 import base64
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from urllib.parse import quote_plus
 import re
+import xml.etree.ElementTree as ET
 
 # Códigos de categoría para Google Trends Realtime (Internal / SerpApi)
 GOOGLE_CAT_CODES = {
@@ -37,7 +38,6 @@ ISO_TO_COUNTRY_NAME = {
     'IT': 'Italy',
     'BR': 'Brazil'
 }
-
 
 
 CATEGORY_AFFINITY_TERMS = {
@@ -120,6 +120,193 @@ def _prioritize_results(results: List[Dict[str, Any]], category: str, focus_term
         item['google_link'] = f"https://google.com/search?q={quote_plus(item.get('topic', ''))}"
     return enriched
 
+
+def _parse_google_news_rss(query: str, geo: str, language: str, limit: int = 20) -> List[Dict[str, Any]]:
+    url = f"https://news.google.com/rss/search?q={quote_plus(query)}&hl={language}&gl={geo}&ceid={geo}:{language}"
+    response = requests.get(url, timeout=20)
+    if response.status_code != 200:
+        raise Exception(f"Google News RSS Error {response.status_code}")
+
+    root = ET.fromstring(response.content)
+    items = root.findall('./channel/item')
+
+    normalized: List[Dict[str, Any]] = []
+    for index, item in enumerate(items[:limit], start=1):
+        title = item.findtext('title') or ''
+        link = item.findtext('link') or ''
+        pub_date = item.findtext('pubDate') or ''
+        source = item.find('{http://search.yahoo.com/mrss/}source')
+        source_name = source.text if source is not None and source.text else 'Google News'
+        description = item.findtext('description') or ''
+
+        if not title or not link:
+            continue
+
+        normalized.append({
+            'article_id': '',
+            'title': title,
+            'url': link,
+            'source_name': source_name,
+            'published_at': pub_date,
+            'thumbnail_url': None,
+            'position': index,
+            'keyword': query,
+            'snippet': description,
+        })
+
+    return normalized
+
+
+def fetch_google_news(
+    query: str,
+    geo: str = 'US',
+    language: str = 'en',
+    provider_name: str = 'auto',
+    limit: int = 20,
+    **kwargs,
+) -> List[Dict[str, Any]]:
+    provider = (provider_name or 'auto').strip().lower()
+
+    if provider == 'serpapi':
+        api_key = kwargs.get('api_key')
+        if not api_key:
+            raise ValueError('API Key requerida para SerpApi')
+
+        params = {
+            'engine': 'google_news',
+            'q': query,
+            'api_key': api_key,
+            'gl': geo.lower(),
+            'hl': language,
+            'num': limit,
+        }
+        response = requests.get('https://serpapi.com/search.json', params=params, timeout=20)
+        data = response.json()
+        if data.get('error'):
+            raise Exception(data['error'])
+
+        news_results = data.get('news_results', [])
+        normalized: List[Dict[str, Any]] = []
+        for index, item in enumerate(news_results, start=1):
+            stories = item.get('stories') if isinstance(item.get('stories'), list) else []
+            for story in stories:
+                title = story.get('title')
+                url = story.get('link')
+                if not title or not url:
+                    continue
+                normalized.append({
+                    'article_id': '',
+                    'title': title,
+                    'url': url,
+                    'source_name': (story.get('source') or {}).get('name') if isinstance(story.get('source'), dict) else (story.get('source') or 'Desconocido'),
+                    'published_at': story.get('date') or '',
+                    'thumbnail_url': item.get('thumbnail'),
+                    'position': index,
+                    'keyword': query,
+                    'snippet': item.get('snippet') or '',
+                })
+
+            title = item.get('title')
+            url = item.get('link')
+            if not title or not url:
+                continue
+            normalized.append({
+                'article_id': '',
+                'title': title,
+                'url': url,
+                'source_name': (item.get('source') or {}).get('name') if isinstance(item.get('source'), dict) else (item.get('source') or 'Desconocido'),
+                'published_at': item.get('date') or '',
+                'thumbnail_url': item.get('thumbnail'),
+                'position': index,
+                'keyword': query,
+                'snippet': item.get('snippet') or '',
+            })
+
+        return normalized
+
+    if provider == 'dataforseo':
+        login = kwargs.get('login')
+        password = kwargs.get('password')
+        if not login or not password:
+            raise ValueError('Credenciales DataForSEO requeridas')
+
+        creds = base64.b64encode(f"{login}:{password}".encode('utf-8')).decode('utf-8')
+        headers = {
+            'Authorization': f'Basic {creds}',
+            'Content-Type': 'application/json',
+        }
+
+        language_name = 'Spanish' if language == 'es' else 'English'
+        location_name = ISO_TO_COUNTRY_NAME.get(geo.upper(), 'United States')
+
+        payload = [{
+            'keyword': query,
+            'location_name': location_name,
+            'language_name': language_name,
+            'depth': min(max(limit, 1), 50),
+        }]
+
+        response = requests.post(
+            'https://api.dataforseo.com/v3/serp/google/news/live/advanced',
+            json=payload,
+            headers=headers,
+            timeout=30,
+        )
+        data = response.json()
+
+        if data.get('status_code') != 20000:
+            raise Exception(f"DataForSEO API Error: {data.get('status_message', 'Error desconocido')}")
+
+        tasks = data.get('tasks', [])
+        items = (((tasks[0] if tasks else {}).get('result') or [{}])[0]).get('items', [])
+
+        normalized = []
+        for index, item in enumerate(items[:limit], start=1):
+            title = item.get('title')
+            url = item.get('url')
+            if not title or not url:
+                continue
+            normalized.append({
+                'article_id': '',
+                'title': title,
+                'url': url,
+                'source_name': item.get('source') or 'Desconocido',
+                'published_at': item.get('timestamp') or '',
+                'thumbnail_url': item.get('image_url'),
+                'position': index,
+                'keyword': query,
+                'snippet': item.get('description') or '',
+            })
+        return normalized
+
+    return _parse_google_news_rss(query=query, geo=geo.upper(), language=language, limit=limit)
+
+
+def fetch_google_news_strategy(
+    queries: List[str],
+    geo: str = 'US',
+    language: str = 'en',
+    provider_name: str = 'auto',
+    limit_per_query: int = 20,
+    **kwargs,
+) -> List[Dict[str, Any]]:
+    all_items: List[Dict[str, Any]] = []
+    for query in queries:
+        sanitized_query = (query or '').strip()
+        if not sanitized_query:
+            continue
+        all_items.extend(
+            fetch_google_news(
+                query=sanitized_query,
+                geo=geo,
+                language=language,
+                provider_name=provider_name,
+                limit=limit_per_query,
+                **kwargs,
+            )
+        )
+    return all_items
+
 class TrendsProvider:
     """Clase base abstracta para proveedores de tendencias."""
     def fetch_trends(self, geo: str, category: str, **kwargs) -> List[Dict[str, Any]]:
@@ -153,8 +340,7 @@ class GoogleInternalProvider(TrendsProvider):
 
             content = response.text
 
-            # Limpiar prefijo de seguridad robustamente (puede tener espacios antes)
-            prefix = ")]}',"
+            prefix = ")]}' ,".replace(' ','')
             idx = content.find(prefix)
             if idx != -1:
                 content = content[idx + len(prefix):]
@@ -179,7 +365,7 @@ class GoogleInternalProvider(TrendsProvider):
                 results.append({
                     "rank": rank_c,
                     "topic": topic,
-                    "traffic": source, # Usamos source como 'traffic' en UI legacy o 'N/A'
+                    "traffic": source,
                     "context": context,
                     "google_link": link
                 })
@@ -202,12 +388,6 @@ class SerpApiProvider(TrendsProvider):
             raise ValueError("API Key requerida para SerpApi")
 
         url = "https://serpapi.com/search"
-        # SerpApi 'google_trends_trending_now' no soporta categorías específicas igual que 'realtimetrends' a veces
-        # Pero intentaremos pasarlo si existe soporte o ignorarlo.
-        # En la implementación original no se pasaba 'cat' a SerpApi, solo 'geo'.
-        # Si queremos categoría, SerpApi quizás no lo soporte en 'trending_now'.
-        # Asumiremos 'geo' solo por compatibilidad.
-
         params = {
             "engine": "google_trends_trending_now",
             "frequency": "daily",
@@ -236,13 +416,6 @@ class SerpApiProvider(TrendsProvider):
             raise e
 
 class DataForSEOProvider(TrendsProvider):
-    """
-    Proveedor que usa DataForSEO.
-    Intenta obtener tendencias usando 'dataforseo_labs/google/top_searches/live'.
-    Nota: DataForSEO no tiene un endpoint directo de 'Trending Now' idéntico a Google.
-    Usamos 'top_searches' como aproximación de lo más buscado.
-    """
-
     def fetch_trends(self, geo: str, category: str, **kwargs) -> List[Dict[str, Any]]:
         login = kwargs.get('login')
         password = kwargs.get('password')
@@ -257,19 +430,16 @@ class DataForSEOProvider(TrendsProvider):
         location_name = ISO_TO_COUNTRY_NAME.get(geo, 'United States')
         language_code = "es" if geo in ['ES', 'MX', 'AR', 'CO', 'CL', 'PE'] else "en"
 
-        # Base64 Auth
         creds = base64.b64encode(f"{login}:{password}".encode('utf-8')).decode('utf-8')
         headers = {
             "Authorization": f"Basic {creds}",
             "Content-Type": "application/json"
         }
 
-        # DataForSEO top_searches payload
         payload = [{
             "location_name": location_name,
             "language_name": "Spanish" if language_code == "es" else "English",
             "limit": 20
-            # "include_serp_info": False # Ahorrar créditos
         }]
 
         try:
@@ -307,9 +477,6 @@ class DataForSEOProvider(TrendsProvider):
             raise e
 
 def fetch_trends_strategy(geo: str, category: str, provider_name: str = 'dataforseo', **kwargs) -> List[Dict[str, Any]]:
-    """
-    Función helper para invocar la estrategia adecuada.
-    """
     try:
         if provider_name == 'serpapi':
             return SerpApiProvider().fetch_trends(geo, category, **kwargs)
@@ -322,6 +489,4 @@ def fetch_trends_strategy(geo: str, category: str, provider_name: str = 'datafor
         else:
             return GoogleInternalProvider().fetch_trends(geo, category, **kwargs)
     except Exception as e:
-        # Si falla el provider específico y era 'auto', podríamos intentar fallback?
-        # Por simplicidad, propagamos el error para que el worker lo maneje
         raise e

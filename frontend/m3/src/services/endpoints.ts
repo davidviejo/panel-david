@@ -14,6 +14,9 @@ export const endpoints = {
   tools: {
     run: (tool: string) => `api/tools/run/${encodePathParam(tool)}`,
   },
+  trendsMedia: {
+    news: () => 'api/trends/media/news',
+  },
   ai: {
     seoAnalysis: () => 'api/ai/seo-analysis',
     headlineChallenge: () => 'api/ai/headline-challenge',

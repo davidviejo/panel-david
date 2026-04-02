@@ -108,3 +108,23 @@ export const iaVisibilityService = {
 ```
 
 Este patrón permite migraciones incrementales módulo por módulo sin romper funcionalidades existentes.
+
+## Ejemplo de consumo (Trends Media)
+
+Servicio: `frontend/m3/src/features/trends-media/services/trendsMediaApi.ts`.
+
+```ts
+const news = await fetchTrendsMediaNews({
+  queries: ['valencia noticias economía', 'startups valencia lanzadera'],
+  geo: 'ES',
+  language: 'es',
+  limitPerQuery: 50,
+  provider: 'auto',
+});
+```
+
+Comportamiento esperado:
+
+- Usa únicamente API interna: `POST api/trends/media/news`.
+- Si backend responde error, propaga mensaje de UI con trazabilidad cuando exista (`ID de trazabilidad`).
+- Mocks solo si el feature flag temporal lo habilita explícitamente.

@@ -20,6 +20,17 @@ const resolveIAVisibilityBackendSource = (): boolean => {
   return toBooleanFlag(import.meta.env.VITE_FF_IA_VISIBILITY_BACKEND_SOURCE, true);
 };
 
+const resolveTrendsMediaMockFallback = (): boolean => {
+  const explicitMode = normalizeFlagValue(import.meta.env.VITE_TRENDS_MEDIA_NEWS_MODE);
+
+  if (explicitMode === 'backend-only') return false;
+  if (explicitMode === 'allow-mock') return true;
+
+  const isTest = normalizeFlagValue(import.meta.env.MODE) === 'test';
+  return toBooleanFlag(import.meta.env.VITE_FF_TRENDS_MEDIA_ALLOW_MOCKS, isTest);
+};
+
 export const featureFlags = {
   iaVisibilityBackendSource: resolveIAVisibilityBackendSource(),
+  trendsMediaMockFallback: resolveTrendsMediaMockFallback(),
 };

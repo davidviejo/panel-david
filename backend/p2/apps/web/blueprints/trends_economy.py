@@ -14,7 +14,7 @@ import uuid
 import os
 from urllib.parse import urljoin
 
-from apps.web.blueprints.trends_provider import fetch_trends_strategy
+from apps.web.blueprints.trends_provider import fetch_trends_strategy, fetch_google_news_strategy
 from apps.tools.credentials import (
     MISSING_DFS_CREDENTIALS_MESSAGE,
     resolve_dataforseo_credentials,
@@ -42,6 +42,22 @@ def resolve_trends_media_frontend_url() -> str:
         return urljoin(f'{configured_base}/', hash_route.lstrip('/'))
 
     return hash_route
+
+
+
+def _resolve_news_provider_payload(payload):
+    provider = str(payload.get('provider', 'auto')).strip().lower()
+    if provider not in {'auto', 'serpapi', 'dataforseo', 'internal'}:
+        return 'auto'
+    return provider
+
+
+def _json_with_traceability(payload, status_code=200, request_id=None):
+    response = jsonify(payload)
+    if request_id:
+        response.headers['x-request-id'] = request_id
+        response.headers['x-trace-id'] = request_id
+    return response, status_code
 
 def init_db():
     """
@@ -240,6 +256,90 @@ def start_analysis():
     t.start()
 
     return jsonify({"status": "started", "job_id": job_id})
+
+
+
+@trends_bp.route('/api/trends/media/news', methods=['POST'])
+def trends_media_news():
+    request_id = request.headers.get('x-request-id') or str(uuid.uuid4())
+
+    try:
+        payload = request.get_json(silent=True) or {}
+        queries = payload.get('queries', [])
+        if not isinstance(queries, list) or not queries:
+            return _json_with_traceability({
+                'code': 'TRENDS_INVALID_REQUEST',
+                'error': 'Debes enviar al menos una query en el campo queries.',
+                'requestId': request_id,
+                'traceId': request_id,
+            }, 400, request_id)
+
+        geo = str(payload.get('geo', 'ES')).strip().upper() or 'ES'
+        language = str(payload.get('language', 'es')).strip().lower() or 'es'
+        limit_per_query = int(payload.get('limitPerQuery', 20) or 20)
+        limit_per_query = min(max(limit_per_query, 1), 50)
+
+        provider = _resolve_news_provider_payload(payload)
+
+        kwargs = {}
+        if provider in {'auto', 'serpapi'}:
+            serpapi_key = os.getenv('SERPAPI_KEY', '').strip()
+            if serpapi_key:
+                kwargs['api_key'] = serpapi_key
+                if provider == 'auto':
+                    provider = 'serpapi'
+
+        if provider in {'auto', 'dataforseo'}:
+            try:
+                credentials = resolve_dataforseo_credentials({})
+            except Exception:
+                credentials = {}
+
+            if credentials.get('login') and credentials.get('password'):
+                kwargs['login'] = credentials['login']
+                kwargs['password'] = credentials['password']
+                if provider == 'auto' and 'api_key' not in kwargs:
+                    provider = 'dataforseo'
+
+        if provider == 'auto':
+            provider = 'internal'
+
+        items = fetch_google_news_strategy(
+            queries=queries,
+            geo=geo,
+            language=language,
+            provider_name=provider,
+            limit_per_query=limit_per_query,
+            **kwargs,
+        )
+
+        return _json_with_traceability({
+            'items': items,
+            'meta': {
+                'providerUsed': provider,
+                'queryCount': len(queries),
+                'empty': len(items) == 0,
+            },
+            'requestId': request_id,
+            'traceId': request_id,
+        }, 200, request_id)
+    except ValueError as error:
+        logging.warning('Trends news validation error request_id=%s detail=%s', request_id, str(error))
+        return _json_with_traceability({
+            'code': 'TRENDS_PROVIDER_CONFIG_ERROR',
+            'error': str(error),
+            'requestId': request_id,
+            'traceId': request_id,
+        }, 400, request_id)
+    except Exception as error:
+        logging.error('Trends news backend error request_id=%s detail=%s', request_id, str(error))
+        return _json_with_traceability({
+            'code': 'TRENDS_NEWS_FETCH_ERROR',
+            'error': 'No fue posible obtener noticias de tendencias en este momento.',
+            'requestId': request_id,
+            'traceId': request_id,
+        }, 502, request_id)
+
 
 @trends_bp.route('/trends/status')
 def get_status():

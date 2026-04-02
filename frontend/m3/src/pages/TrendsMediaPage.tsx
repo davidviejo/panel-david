@@ -46,6 +46,21 @@ const TrendsMediaPage: React.FC = () => {
       if (currentView === 'dashboard') setCurrentView('brief');
 
       const rawArticles = await fetchSerpResults(settings);
+
+      if (rawArticles.length === 0) {
+        setNewsClusters([]);
+        setPipelineStatus('done');
+        setStatusMessage('No se encontraron noticias para las queries y filtros seleccionados.');
+        setStats((previous) => ({
+          ...previous,
+          sourcesScanned: previous.sourcesScanned,
+          itemsFound: 0,
+          highPriority: 0,
+          duplicatesRemoved: 0,
+        }));
+        return;
+      }
+
       setStatusMessage('Procesando: deduplicando y calculando scores...');
       const processedClusters = processNews(rawArticles);
 

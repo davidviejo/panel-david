@@ -53,6 +53,24 @@ export const BriefGenerator: React.FC<BriefGeneratorProps> = ({ items, pipelineS
     );
   }
 
+  if (pipelineStatus === 'done' && items.length === 0) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center space-y-6 text-center">
+        <div className="rounded-full border border-slate-100 bg-slate-50 p-6">
+          <AlertCircle className="h-12 w-12 text-slate-400" />
+        </div>
+        <div className="max-w-md">
+          <h2 className="mb-2 text-2xl font-bold text-slate-800">Sin resultados</h2>
+          <p className="mb-6 text-slate-500">{statusMessage || 'No se encontraron noticias para esta ejecución.'}</p>
+          <button onClick={onRunPipeline} className="flex w-full items-center justify-center space-x-2 rounded-lg bg-blue-600 px-8 py-3 font-semibold text-white shadow-lg transition-all hover:bg-blue-700">
+            <RefreshCw className="h-5 w-5" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (pipelineStatus === 'idle' && items.length === 0) {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center space-y-6 text-center">

@@ -4,7 +4,8 @@ from apps.web.blueprints.trends_provider import (
     SerpApiProvider,
     GoogleInternalProvider,
     DataForSEOProvider,
-    fetch_trends_strategy
+    fetch_trends_strategy,
+    fetch_google_news_strategy
 )
 
 class TestTrendsProvider(unittest.TestCase):
@@ -26,7 +27,7 @@ class TestTrendsProvider(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['topic'], "Test Topic")
         self.assertEqual(results[0]['traffic'], "10K+")
-        self.assertIn("google.com/search?q=Test Topic", results[0]['google_link'])
+        self.assertIn("google.com/search?q=Test+Topic", results[0]['google_link'])
 
     @patch('apps.web.blueprints.trends_provider.requests.get')
     def test_google_internal_provider(self, mock_get):
@@ -75,6 +76,52 @@ class TestTrendsProvider(unittest.TestCase):
     def test_strategy_dataforseo(self, mock_fetch):
         fetch_trends_strategy("US", "h", provider_name="dataforseo", login="u", password="p")
         mock_fetch.assert_called_once()
+
+
+
+    @patch('apps.web.blueprints.trends_provider.requests.get')
+    def test_fetch_google_news_strategy_serpapi(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {
+            "news_results": [
+                {"title": "News 1", "link": "https://example.com/1", "source": {"name": "Example"}, "date": "2026-04-01"}
+            ]
+        }
+        mock_get.return_value = mock_resp
+
+        results = fetch_google_news_strategy(
+            queries=["economia"],
+            geo="ES",
+            language="es",
+            provider_name="serpapi",
+            api_key="token",
+        )
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['title'], 'News 1')
+        self.assertEqual(results[0]['source_name'], 'Example')
+
+    @patch('apps.web.blueprints.trends_provider.requests.get')
+    def test_fetch_google_news_strategy_internal_rss(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.content = b"""
+            <rss><channel>
+              <item><title>Titular RSS</title><link>https://example.com/rss</link><pubDate>Wed, 01 Apr 2026 10:00:00 GMT</pubDate><description>Desc</description></item>
+            </channel></rss>
+        """
+        mock_get.return_value = mock_resp
+
+        results = fetch_google_news_strategy(
+            queries=["economia"],
+            provider_name="internal",
+            geo="ES",
+            language="es",
+        )
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['title'], 'Titular RSS')
+
 
 if __name__ == '__main__':
     unittest.main()

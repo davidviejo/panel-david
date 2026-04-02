@@ -43,3 +43,28 @@ Unificar frontend y backend para que el frontend consuma el backend como **fuent
 
 - En el piloto IA Visibility, la capa API (contratos, servicio y mapper) no usa `any`.
 - Para payloads dinámicos se usa `unknown` tipado (`Array<Record<string, unknown>>`) y se transforma en mappers antes de renderizar.
+
+## Pilot adicional: Trends Media (news ingestion)
+
+### Contratos
+
+- Frontend contract source: `frontend/m3/src/shared/api/contracts/trendsMedia.ts`.
+- Request: `TrendsMediaNewsRequestContract`.
+- Response: `TrendsMediaNewsResponseContract`.
+- Mapper backend -> UI: `frontend/m3/src/shared/api/mappers/trendsMediaMapper.ts`.
+
+### TrendsMediaNewsRequestContract
+
+- **Obligatorios**: `queries`.
+- **Opcionales**: `geo`, `language`, `limitPerQuery`, `provider`.
+
+### TrendsMediaNewsResponseContract
+
+- **Obligatorios**: `items`.
+- **Opcionales**: `meta`, `traceId`, `requestId`.
+
+### Reglas específicas del módulo
+
+1. En producción (`VITE_TRENDS_MEDIA_NEWS_MODE=backend-only`), el frontend no debe usar mocks silenciosos.
+2. El fallback de mocks solo se permite en dev/test controlado por flags (`VITE_TRENDS_MEDIA_NEWS_MODE=allow-mock` o `VITE_FF_TRENDS_MEDIA_ALLOW_MOCKS`).
+3. Los errores deben preservar trazabilidad (`traceId/requestId`) para soporte cruzado FE/BE.
