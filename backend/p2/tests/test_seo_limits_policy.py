@@ -99,7 +99,7 @@ def test_seo_status_returns_results_with_urls_when_job_finished(client):
         job_status.update(previous)
 
 
-def test_seo_download_exports_urls_with_data(client):
+def test_seo_download_exports_urls_with_data_regression(client):
     previous = copy.deepcopy(job_status)
     try:
         job_status.update({
@@ -126,6 +126,11 @@ def test_seo_download_exports_urls_with_data(client):
         workbook_sheets = pd.ExcelFile(workbook).sheet_names
         assert 'Estrategia' in workbook_sheets
         assert 'URLs' in workbook_sheets
+
+        workbook.seek(0)
+        estrategia_df = pd.read_excel(workbook, sheet_name='Estrategia')
+        assert not estrategia_df.empty
+        assert estrategia_df.iloc[0]['Keyword'] == 'keyword padre'
 
         workbook.seek(0)
         urls_df = pd.read_excel(workbook, sheet_name='URLs')
