@@ -41,3 +41,17 @@ def test_seo_start_blocks_invalid_limits(client):
     data = response.get_json()
     assert data['status'] == 'error'
     assert 'topN <= 10' in data['message']
+
+
+def test_seo_start_rejects_invalid_numeric_payload_with_400(client):
+    response = client.post('/seo/start', data={
+        'top_n': 'abc',
+        'depth': '10',
+        'max_crawl_pages': '1',
+        'keywords': 'keyword test'
+    })
+
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data['status'] == 'error'
+    assert "top_n" in data['message']
