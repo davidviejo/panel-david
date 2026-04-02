@@ -30,6 +30,7 @@ const IAVisibility: React.FC = () => {
     status: 'paused',
   });
   const [scheduleError, setScheduleError] = useState<UiApiErrorDisplay | null>(null);
+  const [isHelpVisible, setIsHelpVisible] = useState(false);
 
   const {
     data: rowsResponse,
@@ -126,6 +127,75 @@ const IAVisibility: React.FC = () => {
           </h1>
           <p className="text-slate-500 dark:text-slate-400">{t('ia_visibility.subtitle')}</p>
         </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm mb-6">
+        <button
+          type="button"
+          aria-expanded={isHelpVisible}
+          aria-controls="ia-visibility-help-content"
+          onClick={() => setIsHelpVisible((prev) => !prev)}
+          className="text-sm font-semibold text-indigo-600 dark:text-indigo-300 hover:text-indigo-500 dark:hover:text-indigo-200 underline underline-offset-4"
+        >
+          {isHelpVisible ? 'Ocultar ayuda' : 'Mostrar ayuda'}
+        </button>
+
+        {isHelpVisible && (
+          <div id="ia-visibility-help-content" className="mt-4 space-y-4 text-sm text-slate-700 dark:text-slate-200">
+            <section>
+              <h2 className="font-semibold text-slate-900 dark:text-white mb-1">
+                ¿Cómo usar IA Visibility?
+              </h2>
+              <p>
+                IA Visibility mide la posición de tus keywords, sus cambios entre ejecuciones, el
+                histórico de corridas y la programación automática para monitoreo continuo.
+              </p>
+            </section>
+
+            <section>
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-1">
+                Flujo recomendado
+              </h3>
+              <ol className="list-decimal pl-5 space-y-1">
+                <li>Selecciona el cliente que quieres analizar.</li>
+                <li>Filtra por keyword o estado para enfocar el análisis.</li>
+                <li>Revisa resultados de posición y cambios detectados.</li>
+                <li>Configura frecuencia, zona horaria y hora de ejecución.</li>
+                <li>Guarda la programación y monitorea el histórico.</li>
+              </ol>
+            </section>
+
+            <section>
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-1">
+                Interpretación rápida de estados
+              </h3>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  <strong>up</strong>: mejora de visibilidad frente a la corrida anterior.
+                </li>
+                <li>
+                  <strong>stable</strong>: sin cambios relevantes en posición.
+                </li>
+                <li>
+                  <strong>down</strong>: pérdida de visibilidad frente a la corrida anterior.
+                </li>
+              </ul>
+            </section>
+
+            <section>
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-1">Si hay error</h3>
+              <p>
+                Revisa el mensaje mostrado en pantalla y, si aparece, comparte el ID de
+                trazabilidad con soporte para facilitar el diagnóstico.
+              </p>
+            </section>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Nota: el módulo depende de disponibilidad de datos del backend por cliente y puede
+              mostrar estados vacíos cuando todavía no existen corridas.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm mb-6">
