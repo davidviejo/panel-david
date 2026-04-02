@@ -3,6 +3,7 @@ import { HttpClientError } from '../../services/httpClient';
 import {
   getApiErrorMessage,
   getApiErrorTraceabilityId,
+  getUiApiErrorDisplay,
   isApiErrorStatus,
   isUnauthorizedApiError,
   normalizeApiError,
@@ -33,6 +34,22 @@ describe('errorHandling', () => {
     expect(getApiErrorMessage(error)).toBe(
       'Ocurrió un error interno. Intenta nuevamente en unos minutos.',
     );
+  });
+
+  it('traduce status 403 y 404 a mensajes de UI consistentes', () => {
+    const forbiddenError = new HttpClientError({
+      code: 'HTTP_403',
+      status: 403,
+      message: 'Forbidden',
+    });
+    const notFoundError = new HttpClientError({
+      code: 'HTTP_404',
+      status: 404,
+      message: 'Not found',
+    });
+
+    expect(getApiErrorMessage(forbiddenError)).toBe('No tienes permisos para realizar esta acción.');
+    expect(getApiErrorMessage(notFoundError)).toBe('No encontramos la información solicitada.');
   });
 
   it('normaliza error de negocio serializado', () => {
@@ -66,5 +83,22 @@ describe('errorHandling', () => {
 
   it('devuelve fallback para errores desconocidos', () => {
     expect(getApiErrorMessage(null, 'Fallback')).toBe('Fallback');
+  });
+
+  it('construye mensaje completo reutilizable para componentes', () => {
+    const error = new HttpClientError({
+      code: 'HTTP_500',
+      status: 500,
+      message: 'Internal server error',
+      requestId: 'req-500',
+    });
+
+    const displayError = getUiApiErrorDisplay(error);
+
+    expect(displayError.message).toBe('Ocurrió un error interno. Intenta nuevamente en unos minutos.');
+    expect(displayError.traceabilityId).toBe('req-500');
+    expect(displayError.fullMessage).toBe(
+      'Ocurrió un error interno. Intenta nuevamente en unos minutos. (ID de trazabilidad: req-500)',
+    );
   });
 });
