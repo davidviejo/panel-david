@@ -820,6 +820,12 @@ def analyze_bulk():
 @seo_bp.route('/download')
 def download():
     data = job_status['results']
+    if not data:
+        return jsonify({
+            'status': 'error',
+            'message': 'No hay datos recolectados; ejecuta Estrategia primero'
+        }), 400
+
     r1, r2 = [], []
 
     for c in data:
