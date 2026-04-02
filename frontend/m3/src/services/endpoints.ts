@@ -23,6 +23,10 @@ export const endpoints = {
     bulkUpdate: (clientId: string) => `api/seo/checklist/${encodePathParam(clientId)}/bulk`,
   },
 
+  trendsMedia: {
+    newsSearch: () => 'api/trends-media/news/search',
+  },
+
   ai: {
     seoAnalysis: () => 'api/ai/seo-analysis',
     headlineChallenge: () => 'api/ai/headline-challenge',

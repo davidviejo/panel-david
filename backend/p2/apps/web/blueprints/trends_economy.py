@@ -4,7 +4,7 @@ Módulo para el análisis de tendencias económicas y de búsqueda.
 Integra DataForSEO para monitorizar temas virales en tiempo real.
 Gestiona trabajos en segundo plano utilizando SQLite.
 """
-from flask import Blueprint, request, jsonify, redirect, url_for
+from flask import Blueprint, request, jsonify, redirect, url_for, make_response
 import threading
 import logging
 import json
@@ -15,6 +15,8 @@ import os
 from urllib.parse import urljoin
 
 from apps.web.blueprints.trends_provider import fetch_trends_strategy
+from apps.core.database import get_user_settings
+from apps.tools.scraper_core import smart_serp_search
 from apps.tools.credentials import (
     MISSING_DFS_CREDENTIALS_MESSAGE,
     resolve_dataforseo_credentials,
@@ -198,6 +200,121 @@ def worker_realtime_trends(job_id, geo, category, focus_terms='', ranking_mode='
                 conn.close()
             except Exception:
                 pass
+
+
+
+def _resolve_trace_id() -> str:
+    incoming = request.headers.get('x-trace-id') or request.headers.get('x-request-id')
+    if incoming and incoming.strip():
+        return incoming.strip()
+    return str(uuid.uuid4())
+
+
+def _json_with_trace(payload, status_code: int = 200):
+    trace_id = _resolve_trace_id()
+    response_payload = {
+        **payload,
+        'traceId': trace_id,
+        'requestId': trace_id,
+    }
+    response = make_response(jsonify(response_payload), status_code)
+    response.headers['x-trace-id'] = trace_id
+    response.headers['x-request-id'] = trace_id
+    return response
+
+
+def _normalize_news_item(item, query: str, index: int):
+    if not isinstance(item, dict):
+        return None
+
+    title = (item.get('title') or '').strip()
+    url = (item.get('link') or item.get('url') or '').strip()
+    if not title or not url:
+        return None
+
+    return {
+        'title': title,
+        'url': url,
+        'source': item.get('source') or item.get('displayed_link') or 'Desconocido',
+        'publishedAt': item.get('date') or item.get('datetime') or '',
+        'thumbnailUrl': item.get('thumbnail') or item.get('thumbnail_url') or None,
+        'position': item.get('position') or (index + 1),
+        'query': query,
+        'snippet': item.get('snippet') or '',
+    }
+
+
+def _resolve_serp_credentials(provider: str):
+    settings = get_user_settings('default') or {}
+    normalized_provider = (provider or 'auto').strip().lower()
+
+    return {
+        'mode': normalized_provider,
+        'serpapi_key': settings.get('serpapi_key') or os.getenv('SERPAPI_KEY'),
+        'dataforseo_login': settings.get('dataforseo_login') or os.getenv('DATAFORSEO_LOGIN'),
+        'dataforseo_password': settings.get('dataforseo_password') or os.getenv('DATAFORSEO_PASSWORD'),
+    }
+
+
+@trends_bp.route('/api/trends-media/news/search', methods=['POST'])
+def trends_media_news_search():
+    payload = request.get_json(silent=True) or {}
+    queries = payload.get('queries')
+
+    if not isinstance(queries, list) or not queries:
+        return _json_with_trace({'error': 'queries must be a non-empty array', 'code': 'INVALID_REQUEST'}, 400)
+
+    normalized_queries = [str(query).strip() for query in queries if str(query).strip()]
+    if not normalized_queries:
+        return _json_with_trace({'error': 'queries must include at least one valid term', 'code': 'INVALID_REQUEST'}, 400)
+
+    provider = str(payload.get('provider') or 'auto').strip().lower()
+    country = str(payload.get('country') or 'es').strip().lower()
+    language = str(payload.get('language') or 'es').strip().lower()
+    limit = payload.get('limit') or 25
+
+    try:
+        limit = max(1, min(int(limit), 100))
+    except (TypeError, ValueError):
+        return _json_with_trace({'error': 'limit must be an integer between 1 and 100', 'code': 'INVALID_REQUEST'}, 400)
+
+    config = _resolve_serp_credentials(provider)
+
+    all_items = []
+    provider_used = provider or 'auto'
+
+    try:
+        for query in normalized_queries:
+            result = smart_serp_search(
+                query,
+                config=config,
+                num_results=limit,
+                lang=language,
+                country=country,
+            )
+
+            items = result if isinstance(result, list) else result.get('results', [])
+            if isinstance(result, dict):
+                provider_used = result.get('providerUsed') or result.get('provider_used') or provider_used
+
+            for index, raw_item in enumerate(items):
+                normalized = _normalize_news_item(raw_item, query, index)
+                if normalized:
+                    all_items.append(normalized)
+    except Exception as exc:
+        logging.exception('trends_media_news_search_error provider=%s', provider)
+        return _json_with_trace({
+            'error': f'Unable to fetch trends media news: {exc}',
+            'code': 'TRENDS_MEDIA_PROVIDER_ERROR',
+        }, 502)
+
+    return _json_with_trace({
+        'items': all_items,
+        'meta': {
+            'providerUsed': provider_used,
+            'total': len(all_items),
+        },
+    })
 
 @trends_bp.route('/trends/dashboard')
 def dashboard():

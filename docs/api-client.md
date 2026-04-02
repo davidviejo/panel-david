@@ -108,3 +108,29 @@ export const iaVisibilityService = {
 ```
 
 Este patrón permite migraciones incrementales módulo por módulo sin romper funcionalidades existentes.
+
+## Ejemplo real (Trends Media)
+
+Servicio del módulo: `frontend/m3/src/features/trends-media/services/serp.ts`.
+
+```ts
+const payload: TrendsMediaNewsSearchRequestContract = {
+  queries: settings.searchQueries,
+  provider: 'auto',
+  country: 'es',
+  language: 'es',
+  limit: 100,
+};
+
+const response = await httpClient.post<TrendsMediaNewsSearchResponseContract>(
+  endpoints.trendsMedia.newsSearch(),
+  payload,
+);
+
+return mapTrendsMediaResponseToArticles(response);
+```
+
+Notas:
+- Producción **no** usa fallback silencioso a mocks.
+- Mock fallback solo en `test/dev` y con flag explícita `VITE_TRENDS_MEDIA_ALLOW_MOCKS=true`.
+- Si backend responde error, `HttpClientError` conserva `traceId/requestId` para UI y logs.

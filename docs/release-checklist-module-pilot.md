@@ -65,3 +65,21 @@ La decisión se toma en la revisión semanal y antes de cada subida de porcentaj
   2. navegación a `/c/:slug/overview`,
   3. render de métricas desde backend,
   4. validación de mensajes consistentes para 401/403/404/500 vía `normalizeApiError`.
+
+## Evidencia módulo Trends Media (2026-04-02)
+
+- Backend endpoint real agregado para fuente de verdad:
+  - `POST /api/trends-media/news/search` (`backend/p2/apps/web/blueprints/trends_economy.py`)
+  - tests: `backend/p2/tests/test_trends_media_news_endpoint.py` (success/error/empty)
+- Frontend migrado a API interna unificada:
+  - servicio: `frontend/m3/src/features/trends-media/services/serp.ts`
+  - contratos: `frontend/m3/src/shared/api/contracts/trendsMedia.ts`
+  - mapper: `frontend/m3/src/shared/api/mappers/trendsMediaMapper.ts`
+- Feature flag temporal de rollback:
+  - `featureFlags.trendsMediaBackendSource` controlado por
+    `VITE_TRENDS_MEDIA_DATA_SOURCE` / `VITE_FF_TRENDS_MEDIA_BACKEND_SOURCE`.
+- Verificaciones ejecutadas (módulo Trends):
+  1. unit mapper: normalización y filtros,
+  2. integración ligera servicio: success/error/empty,
+  3. backend endpoint contract tests,
+  4. build/lint del frontend.

@@ -9,6 +9,8 @@ import { processNews } from '../features/trends-media/services/newsProcessor';
 import { fetchSerpResults } from '../features/trends-media/services/serp';
 import { getSettings } from '../features/trends-media/services/storage';
 import { AppSettings, DashboardStats as StatsType, NewsCluster, NewsPriority } from '../features/trends-media/types';
+import { normalizeApiError } from '../shared/api/errorHandling';
+import { logApiError } from '../shared/api/apiErrorLogger';
 import { useSettings } from '../context/SettingsContext';
 
 const viewOptions = [
@@ -67,9 +69,21 @@ const TrendsMediaPage: React.FC = () => {
         duplicatesRemoved: rawArticles.length - processedClusters.length,
       }));
     } catch (error) {
-      console.error(error);
+      const normalized = normalizeApiError(error, 'No fue posible completar el pipeline de Trends Media.');
+      logApiError({
+        endpoint: 'trends-media.pipeline',
+        code: normalized.code,
+        message: normalized.message,
+        status: normalized.status,
+        traceId: normalized.traceId,
+        requestId: normalized.requestId,
+      });
       setPipelineStatus('error');
-      setStatusMessage(error instanceof Error ? error.message : 'Error desconocido');
+      setStatusMessage(
+        normalized.traceId
+          ? `${normalized.message} (ID de trazabilidad: ${normalized.traceId})`
+          : normalized.message,
+      );
     }
   };
 

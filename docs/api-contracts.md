@@ -126,3 +126,43 @@ Fuente de contratos en frontend:
 
 - Cambios no rompientes: añadir campos opcionales.
 - Cambios rompientes: publicar `portal.project-overview.v2` con compatibilidad por mapper en frontend.
+
+## Trends Media (P0 migración backend source-of-truth)
+
+Fuente de contratos en frontend:
+- `frontend/m3/src/shared/api/contracts/trendsMedia.ts`
+- Mapper backend→UI: `frontend/m3/src/shared/api/mappers/trendsMediaMapper.ts`
+
+### Endpoint
+
+`POST /api/trends-media/news/search`
+
+### Request (`TrendsMediaNewsSearchRequestContract`)
+
+- `queries: string[]` (**obligatorio**, no vacío)
+- `provider?: 'serpapi' | 'dataforseo' | 'auto'`
+- `language?: string`
+- `country?: string`
+- `limit?: number (1..100)`
+
+### Response (`TrendsMediaNewsSearchResponseContract`)
+
+- `items: TrendsMediaNewsItemContract[]`
+  - `title: string`
+  - `url: string`
+  - `source?: string`
+  - `publishedAt?: string`
+  - `thumbnailUrl?: string`
+  - `position?: number`
+  - `query: string`
+  - `snippet?: string`
+- `meta.providerUsed: string`
+- `meta.total: number`
+- `traceId?: string`
+- `requestId?: string`
+
+### Observabilidad y errores
+
+- Error uniforme en request inválida: `{ error, code: 'INVALID_REQUEST', traceId, requestId }`.
+- Headers de trazabilidad: `x-trace-id`, `x-request-id`.
+- Frontend propaga `traceId/requestId` en mensajes de error y logging estructurado.
