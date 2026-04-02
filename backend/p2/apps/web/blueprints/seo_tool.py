@@ -732,25 +732,35 @@ def start():
 @seo_bp.route('/status')
 def status():
     include_diagnostics = str(request.args.get('diagnostics', '')).strip().lower() in ('1', 'true', 'yes', 'on')
+    with _status_lock:
+        active = job_status['active']
+        progress = job_status['progress']
+        current_action = job_status['current_action']
+        logs = list(job_status['logs'])
+        error = job_status['error']
+        diagnostics = job_status.get('diagnostics', {})
+        raw_results = list(job_status.get('results', []))
+
+    # Enviamos resultados saneados tanto en progreso como al finalizar.
+    # Esto permite render progresivo sin exponer estructuras no serializables
+    # como `urls_set`.
     clean_results = []
-    # Solo enviamos los clusters completos si el job ya ha terminado,
-    # para no mandar sets ni estructuras incompletas
-    if not job_status['active']:
-        for c in job_status['results']:
-            cc = c.copy()
-            cc.pop('urls_set', None)
-            clean_results.append(cc)
+    for c in raw_results:
+        cc = c.copy()
+        cc.pop('urls_set', None)
+        clean_results.append(cc)
 
     payload = {
-        'active': job_status['active'],
-        'progress': job_status['progress'],
-        'current_action': job_status['current_action'],
-        'logs': job_status['logs'],
+        'active': active,
+        'progress': progress,
+        'current_action': current_action,
+        'logs': logs,
         'results': clean_results,
-        'error': job_status['error']
+        'error': error,
+        'partial_results': active
     }
     if include_diagnostics:
-        payload['diagnostics'] = job_status.get('diagnostics', {})
+        payload['diagnostics'] = diagnostics
     return jsonify(payload)
 
 
