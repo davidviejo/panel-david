@@ -1,5 +1,6 @@
 import copy
 import io
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -61,6 +62,23 @@ def test_seo_start_rejects_invalid_numeric_payload_with_400(client):
     data = response.get_json()
     assert data['status'] == 'error'
     assert "top_n" in data['message']
+
+
+def test_seo_start_allows_realtime_with_300_keywords_without_batching_rejection(client):
+    keywords = "\n".join(f"keyword {i}" for i in range(300))
+    with patch('apps.web.blueprints.seo_tool.threading.Thread') as mock_thread:
+        response = client.post('/seo/start', data={
+            'top_n': '10',
+            'depth': '10',
+            'max_crawl_pages': '1',
+            'requireRealtime': 'true',
+            'keywords': keywords,
+        })
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['status'] == 'ok'
+    assert mock_thread.called is True
 
 
 def test_seo_status_returns_results_with_urls_when_job_finished(client):

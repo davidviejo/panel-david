@@ -29,7 +29,7 @@ def validate_serp_ranges(config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     - topN permitido: 1..10
     - depth: 1..100
     - max_crawl_pages: 1..10
-    - coherencia requireRealtime + batching: LIVE no permite batch > 1 keyword.
+    - coherencia requireRealtime + batching: LIVE no permite batch > 1 en request.
     """
     cfg = dict(config or {})
     top_n = _safe_int(cfg.get("topN", cfg.get("top_n")), 10)
@@ -46,7 +46,7 @@ def validate_serp_ranges(config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         errors.append("depth debe estar entre 1 y 100.")
     if max_crawl_pages is None or max_crawl_pages < 1 or max_crawl_pages > 10:
         errors.append("max_crawl_pages debe estar entre 1 y 10.")
-    if require_realtime and keyword_count > 1:
+    if require_realtime and batch_size > 1:
         errors.append("Con requireRealtime=true no se permite batching de múltiples keywords.")
 
     return {

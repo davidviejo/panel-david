@@ -3,16 +3,29 @@ from unittest.mock import patch
 from apps.tools.serp_costs import estimate_serp_cost, validate_serp_ranges
 
 
-def test_validate_serp_ranges_rejects_realtime_batching():
+def test_validate_serp_ranges_rejects_realtime_batching_by_batch_size():
     result = validate_serp_ranges({
         "topN": 10,
         "depth": 10,
         "max_crawl_pages": 1,
         "requireRealtime": True,
-        "keyword_count": 3,
+        "batch_size": 3,
+        "keyword_count": 300,
     })
     assert result["valid"] is False
     assert any("requireRealtime=true" in err for err in result["errors"])
+
+
+def test_validate_serp_ranges_allows_large_keyword_count_when_batch_is_single():
+    result = validate_serp_ranges({
+        "topN": 10,
+        "depth": 10,
+        "max_crawl_pages": 1,
+        "requireRealtime": True,
+        "batch_size": 1,
+        "keyword_count": 300,
+    })
+    assert result["valid"] is True
 
 
 def test_validate_serp_ranges_blocks_top10_guardrails_depth_and_pages():
