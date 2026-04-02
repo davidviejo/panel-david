@@ -14,6 +14,7 @@ from apps.tools.credentials import (
     resolve_dataforseo_credentials,
 )
 from apps.web.blueprints.seo_limits_policy import apply_seo_limits_policy
+from apps.tools.serp_costs import validate_serp_ranges
 
 seo_bp = Blueprint('seo', __name__, url_prefix='/seo')
 
@@ -621,6 +622,16 @@ def start():
     )
     if max_crawl_pages_err:
         return jsonify({'status': 'error', 'message': max_crawl_pages_err}), 400
+
+    range_validation = validate_serp_ranges({
+        'topN': top_n,
+        'depth': depth,
+        'max_crawl_pages': max_crawl_pages,
+        'requireRealtime': _to_bool(request.form.get('requireRealtime'), False),
+        'keyword_count': len([kw for kw in request.form.get('keywords', '').split('\n') if str(kw).strip()]),
+    })
+    if not range_validation['valid']:
+        return jsonify({'status': 'error', 'message': " ".join(range_validation['errors'])}), 400
 
     limits_policy = apply_seo_limits_policy(
         top_n=top_n,

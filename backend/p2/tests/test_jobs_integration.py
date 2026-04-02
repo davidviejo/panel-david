@@ -166,6 +166,31 @@ class TestJobsIntegration(unittest.TestCase):
                  data = response.get_json()
                  self.assertFalse(data['advancedAllowed'])
                  self.assertIn('exceeds batch limit', data['advancedBlockedReason'])
+                 self.assertIn('serpCostEstimate', data)
+
+    @patch('apps.job_runner.JobRunner.start_worker')
+    def test_advanced_rejects_invalid_realtime_batching(self, mock_start_worker):
+        payload = {
+            "urls": [{"url": "https://example.com"}],
+            "analysisConfig": {
+                "mode": "advanced",
+                "serp": {
+                    "confirmed": True,
+                    "provider": "internal",
+                    "topN": 10,
+                    "depth": 10,
+                    "max_crawl_pages": 1,
+                    "requireRealtime": True,
+                    "maxKeywordsPerUrl": 5
+                }
+            }
+        }
+
+        response = self.client.post('/api/jobs', json=payload)
+        self.assertEqual(response.status_code, 201)
+        data = response.get_json()
+        self.assertFalse(data['advancedAllowed'])
+        self.assertIn('requireRealtime=true', data['advancedBlockedReason'])
 
 if __name__ == '__main__':
     unittest.main()

@@ -7,6 +7,7 @@ from apps.core.database import (
     update_job_status, get_user_settings
 )
 from apps.job_runner import JobRunner
+from apps.tools.serp_costs import estimate_serp_cost, validate_serp_ranges
 from . import api_engine_bp
 
 # Hard limits
@@ -43,6 +44,16 @@ def create_analysis_job():
     serp_section = analysis_config.get('serp', {})
 
     if mode == 'advanced' and serp_section.get('confirmed'):
+        range_validation = validate_serp_ranges({
+            'topN': serp_section.get('topN', serp_section.get('top_n', 10)),
+            'depth': serp_section.get('depth', 10),
+            'max_crawl_pages': serp_section.get('max_crawl_pages', serp_section.get('maxCrawlPages', 1)),
+            'requireRealtime': serp_section.get('requireRealtime', False),
+            'keyword_count': int(serp_section.get('maxKeywordsPerUrl', 20)),
+        })
+        if not range_validation['valid']:
+            advanced_blocked_reason = " ".join(range_validation['errors'])
+
         # Check provider
         provider = serp_section.get('provider')
         settings = get_user_settings()
@@ -61,25 +72,19 @@ def create_analysis_job():
         elif provider == 'google_official':
             has_creds = bool(settings.get('cse_key') and settings.get('cse_cx'))
 
-        if not has_creds:
+        if not advanced_blocked_reason and not has_creds:
             advanced_blocked_reason = f"Provider '{provider}' credentials missing."
-        else:
-            # Check cost limits (approx)
+        elif not advanced_blocked_reason:
+            # Check cost limits (estimator-based)
             max_cost_batch = float(os.environ.get('ENGINE_MAX_ESTIMATED_COST_PER_BATCH', 100.0))
 
             max_kw = int(serp_section.get('maxKeywordsPerUrl', 20))
-            # Queries for competitors: 1 (if analyze_competitors or just to find them)
-            # Queries for zero-click: up to max_kw.
-
-            queries_per_url = 1 + max_kw
-            estimated_queries = len(items) * queries_per_url
-
-            # Unit cost depends on provider.
-            unit_cost = 0.01 # Default
-            if provider == 'dataforseo': unit_cost = 0.02
-            if provider == 'internal': unit_cost = 0.0
-
-            estimated_total_cost = estimated_queries * unit_cost
+            estimated_queries = len(items) * (1 + max_kw)
+            serp_cost_estimate = estimate_serp_cost({
+                'provider': provider,
+                'requireRealtime': serp_section.get('requireRealtime', False),
+            }, estimated_queries)
+            estimated_total_cost = serp_cost_estimate['total_estimated_cost']
 
             if estimated_total_cost > max_cost_batch:
                 advanced_blocked_reason = f"Estimated cost ${estimated_total_cost:.2f} exceeds batch limit ${max_cost_batch:.2f}."
@@ -91,12 +96,20 @@ def create_analysis_job():
         elif not serp_section.get('confirmed'):
             advanced_blocked_reason = "SERP usage not confirmed."
 
+    max_kw = int(serp_section.get('maxKeywordsPerUrl', 20)) if isinstance(serp_section, dict) else 20
+    estimated_queries = max(1, len(items) * (1 + max_kw))
+    serp_cost_estimate = estimate_serp_cost({
+        'provider': serp_section.get('provider') if isinstance(serp_section, dict) else None,
+        'requireRealtime': serp_section.get('requireRealtime', False) if isinstance(serp_section, dict) else False,
+    }, estimated_queries)
+
     # Create Job
     job_data = {
         'analysisConfig': analysis_config,
         'user_notes': user_notes,
         'advancedAllowed': advanced_allowed,
-        'advancedBlockedReason': advanced_blocked_reason
+        'advancedBlockedReason': advanced_blocked_reason,
+        'serpCostEstimate': serp_cost_estimate,
     }
 
     items_data = items
@@ -112,7 +125,8 @@ def create_analysis_job():
             "status": "queued",
             "total": len(items),
             "advancedAllowed": advanced_allowed,
-            "advancedBlockedReason": advanced_blocked_reason
+            "advancedBlockedReason": advanced_blocked_reason,
+            "serpCostEstimate": serp_cost_estimate,
         }), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
