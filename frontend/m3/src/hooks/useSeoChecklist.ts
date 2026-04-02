@@ -1,238 +1,92 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useProject } from '../context/ProjectContext';
-import {
-  SeoPage,
-  ChecklistKey,
-  ChecklistItem,
-  ChecklistStatus,
-  CHECKLIST_POINTS,
-  normalizeChecklistStatus,
-} from '../types/seoChecklist';
-import { isBrandTermMatch } from '../utils/brandTerms';
+import { ChecklistKey, ChecklistItem, SeoPage } from '../types/seoChecklist';
 import { useSeoChecklistSettings } from './useSeoChecklistSettings';
+import { featureFlags } from '../config/featureFlags';
+import {
+  buildFallbackChecklistItem,
+  enforceUniquePrimaryKeywords,
+  mergeChecklistItemWithBusinessRules,
+  mergeChecklistWithBusinessRules,
+  normalizeSeoPages,
+} from '../shared/api/mappers/seoChecklistMapper';
+import {
+  useBulkUpdateSeoChecklistPagesMutation,
+  useImportSeoChecklistPagesMutation,
+  useSeoChecklistQuery,
+  useUpdateSeoChecklistPageMutation,
+  seoChecklistKeys,
+} from './useSeoChecklistServerState';
 
-const normalizeKeyword = (keyword?: string) => (keyword || '').trim().toLowerCase();
-const isUsableKeyword = (keyword?: string) => {
-  const normalized = normalizeKeyword(keyword);
-  return Boolean(normalized) && normalized !== '-';
-};
+const loadLocalPages = (storageKey: string): SeoPage[] => {
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (!saved) return [];
 
-const getKeywordCandidate = (page: SeoPage) => {
-  if (isUsableKeyword(page.kwPrincipal)) {
-    return page.kwPrincipal.trim();
-  }
-
-  if (isUsableKeyword(page.originalKwPrincipal)) {
-    return page.originalKwPrincipal!.trim();
-  }
-
-  return '';
-};
-
-const getPagePerformanceScore = (page: SeoPage) => {
-  const clicks = page.gscMetrics?.clicks || 0;
-  const impressions = page.gscMetrics?.impressions || 0;
-  const position = page.gscMetrics?.position ?? Number.POSITIVE_INFINITY;
-
-  return { clicks, impressions, position };
-};
-
-const shouldKeepKeywordOver = (candidate: SeoPage, currentWinner: SeoPage) => {
-  const candidateScore = getPagePerformanceScore(candidate);
-  const winnerScore = getPagePerformanceScore(currentWinner);
-
-  if (candidateScore.clicks !== winnerScore.clicks) {
-    return candidateScore.clicks > winnerScore.clicks;
-  }
-
-  if (candidateScore.impressions !== winnerScore.impressions) {
-    return candidateScore.impressions > winnerScore.impressions;
-  }
-
-  if (candidateScore.position !== winnerScore.position) {
-    return candidateScore.position < winnerScore.position;
-  }
-
-  return candidate.id < currentWinner.id;
-};
-
-const buildFallbackChecklistItem = (key: ChecklistKey): ChecklistItem => {
-  const point = CHECKLIST_POINTS.find((item) => item.key === key);
-  return {
-    key,
-    label: point?.label || key,
-    status_manual: 'NA',
-    notes_manual: '',
-  };
-};
-
-const normalizeChecklist = (checklist?: Partial<Record<ChecklistKey, ChecklistItem>>) => {
-  return CHECKLIST_POINTS.reduce(
-    (acc, point) => {
-      const existing = checklist?.[point.key];
-      acc[point.key] = existing
-        ? {
-            ...buildFallbackChecklistItem(point.key),
-            ...existing,
-            status_manual: normalizeChecklistStatus(existing.status_manual),
-          }
-        : buildFallbackChecklistItem(point.key);
-      return acc;
-    },
-    {} as Record<ChecklistKey, ChecklistItem>,
-  );
-};
-
-const normalizeSeoPage = (page: SeoPage): SeoPage => ({
-  ...page,
-  checklist: normalizeChecklist(page.checklist),
-});
-
-const normalizeSeoPages = (pages: SeoPage[]) => pages.map(normalizeSeoPage);
-
-const AI_DRIVEN_STATUSES = new Set<ChecklistStatus>(['SI_IA', 'ERROR_CLARO_IA']);
-
-const isProtectedManualSiOverwrite = (
-  currentStatus: ChecklistItem['status_manual'],
-  nextStatus?: ChecklistItem['status_manual'],
-) => currentStatus === 'SI' && Boolean(nextStatus) && AI_DRIVEN_STATUSES.has(nextStatus!);
-
-export const mergeChecklistItemWithBusinessRules = (
-  currentItem: ChecklistItem,
-  incomingUpdates: Partial<ChecklistItem>,
-): ChecklistItem => {
-  if (!isProtectedManualSiOverwrite(currentItem.status_manual, incomingUpdates.status_manual)) {
-    return { ...currentItem, ...incomingUpdates };
-  }
-
-  const { status_manual: _statusManual, notes_manual: _notesManual, ...rest } = incomingUpdates;
-  return { ...currentItem, ...rest };
-};
-
-const mergeChecklistWithBusinessRules = (
-  currentChecklist: Record<ChecklistKey, ChecklistItem>,
-  incomingChecklist?: Partial<Record<ChecklistKey, ChecklistItem>>,
-) => {
-  if (!incomingChecklist) return currentChecklist;
-
-  return CHECKLIST_POINTS.reduce(
-    (acc, point) => {
-      const currentItem = currentChecklist[point.key] || buildFallbackChecklistItem(point.key);
-      const incomingItem = incomingChecklist[point.key];
-      acc[point.key] = incomingItem
-        ? mergeChecklistItemWithBusinessRules(currentItem, incomingItem)
-        : currentItem;
-      return acc;
-    },
-    {} as Record<ChecklistKey, ChecklistItem>,
-  );
-};
-
-export const enforceUniquePrimaryKeywords = (pages: SeoPage[], brandTerms: string[] = []) => {
-  const winners = new Map<string, string>();
-
-  pages.forEach((page) => {
-    const keywordCandidate = getKeywordCandidate(page);
-    const isBrandKeywordCandidate = isBrandTermMatch(keywordCandidate, brandTerms);
-    const isBrandPage = Boolean(page.isBrandKeyword || isBrandKeywordCandidate);
-
-    if (isBrandPage) return;
-
-    const normalizedKeyword = normalizeKeyword(keywordCandidate);
-    if (!isUsableKeyword(keywordCandidate)) return;
-
-    const currentWinnerId = winners.get(normalizedKeyword);
-    if (!currentWinnerId) {
-      winners.set(normalizedKeyword, page.id);
-      return;
+    const parsed = JSON.parse(saved) as SeoPage[];
+    const normalized = normalizeSeoPages(parsed);
+    if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
+      localStorage.setItem(storageKey, JSON.stringify(normalized));
     }
 
-    const currentWinner = pages.find((candidate) => candidate.id === currentWinnerId);
-    if (!currentWinner || shouldKeepKeywordOver(page, currentWinner)) {
-      winners.set(normalizedKeyword, page.id);
-    }
-  });
-
-  return pages.map((page) => {
-    const keywordCandidate = getKeywordCandidate(page);
-    const isBrandKeywordCandidate = isBrandTermMatch(keywordCandidate, brandTerms);
-    const isBrandPage = Boolean(page.isBrandKeyword || isBrandKeywordCandidate);
-    const normalizedKeyword = normalizeKeyword(keywordCandidate);
-    const nextOriginalKeyword = isUsableKeyword(keywordCandidate) ? keywordCandidate : undefined;
-
-    if (isBrandPage) {
-      return {
-        ...page,
-        kwPrincipal: '',
-        originalKwPrincipal: nextOriginalKeyword,
-        isBrandKeyword: true,
-      };
-    }
-
-    if (!isUsableKeyword(keywordCandidate)) {
-      return {
-        ...page,
-        originalKwPrincipal: nextOriginalKeyword,
-      };
-    }
-
-    if (winners.get(normalizedKeyword) === page.id) {
-      return {
-        ...page,
-        kwPrincipal: keywordCandidate,
-        originalKwPrincipal: keywordCandidate,
-      };
-    }
-
-    return {
-      ...page,
-      kwPrincipal: '',
-      originalKwPrincipal: keywordCandidate,
-    };
-  });
+    return normalized;
+  } catch (e) {
+    console.error('Failed to parse SEO Checklist data', e);
+    return [];
+  }
 };
+
+export { enforceUniquePrimaryKeywords, mergeChecklistItemWithBusinessRules };
 
 export const useSeoChecklist = () => {
   const { currentClientId } = useProject();
   const { settings } = useSeoChecklistSettings();
   const activeBrandTerms = useMemo(() => settings.brandTerms || [], [settings.brandTerms]);
   const storageKey = `mediaflow_seo_checklist_${currentClientId}`;
-  const [pages, setPages] = useState<SeoPage[]>(() => {
-    if (!currentClientId) return [];
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (!saved) return [];
+  const useBackendSource = featureFlags.seoChecklistBackendSource;
 
-      const parsed = JSON.parse(saved) as SeoPage[];
-      const normalized = normalizeSeoPages(parsed);
-      if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
-        localStorage.setItem(storageKey, JSON.stringify(normalized));
-      }
+  const [localPages, setLocalPages] = useState<SeoPage[]>(() =>
+    currentClientId ? loadLocalPages(storageKey) : [],
+  );
 
-      return normalized;
-    } catch (e) {
-      console.error('Failed to parse SEO Checklist data', e);
-      return [];
-    }
-  });
+  useEffect(() => {
+    if (useBackendSource || !currentClientId) return;
+    setLocalPages(loadLocalPages(storageKey));
+  }, [currentClientId, storageKey, useBackendSource]);
+
+  const queryClient = useQueryClient();
+  const listQuery = useSeoChecklistQuery(currentClientId, activeBrandTerms, useBackendSource);
+  const importMutation = useImportSeoChecklistPagesMutation(currentClientId, activeBrandTerms);
+  const updateMutation = useUpdateSeoChecklistPageMutation(currentClientId, activeBrandTerms);
+  const bulkUpdateMutation = useBulkUpdateSeoChecklistPagesMutation(currentClientId, activeBrandTerms);
+
+  const pages = useBackendSource ? listQuery.data || [] : localPages;
 
   const addPages = useCallback(
     (newPages: SeoPage[]) => {
-      setPages((prev) => {
-        const updated = enforceUniquePrimaryKeywords(
-          normalizeSeoPages([...prev, ...newPages]),
-          activeBrandTerms,
-        );
+      if (useBackendSource) {
+        void importMutation.mutateAsync(newPages);
+        return;
+      }
+
+      setLocalPages((prev) => {
+        const updated = enforceUniquePrimaryKeywords(normalizeSeoPages([...prev, ...newPages]), activeBrandTerms);
         localStorage.setItem(storageKey, JSON.stringify(updated));
         return updated;
       });
     },
-    [activeBrandTerms, storageKey],
+    [activeBrandTerms, importMutation, storageKey, useBackendSource],
   );
 
   const updatePage = useCallback(
     (id: string, updates: Partial<SeoPage>) => {
-      setPages((prev) => {
+      if (useBackendSource) {
+        void updateMutation.mutateAsync({ id, updates });
+        return;
+      }
+
+      setLocalPages((prev) => {
         const updated = enforceUniquePrimaryKeywords(
           normalizeSeoPages(prev.map((p) => (p.id === id ? { ...p, ...updates } : p))),
           activeBrandTerms,
@@ -241,12 +95,17 @@ export const useSeoChecklist = () => {
         return updated;
       });
     },
-    [activeBrandTerms, storageKey],
+    [activeBrandTerms, storageKey, updateMutation, useBackendSource],
   );
 
   const bulkUpdatePages = useCallback(
     (updates: { id: string; changes: Partial<SeoPage> }[]) => {
-      setPages((prev) => {
+      if (useBackendSource) {
+        void bulkUpdateMutation.mutateAsync(updates);
+        return;
+      }
+
+      setLocalPages((prev) => {
         const updated = enforceUniquePrimaryKeywords(
           normalizeSeoPages(
             prev.map((p) => {
@@ -264,12 +123,23 @@ export const useSeoChecklist = () => {
         return updated;
       });
     },
-    [activeBrandTerms, storageKey],
+    [activeBrandTerms, bulkUpdateMutation, storageKey, useBackendSource],
   );
 
   const updateChecklistItem = useCallback(
     (pageId: string, key: ChecklistKey, updates: Partial<ChecklistItem>) => {
-      setPages((prev) => {
+      const wrappedUpdate = {
+        checklist: {
+          [key]: updates,
+        },
+      } as Partial<SeoPage>;
+
+      if (useBackendSource) {
+        void updateMutation.mutateAsync({ id: pageId, updates: wrappedUpdate });
+        return;
+      }
+
+      setLocalPages((prev) => {
         const updated = prev.map((p) => {
           if (p.id !== pageId) return p;
           const currentItem = p.checklist[key];
@@ -288,29 +158,45 @@ export const useSeoChecklist = () => {
         return updated;
       });
     },
-    [storageKey],
+    [storageKey, updateMutation, useBackendSource],
   );
 
   const deletePage = useCallback(
     (id: string) => {
-      setPages((prev) => {
+      if (useBackendSource && currentClientId) {
+        const current = queryClient.getQueryData<SeoPage[]>(seoChecklistKeys.list(currentClientId)) || [];
+        const nextPages = current.filter((page) => page.id !== id);
+        queryClient.setQueryData(seoChecklistKeys.list(currentClientId), nextPages);
+        void importMutation.mutateAsync(nextPages);
+        return;
+      }
+
+      setLocalPages((prev) => {
         const updated = prev.filter((p) => p.id !== id);
         localStorage.setItem(storageKey, JSON.stringify(updated));
         return updated;
       });
     },
-    [storageKey],
+    [currentClientId, importMutation, queryClient, storageKey, useBackendSource],
   );
 
   const bulkDeletePages = useCallback(
     (ids: string[]) => {
-      setPages((prev) => {
+      if (useBackendSource && currentClientId) {
+        const current = queryClient.getQueryData<SeoPage[]>(seoChecklistKeys.list(currentClientId)) || [];
+        const nextPages = current.filter((page) => !ids.includes(page.id));
+        queryClient.setQueryData(seoChecklistKeys.list(currentClientId), nextPages);
+        void importMutation.mutateAsync(nextPages);
+        return;
+      }
+
+      setLocalPages((prev) => {
         const updated = prev.filter((p) => !ids.includes(p.id));
         localStorage.setItem(storageKey, JSON.stringify(updated));
         return updated;
       });
     },
-    [storageKey],
+    [currentClientId, importMutation, queryClient, storageKey, useBackendSource],
   );
 
   return {
@@ -321,5 +207,8 @@ export const useSeoChecklist = () => {
     updateChecklistItem,
     deletePage,
     bulkDeletePages,
+    isLoading: useBackendSource ? listQuery.isLoading : false,
+    isError: useBackendSource ? listQuery.isError : false,
+    error: useBackendSource ? listQuery.error : null,
   };
 };
