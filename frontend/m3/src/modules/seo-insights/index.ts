@@ -6,7 +6,7 @@
  */
 
 export * from './types/contracts';
-export * from './entities/insight';
+export * from './entities';
 export * from './enums/analysis-source';
 export * from './services/public-api';
 export * from './hooks/public-api';
