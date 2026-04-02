@@ -44,3 +44,10 @@ class Config:
     ENGINE_MAX_KEYWORDS_PER_URL = int(os.environ.get('ENGINE_MAX_KEYWORDS_PER_URL', 20))
     ENGINE_MAX_COMPETITORS_PER_KEYWORD = int(os.environ.get('ENGINE_MAX_COMPETITORS_PER_KEYWORD', 5))
     ENGINE_MAX_URLS_PER_BATCH = int(os.environ.get('ENGINE_MAX_URLS_PER_BATCH', 100))
+
+    # Google scraping fallback controls (conservative by default)
+    GOOGLE_SCRAPING_AUTO_FALLBACK = os.environ.get('GOOGLE_SCRAPING_AUTO_FALLBACK', 'false').lower() == 'true'
+    GOOGLE_SCRAPING_FALLBACK_MODE = os.environ.get('GOOGLE_SCRAPING_FALLBACK_MODE', 'explicit_error')
+    GOOGLE_SCRAPING_RETRY_MIN_JITTER = float(os.environ.get('GOOGLE_SCRAPING_RETRY_MIN_JITTER', 0.4))
+    GOOGLE_SCRAPING_RETRY_MAX_JITTER = float(os.environ.get('GOOGLE_SCRAPING_RETRY_MAX_JITTER', 1.2))
+    ENABLE_DDG_FALLBACK = os.environ.get('ENABLE_DDG_FALLBACK', 'false').lower() == 'true'
