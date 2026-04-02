@@ -18,6 +18,7 @@ export const endpoints = {
     seoAnalysis: () => 'api/ai/seo-analysis',
     headlineChallenge: () => 'api/ai/headline-challenge',
     checklistEvaluate: () => 'api/ai/checklist-evaluate',
+    visibilityList: (clientId: string) => `api/ai/visibility/${encodePathParam(clientId)}`,
     visibilityRun: () => 'api/ai/visibility/run',
     visibilityHistory: (clientId: string) => `api/ai/visibility/history/${encodePathParam(clientId)}`,
     visibilityConfig: (clientId: string) => `api/ai/visibility/config/${encodePathParam(clientId)}`,

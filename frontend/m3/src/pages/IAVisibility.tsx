@@ -2,56 +2,22 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Eye, Filter, History, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProject } from '../context/ProjectContext';
-import { iaVisibilityService, IAVisibilitySchedule } from '../services/iaVisibilityService';
+import {
+  iaVisibilityService,
+  IAVisibilityListItem,
+  IAVisibilitySchedule,
+  IAVisibilityStatus,
+} from '../services/iaVisibilityService';
 import { IAVisibilityHistoryItemViewModel, mapIAVisibilityHistoryToViewModel } from '../shared/api/mappers/iaVisibilityMapper';
-
-type VisibilityStatus = 'up' | 'stable' | 'down';
-
-interface VisibilityRow {
-  id: string;
-  keyword: string;
-  url: string;
-  position: number;
-  change: number;
-  status: VisibilityStatus;
-  updatedAt: string;
-}
-
-const seedRows: VisibilityRow[] = [
-  {
-    id: '1',
-    keyword: 'seo para medios digitales',
-    url: '/guias/seo-medios',
-    position: 5,
-    change: 3,
-    status: 'up',
-    updatedAt: '2026-03-30',
-  },
-  {
-    id: '2',
-    keyword: 'indexacion google news',
-    url: '/noticias/google-news-indexacion',
-    position: 12,
-    change: 0,
-    status: 'stable',
-    updatedAt: '2026-03-30',
-  },
-  {
-    id: '3',
-    keyword: 'clusterizacion semantica',
-    url: '/seo/clusterizacion-semantica',
-    position: 18,
-    change: -4,
-    status: 'down',
-    updatedAt: '2026-03-29',
-  },
-];
 
 const IAVisibility: React.FC = () => {
   const { t } = useTranslation();
   const { clients = [], currentClientId, switchClient, currentClient } = useProject();
   const [query, setQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | VisibilityStatus>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | IAVisibilityStatus>('all');
+  const [rows, setRows] = useState<IAVisibilityListItem[]>([]);
+  const [isRowsLoading, setIsRowsLoading] = useState(false);
+  const [rowsError, setRowsError] = useState<string | null>(null);
   const [schedule, setSchedule] = useState<IAVisibilitySchedule>({
     frequency: 'daily',
     timezone: 'UTC',
@@ -63,7 +29,7 @@ const IAVisibility: React.FC = () => {
   const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   const filteredRows = useMemo(() => {
-    return seedRows.filter((row) => {
+    return rows.filter((row) => {
       const matchesQuery =
         !query ||
         row.keyword.toLowerCase().includes(query.toLowerCase()) ||
@@ -71,9 +37,9 @@ const IAVisibility: React.FC = () => {
       const matchesStatus = statusFilter === 'all' || row.status === statusFilter;
       return matchesQuery && matchesStatus;
     });
-  }, [query, statusFilter]);
+  }, [rows, query, statusFilter]);
 
-  const getStatusLabel = (status: VisibilityStatus) => {
+  const getStatusLabel = (status: IAVisibilityStatus) => {
     if (status === 'up') return t('ia_visibility.filters.up');
     if (status === 'down') return t('ia_visibility.filters.down');
     return t('ia_visibility.filters.stable');
@@ -81,6 +47,21 @@ const IAVisibility: React.FC = () => {
 
   useEffect(() => {
     if (!currentClientId) return;
+
+    setIsRowsLoading(true);
+    setRowsError(null);
+
+    iaVisibilityService.list(currentClientId)
+      .then((response) => {
+        setRows(response.items || []);
+      })
+      .catch((error) => {
+        setRows([]);
+        setRowsError(error instanceof Error ? error.message : 'No fue posible cargar resultados.');
+      })
+      .finally(() => {
+        setIsRowsLoading(false);
+      });
 
     iaVisibilityService.getSchedule(currentClientId)
       .then((res) => {
@@ -177,7 +158,7 @@ const IAVisibility: React.FC = () => {
               <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as 'all' | VisibilityStatus)}
+                onChange={(e) => setStatusFilter(e.target.value as 'all' | IAVisibilityStatus)}
                 className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm"
               >
                 <option value="all">{t('ia_visibility.filters.all')}</option>
@@ -241,35 +222,39 @@ const IAVisibility: React.FC = () => {
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm mb-6">
         <h2 className="font-bold text-slate-900 dark:text-white mb-4">{t('ia_visibility.results_title')}</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-slate-500 border-b border-slate-200 dark:border-slate-700">
-                <th className="py-2 pr-4">{t('ia_visibility.table.keyword')}</th>
-                <th className="py-2 pr-4">{t('ia_visibility.table.url')}</th>
-                <th className="py-2 pr-4">{t('ia_visibility.table.position')}</th>
-                <th className="py-2 pr-4">{t('ia_visibility.table.change')}</th>
-                <th className="py-2 pr-4">{t('ia_visibility.table.status')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.map((row) => (
-                <tr key={row.id} className="border-b border-slate-100 dark:border-slate-700/50">
-                  <td className="py-3 pr-4 text-slate-800 dark:text-slate-200">{row.keyword}</td>
-                  <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{row.url}</td>
-                  <td className="py-3 pr-4 text-slate-800 dark:text-slate-200">#{row.position}</td>
-                  <td className={`py-3 pr-4 font-semibold ${row.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {row.change > 0 ? `+${row.change}` : row.change}
-                  </td>
-                  <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{getStatusLabel(row.status)}</td>
+        {isRowsLoading && <p className="text-sm text-slate-500 py-4">Cargando resultados...</p>}
+        {!isRowsLoading && rowsError && <p className="text-sm text-rose-600 py-4">{rowsError}</p>}
+        {!isRowsLoading && !rowsError && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                  <th className="py-2 pr-4">{t('ia_visibility.table.keyword')}</th>
+                  <th className="py-2 pr-4">{t('ia_visibility.table.url')}</th>
+                  <th className="py-2 pr-4">{t('ia_visibility.table.position')}</th>
+                  <th className="py-2 pr-4">{t('ia_visibility.table.change')}</th>
+                  <th className="py-2 pr-4">{t('ia_visibility.table.status')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {filteredRows.length === 0 && (
-            <p className="text-sm text-slate-500 py-4">{t('ia_visibility.no_results')}</p>
-          )}
-        </div>
+              </thead>
+              <tbody>
+                {filteredRows.map((row) => (
+                  <tr key={row.id} className="border-b border-slate-100 dark:border-slate-700/50">
+                    <td className="py-3 pr-4 text-slate-800 dark:text-slate-200">{row.keyword}</td>
+                    <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{row.url}</td>
+                    <td className="py-3 pr-4 text-slate-800 dark:text-slate-200">#{row.position}</td>
+                    <td className={`py-3 pr-4 font-semibold ${row.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {row.change > 0 ? `+${row.change}` : row.change}
+                    </td>
+                    <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{getStatusLabel(row.status)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredRows.length === 0 && (
+              <p className="text-sm text-slate-500 py-4">{t('ia_visibility.no_results')}</p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
