@@ -15,4 +15,5 @@ export interface RecommendationFeedback extends BaseEntity {
   wasEffective?: boolean;
   clientIgnoredPattern?: boolean;
   similarCasesResolved?: number;
+  usageCount?: number;
 }

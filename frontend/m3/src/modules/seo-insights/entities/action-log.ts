@@ -13,5 +13,8 @@ export interface ActionLog extends BaseEntity {
   sectorId?: Uuid;
   patternIgnored?: boolean;
   applied?: boolean;
+  wasUsed?: boolean;
   wasEffective?: boolean;
+  clientIgnoredPattern?: boolean;
+  similarCasesResolved?: number;
 }

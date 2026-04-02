@@ -19,4 +19,5 @@ export interface OutcomeLog extends BaseEntity {
   wasEffective?: boolean;
   clientIgnoredPattern?: boolean;
   similarCasesResolved?: number;
+  usageCount?: number;
 }
