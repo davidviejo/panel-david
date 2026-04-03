@@ -41,6 +41,26 @@ function matchesRecommendation(
   return !recommendationId && !toolKey;
 }
 
+function countEffectiveSignals(entries: RecommendationFeedback[] | OutcomeLog[]): number {
+  return entries.filter((entry) => {
+    if ('rating' in entry) {
+      return entry.wasEffective === true || entry.rating >= 4;
+    }
+
+    return entry.outcomeStatus === 'improved' || entry.wasEffective === true;
+  }).length;
+}
+
+function countIneffectiveSignals(entries: RecommendationFeedback[] | OutcomeLog[]): number {
+  return entries.filter((entry) => {
+    if ('rating' in entry) {
+      return entry.wasEffective === false || entry.rating <= 2;
+    }
+
+    return entry.outcomeStatus === 'worsened' || entry.wasEffective === false;
+  }).length;
+}
+
 export function computeRecommendationDelta({
   recommendationId,
   toolKey,
@@ -77,12 +97,21 @@ export function computeRecommendationDelta({
   const typedOutcomes = outcomesForRecommendation.filter(
     (entry) => !insightType || !entry.insightType || entry.insightType === insightType,
   );
-  const effectiveByInsightType = typedFeedback.filter(
-    (entry) => entry.wasEffective === true || entry.rating >= 4,
-  ).length + typedOutcomes.filter((entry) => entry.outcomeStatus === 'improved').length;
-  const ineffectiveByInsightType = typedFeedback.filter(
-    (entry) => entry.wasEffective === false || entry.rating <= 2,
-  ).length + typedOutcomes.filter((entry) => entry.outcomeStatus === 'worsened').length;
+
+  const effectiveByInsightType =
+    countEffectiveSignals(typedFeedback) +
+    countEffectiveSignals(typedOutcomes) +
+    actionsForRecommendation.filter(
+      (entry) => (!insightType || !entry.insightType || entry.insightType === insightType) && entry.wasEffective,
+    ).length;
+
+  const ineffectiveByInsightType =
+    countIneffectiveSignals(typedFeedback) +
+    countIneffectiveSignals(typedOutcomes) +
+    actionsForRecommendation.filter(
+      (entry) => (!insightType || !entry.insightType || entry.insightType === insightType) && entry.wasEffective === false,
+    ).length;
+
   const insightTypeSignals = typedFeedback.length + typedOutcomes.length;
 
   if (insightTypeSignals >= 2 && effectiveByInsightType > ineffectiveByInsightType) {
@@ -90,8 +119,9 @@ export function computeRecommendationDelta({
   }
 
   const ignoredPatternSignals =
-    actionsForRecommendation.filter((entry) => entry.patternIgnored === true).length +
-    feedbackForRecommendation.filter((entry) => entry.clientIgnoredPattern === true).length;
+    actionsForRecommendation.filter((entry) => entry.patternIgnored === true || entry.clientIgnoredPattern === true).length +
+    feedbackForRecommendation.filter((entry) => entry.clientIgnoredPattern === true).length +
+    outcomesForRecommendation.filter((entry) => entry.clientIgnoredPattern === true).length;
 
   if (ignoredPatternSignals >= 2) {
     delta -= RECOMMENDATION_FEEDBACK_RULES.IGNORED_PATTERN_PENALTY;
@@ -99,7 +129,8 @@ export function computeRecommendationDelta({
 
   const similarCasesResolved =
     outcomesForRecommendation.reduce((sum, entry) => sum + (entry.similarCasesResolved ?? 0), 0) +
-    feedbackForRecommendation.reduce((sum, entry) => sum + (entry.similarCasesResolved ?? 0), 0);
+    feedbackForRecommendation.reduce((sum, entry) => sum + (entry.similarCasesResolved ?? 0), 0) +
+    actionsForRecommendation.reduce((sum, entry) => sum + (entry.similarCasesResolved ?? 0), 0);
 
   const tested = similarCasesResolved > 0;
 
@@ -111,8 +142,11 @@ export function computeRecommendationDelta({
   }
 
   const usageSignals =
-    actionsForRecommendation.filter((entry) => entry.applied === true).length +
-    feedbackForRecommendation.filter((entry) => entry.wasUsed === true).length;
+    actionsForRecommendation.filter((entry) => entry.applied === true || entry.wasUsed === true).length +
+    feedbackForRecommendation.filter((entry) => entry.wasUsed === true).length +
+    outcomesForRecommendation.filter((entry) => entry.wasUsed === true).length +
+    feedbackForRecommendation.reduce((sum, entry) => sum + (entry.usageCount ?? 0), 0) +
+    outcomesForRecommendation.reduce((sum, entry) => sum + (entry.usageCount ?? 0), 0);
   const totalInteractionSignals =
     actionsForRecommendation.length + feedbackForRecommendation.length + outcomesForRecommendation.length;
 

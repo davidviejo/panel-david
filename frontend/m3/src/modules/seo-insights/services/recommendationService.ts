@@ -36,7 +36,11 @@ function clampWeight(weight: number): number {
 }
 
 function resolveRecommendationId(recommendation: RecommendedAction): string {
-  return recommendation.insightId + recommendation.title;
+  const raw = [recommendation.insightId, recommendation.toolKey, recommendation.title]
+    .filter(Boolean)
+    .join('::');
+
+  return raw.toLowerCase().replace(/\s+/g, '-');
 }
 
 export function applyRecommendationFeedback({
