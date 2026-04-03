@@ -2,14 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const httpGetMock = vi.fn();
 const httpPostMock = vi.fn();
-const legacyListMock = vi.fn();
-const legacyRunMock = vi.fn();
-const legacyHistoryMock = vi.fn();
-const legacyConfigMock = vi.fn();
-const legacySaveConfigMock = vi.fn();
-const legacyScheduleMock = vi.fn();
-const legacySaveScheduleMock = vi.fn();
-const legacyToggleScheduleMock = vi.fn();
 
 vi.mock('./httpClient', () => ({
   createHttpClient: () => ({
@@ -18,99 +10,59 @@ vi.mock('./httpClient', () => ({
   }),
 }));
 
-vi.mock('./iaVisibilityLegacySource', () => ({
-  getLegacyIAVisibilityList: legacyListMock,
-  runLegacyIAVisibility: legacyRunMock,
-  getLegacyIAVisibilityHistory: legacyHistoryMock,
-  getLegacyIAVisibilityConfig: legacyConfigMock,
-  saveLegacyIAVisibilityConfig: legacySaveConfigMock,
-  getLegacyIAVisibilitySchedule: legacyScheduleMock,
-  saveLegacyIAVisibilitySchedule: legacySaveScheduleMock,
-  toggleLegacyIAVisibilitySchedule: legacyToggleScheduleMock,
-}));
-
-describe('iaVisibilityService.list', () => {
+describe('iaVisibilityService', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    delete import.meta.env.VITE_IA_VISIBILITY_DATA_SOURCE;
-    delete import.meta.env.VITE_FF_IA_VISIBILITY_BACKEND_SOURCE;
   });
 
-  it('uses backend source by default', async () => {
-    httpGetMock.mockResolvedValue({ clientId: 'client-1', items: [] });
+  it('uses backend endpoints for list/history/config/schedule getters', async () => {
+    httpGetMock.mockResolvedValue({});
 
     const { iaVisibilityService } = await import('./iaVisibilityService');
+
     await iaVisibilityService.list('client-1');
+    await iaVisibilityService.getHistory('client-1');
+    await iaVisibilityService.getConfig('client-1');
+    await iaVisibilityService.getSchedule('client-1');
 
-    expect(httpGetMock).toHaveBeenCalledOnce();
-    expect(legacyListMock).not.toHaveBeenCalled();
+    expect(httpGetMock).toHaveBeenCalledTimes(4);
+    expect(httpGetMock).toHaveBeenNthCalledWith(1, 'api/ai/visibility/client-1');
+    expect(httpGetMock).toHaveBeenNthCalledWith(2, 'api/ai/visibility/history/client-1');
+    expect(httpGetMock).toHaveBeenNthCalledWith(3, 'api/ai/visibility/config/client-1');
+    expect(httpGetMock).toHaveBeenNthCalledWith(4, 'api/ai/visibility/schedule/client-1');
   });
 
-  it('uses legacy source when pilot flag sets legacy mode', async () => {
-    import.meta.env.VITE_IA_VISIBILITY_DATA_SOURCE = 'legacy';
-    legacyListMock.mockResolvedValue({ clientId: 'client-legacy', items: [] });
+  it('uses backend endpoints for run/config/schedule mutations', async () => {
+    httpPostMock.mockResolvedValue({});
 
     const { iaVisibilityService } = await import('./iaVisibilityService');
-    await iaVisibilityService.list('client-legacy');
-
-    expect(legacyListMock).toHaveBeenCalledWith('client-legacy');
-    expect(httpGetMock).not.toHaveBeenCalled();
-  });
-
-  it('uses legacy source across pilot endpoints when legacy mode is active', async () => {
-    import.meta.env.VITE_IA_VISIBILITY_DATA_SOURCE = 'legacy';
-    legacyHistoryMock.mockResolvedValue({ clientId: 'client-legacy', runs: [] });
-    legacyConfigMock.mockResolvedValue({ status: 'ok', config: { clientId: 'client-legacy' } });
-    legacyScheduleMock.mockResolvedValue({
-      status: 'ok',
-      clientId: 'client-legacy',
-      schedule: { frequency: 'daily', timezone: 'UTC', runHour: 9, runMinute: 0, status: 'paused' },
-    });
-    legacyRunMock.mockResolvedValue({ clientId: 'client-legacy', mentions: 0, shareOfVoice: 0, sentiment: 0, competitorAppearances: {}, rawEvidence: [] });
-    legacySaveConfigMock.mockResolvedValue({ status: 'ok', config: { clientId: 'client-legacy' } });
-    legacySaveScheduleMock.mockResolvedValue({
-      status: 'ok',
-      clientId: 'client-legacy',
-      schedule: { frequency: 'daily', timezone: 'UTC', runHour: 9, runMinute: 0, status: 'paused' },
-    });
-    legacyToggleScheduleMock.mockResolvedValue({
-      status: 'ok',
-      clientId: 'client-legacy',
-      schedule: { frequency: 'daily', timezone: 'UTC', runHour: 9, runMinute: 0, status: 'active' },
-    });
-
-    const { iaVisibilityService } = await import('./iaVisibilityService');
-    await iaVisibilityService.getHistory('client-legacy');
-    await iaVisibilityService.getConfig('client-legacy');
-    await iaVisibilityService.getSchedule('client-legacy');
-    await iaVisibilityService.run({
-      clientId: 'client-legacy',
-      brand: 'Legacy Brand',
+    const runPayload = {
+      clientId: 'client-1',
+      brand: 'Brand',
       competitors: [],
       promptTemplate: '',
       sources: [],
       providerPriority: [],
-    });
-    await iaVisibilityService.saveConfig('client-legacy', {
-      clientId: 'client-legacy',
-      brand: 'Legacy Brand',
-      competitors: [],
-      promptTemplate: '',
-      sources: [],
-      providerPriority: [],
-    });
-    await iaVisibilityService.saveSchedule('client-legacy', { frequency: 'daily' });
-    await iaVisibilityService.toggleSchedule('client-legacy', 'resume');
+    };
 
-    expect(httpGetMock).not.toHaveBeenCalled();
-    expect(httpPostMock).not.toHaveBeenCalled();
-    expect(legacyHistoryMock).toHaveBeenCalledWith('client-legacy');
-    expect(legacyConfigMock).toHaveBeenCalledWith('client-legacy');
-    expect(legacyScheduleMock).toHaveBeenCalledWith('client-legacy');
-    expect(legacyRunMock).toHaveBeenCalledOnce();
-    expect(legacySaveConfigMock).toHaveBeenCalledOnce();
-    expect(legacySaveScheduleMock).toHaveBeenCalledWith('client-legacy', { frequency: 'daily' });
-    expect(legacyToggleScheduleMock).toHaveBeenCalledWith('client-legacy', 'resume');
+    await iaVisibilityService.run(runPayload);
+    await iaVisibilityService.saveConfig('client-1', runPayload);
+    await iaVisibilityService.saveSchedule('client-1', { frequency: 'daily' });
+    await iaVisibilityService.toggleSchedule('client-1', 'resume');
+
+    expect(httpPostMock).toHaveBeenCalledTimes(4);
+    expect(httpPostMock).toHaveBeenNthCalledWith(1, 'api/ai/visibility/run', runPayload);
+    expect(httpPostMock).toHaveBeenNthCalledWith(2, 'api/ai/visibility/config/client-1', runPayload);
+    expect(httpPostMock).toHaveBeenNthCalledWith(
+      3,
+      'api/ai/visibility/schedule/client-1',
+      { frequency: 'daily' },
+    );
+    expect(httpPostMock).toHaveBeenNthCalledWith(
+      4,
+      'api/ai/visibility/schedule/client-1/resume',
+      {},
+    );
   });
 });

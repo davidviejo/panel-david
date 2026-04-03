@@ -1,17 +1,6 @@
 import { createHttpClient } from './httpClient';
 import { endpoints } from './endpoints';
 import {
-  getLegacyIAVisibilityConfig,
-  getLegacyIAVisibilityHistory,
-  getLegacyIAVisibilityList,
-  getLegacyIAVisibilitySchedule,
-  runLegacyIAVisibility,
-  saveLegacyIAVisibilityConfig,
-  saveLegacyIAVisibilitySchedule,
-  toggleLegacyIAVisibilitySchedule,
-} from './iaVisibilityLegacySource';
-import { resolveModuleDataSource } from '../shared/data-hooks/backendSourceResolver';
-import {
   IAVisibilityConfigResponseContract,
   IAVisibilityHistoryResponseContract,
   IAVisibilityRunRequestContract,
@@ -46,75 +35,45 @@ export interface IAVisibilityListResponse {
   items: IAVisibilityListItem[];
 }
 
-const shouldUseBackendSource = (tenantId?: string): boolean =>
-  resolveModuleDataSource({ module: 'ia_visibility', tenantId });
-
 export const iaVisibilityService = {
   list: (clientId: string): Promise<IAVisibilityListResponse> => {
-    if (shouldUseBackendSource(clientId)) {
-      return httpClient.get<IAVisibilityListResponse>(endpoints.ai.visibilityList(clientId));
-    }
-
-    return getLegacyIAVisibilityList(clientId);
+    return httpClient.get<IAVisibilityListResponse>(endpoints.ai.visibilityList(clientId));
   },
 
   run: (payload: IAVisibilityRequest) => {
-    if (shouldUseBackendSource(payload.clientId)) {
-      return httpClient.post<IAVisibilityResponse>(endpoints.ai.visibilityRun(), payload);
-    }
-    return runLegacyIAVisibility(payload);
+    return httpClient.post<IAVisibilityResponse>(endpoints.ai.visibilityRun(), payload);
   },
 
   getHistory: (clientId: string) => {
-    if (shouldUseBackendSource(clientId)) {
-      return httpClient.get<IAVisibilityHistoryResponse>(endpoints.ai.visibilityHistory(clientId));
-    }
-    return getLegacyIAVisibilityHistory(clientId);
+    return httpClient.get<IAVisibilityHistoryResponse>(endpoints.ai.visibilityHistory(clientId));
   },
 
   getConfig: (clientId: string) => {
-    if (shouldUseBackendSource(clientId)) {
-      return httpClient.get<IAVisibilityConfigResponse>(endpoints.ai.visibilityConfig(clientId));
-    }
-    return getLegacyIAVisibilityConfig(clientId);
+    return httpClient.get<IAVisibilityConfigResponse>(endpoints.ai.visibilityConfig(clientId));
   },
 
   saveConfig: (clientId: string, payload: IAVisibilityRequest) => {
-    if (shouldUseBackendSource(clientId)) {
-      return httpClient.post<IAVisibilityConfigResponse>(
-        endpoints.ai.visibilityConfig(clientId),
-        payload,
-      );
-    }
-    return saveLegacyIAVisibilityConfig(clientId, payload);
+    return httpClient.post<IAVisibilityConfigResponse>(
+      endpoints.ai.visibilityConfig(clientId),
+      payload,
+    );
   },
 
   getSchedule: (clientId: string) => {
-    if (shouldUseBackendSource(clientId)) {
-      return httpClient.get<IAVisibilityScheduleResponse>(
-        endpoints.ai.visibilitySchedule(clientId),
-      );
-    }
-    return getLegacyIAVisibilitySchedule(clientId);
+    return httpClient.get<IAVisibilityScheduleResponse>(endpoints.ai.visibilitySchedule(clientId));
   },
 
   saveSchedule: (clientId: string, payload: Partial<IAVisibilitySchedule>) => {
-    if (shouldUseBackendSource(clientId)) {
-      return httpClient.post<IAVisibilityScheduleResponse>(
-        endpoints.ai.visibilitySchedule(clientId),
-        payload,
-      );
-    }
-    return saveLegacyIAVisibilitySchedule(clientId, payload);
+    return httpClient.post<IAVisibilityScheduleResponse>(
+      endpoints.ai.visibilitySchedule(clientId),
+      payload,
+    );
   },
 
   toggleSchedule: (clientId: string, action: 'pause' | 'resume') => {
-    if (shouldUseBackendSource(clientId)) {
-      return httpClient.post<IAVisibilityScheduleResponse>(
-        endpoints.ai.visibilityScheduleAction(clientId, action),
-        {},
-      );
-    }
-    return toggleLegacyIAVisibilitySchedule(clientId, action);
+    return httpClient.post<IAVisibilityScheduleResponse>(
+      endpoints.ai.visibilityScheduleAction(clientId, action),
+      {},
+    );
   },
 };

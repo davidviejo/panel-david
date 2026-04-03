@@ -7,7 +7,7 @@ Objetivo: tener visibilidad operativa y criterio objetivo de salida a producció
 | Módulo                    | Estado        | Fuente actual (mock/local/api)     | Feature flag (`ff_<modulo>_backend_source`) | Activación por entorno                            | Cobertura de tests                            | Riesgo     | Owner                          |
 | ------------------------- | ------------- | ---------------------------------- | ------------------------------------------- | ------------------------------------------------- | --------------------------------------------- | ---------- | ------------------------------ |
 | Portal clientes/proyectos | En validación | api + fallback legacy controlado   | `ff_portal_overview_backend_source`         | dev=100% · staging=100% · prod=canary 5→25→50→100 | Media-Alta (servicio datasource + UI)         | Medio      | FE Platform + BE Core          |
-| IA Visibility             | En validación | api + legacy datasource controlado | `ff_ia_visibility_backend_source`           | dev=100% · staging=100% · prod=canary 5→25→50→100 | Alta (unit + integración servicio ON/OFF)     | Alto       | Growth FE + Data/AI BE         |
+| IA Visibility             | En producción | backend api (sin fallback legacy)  | N/A (flag retirado tras estabilización)     | dev=100% · staging=100% · prod=100%                | Alta (servicio backend-only + UI)             | Medio      | Growth FE + Data/AI BE         |
 | SEO Checklist             | En progreso   | api + fallback local               | `ff_seo_checklist_backend_source`           | dev=100% · staging=100% · prod=canary 5→25→50→100 | Alta (hooks/mappers/mutaciones)               | Alto       | SEO FE + Content API           |
 | Dashboard + GSC           | No iniciado   | api externa directa + localStorage | `ff_gsc_backend_source` (pendiente)         | dev=0% · staging=0% · prod=0%                     | Media (hook/servicio, falta e2e con BFF)      | Medio      | Analytics FE + Integrations BE |
 | Trends Media              | En validación | backend api + legacy solo no-prod  | `ff_trends_media_backend_source`            | dev=100% · staging=100% · prod=canary 5→25→50→100 | Media (servicio + mapper + tests de fallback) | Medio-Alto | Trends FE + Data Connectors BE |
@@ -77,8 +77,8 @@ Un módulo se considera **listo para producción** cuando cumple todos los crite
 
 ### IA Visibility
 
-- **Riesgo abierto**: inconsistencia entre tabla (seed local) e historial/schedule (backend).
-- **Mitigación**: migrar tabla principal a contrato backend tipado, mantener fallback solo en no-prod y cortar `seedRows` en release.
+- **Riesgo residual**: dependencia total de disponibilidad backend para consultas críticas.
+- **Mitigación**: observabilidad activa, smoke recurrente y rollback por release (sin fallback local).
 
 ### SEO Checklist
 
@@ -94,3 +94,11 @@ Un módulo se considera **listo para producción** cuando cumple todos los crite
 
 - **Riesgo abierto**: fallback silencioso a mock puede ocultar fallas reales de proveedor.
 - **Mitigación**: endpoint backend único con observabilidad obligatoria y política explícita de fallo (sin mock en prod).
+
+## 6) Registro de limpieza de legacy
+
+- **2026-04-03 · IA Visibility**: cleanup completado de datasource legacy en frontend.
+  - eliminado `iaVisibilityLegacySource`,
+  - retirado uso del flag `ff_ia_visibility_backend_source` para el módulo,
+  - módulo operando backend-only en producción.
+  - detalle: `docs/legacy-cleanup-ia-visibility.md`.
