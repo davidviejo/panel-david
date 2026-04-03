@@ -6,21 +6,10 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { EmptyState, ErrorState, LoadingState } from '../../shared/ui/async-states';
 import { api } from '../../services/api';
-import { featureFlags } from '../../config/featureFlags';
 import { ProjectOverviewViewModel } from '../../shared/api/contracts/projectOverview';
 import { getUiApiErrorDisplay, normalizeApiError } from '../../shared/api/errorHandling';
 import { logApiError } from '../../shared/api/apiErrorLogger';
-import { mapProjectOverviewToViewModel } from '../../shared/api/mappers/projectOverviewMapper';
-
-const LEGACY_FALLBACK_OVERVIEW: ProjectOverviewViewModel = {
-  projectSlug: 'legacy-overview',
-  generatedAt: '',
-  urlsTracked: 0,
-  urlsOk: 0,
-  healthScore: 0,
-  issuesOpen: 0,
-  recentIssues: [],
-};
+import { projectOverviewDataSource } from '../../services/projectOverviewDataSource';
 
 const ProjectOverview: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -38,26 +27,21 @@ const ProjectOverview: React.FC = () => {
     setTraceabilityId(undefined);
 
     try {
-        if (!featureFlags.portalOverviewBackendSource) {
-          setData({ ...LEGACY_FALLBACK_OVERVIEW, projectSlug: slug });
-          return;
-        }
-
-        const response = await api.getProjectOverview(slug);
-        setData(mapProjectOverviewToViewModel(response));
-      } catch (error) {
-        const display = getUiApiErrorDisplay(error, 'No pudimos cargar el overview del proyecto.');
-        setErrorMessage(display.message);
-        setTraceabilityId(display.traceabilityId);
-        const normalized = normalizeApiError(error, display.message);
-        logApiError({
-          endpoint: `/api/${slug}/overview`,
-          code: normalized.code,
-          message: normalized.message,
-          status: normalized.status,
-          traceId: normalized.traceId,
-          requestId: normalized.requestId,
-        });
+      const overview = await projectOverviewDataSource.getOverview(slug);
+      setData(overview);
+    } catch (error) {
+      const display = getUiApiErrorDisplay(error, 'No pudimos cargar el overview del proyecto.');
+      setErrorMessage(display.message);
+      setTraceabilityId(display.traceabilityId);
+      const normalized = normalizeApiError(error, display.message);
+      logApiError({
+        endpoint: `/api/${slug}/overview`,
+        code: normalized.code,
+        message: normalized.message,
+        status: normalized.status,
+        traceId: normalized.traceId,
+        requestId: normalized.requestId,
+      });
     } finally {
       setLoading(false);
     }
@@ -121,11 +105,17 @@ const ProjectOverview: React.FC = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="text-lg font-bold leading-none text-slate-900">{data.projectSlug}</h1>
+                <h1 className="text-lg font-bold leading-none text-slate-900">
+                  {data.projectSlug}
+                </h1>
                 <span className="font-mono text-xs text-slate-500">Overview Dashboard</span>
               </div>
             </div>
-            <Button onClick={() => void api.logout('/clientes')} variant="ghost" className="text-slate-500">
+            <Button
+              onClick={() => void api.logout('/clientes')}
+              variant="ghost"
+              className="text-slate-500"
+            >
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
@@ -158,7 +148,9 @@ const ProjectOverview: React.FC = () => {
           <Card className="flex items-center justify-between p-6">
             <div>
               <p className="mb-1 text-sm font-medium text-slate-500">Health Score</p>
-              <p className={`text-3xl font-bold ${data.healthScore > 80 ? 'text-green-600' : 'text-orange-500'}`}>
+              <p
+                className={`text-3xl font-bold ${data.healthScore > 80 ? 'text-green-600' : 'text-orange-500'}`}
+              >
                 {data.healthScore}/100
               </p>
             </div>
@@ -196,7 +188,9 @@ const ProjectOverview: React.FC = () => {
         </Card>
 
         <div className="mt-8 text-center">
-          <p className="text-xs text-slate-400">Última actualización: {new Date(data.generatedAt).toLocaleString()}</p>
+          <p className="text-xs text-slate-400">
+            Última actualización: {new Date(data.generatedAt).toLocaleString()}
+          </p>
         </div>
       </div>
     </PortalShell>

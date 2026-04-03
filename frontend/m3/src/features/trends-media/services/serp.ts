@@ -1,4 +1,3 @@
-import { featureFlags } from '../../../config/featureFlags';
 import { endpoints } from '../../../services/endpoints';
 import { createHttpClient, HttpClientError } from '../../../services/httpClient';
 import {
@@ -8,10 +7,13 @@ import {
 import { mapTrendsMediaArticleToUiModel } from '../../../shared/api/mappers/trendsMediaMapper';
 import { AppSettings, NewsArticle } from '../types';
 import { SettingsRepository } from '../../../services/settingsRepository';
+import { resolveModuleDataSource } from '../../../shared/data-hooks/backendSourceResolver';
 
 const httpClient = createHttpClient({ service: 'api' });
 const isProductionRuntime = (): boolean =>
-  import.meta.env.PROD || import.meta.env.MODE === 'production' || import.meta.env.NODE_ENV === 'production';
+  import.meta.env.PROD ||
+  import.meta.env.MODE === 'production' ||
+  import.meta.env.NODE_ENV === 'production';
 
 const buildRequest = (settings: AppSettings): TrendsMediaNewsRequestContract => {
   const appSettings = SettingsRepository.getSettings();
@@ -41,7 +43,7 @@ const logStructuredError = (error: HttpClientError | Error, settings: AppSetting
 };
 
 export const fetchSerpResults = async (settings: AppSettings): Promise<NewsArticle[]> => {
-  const useBackendSource = featureFlags.trendsMediaBackendSource;
+  const useBackendSource = resolveModuleDataSource({ module: 'trends_media' });
 
   if (!useBackendSource) {
     if (isProductionRuntime()) {

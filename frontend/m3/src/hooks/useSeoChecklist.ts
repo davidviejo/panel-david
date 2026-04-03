@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useProject } from '../context/ProjectContext';
 import { ChecklistKey, ChecklistItem, SeoPage } from '../types/seoChecklist';
 import { useSeoChecklistSettings } from './useSeoChecklistSettings';
-import { featureFlags } from '../config/featureFlags';
 import {
   buildFallbackChecklistItem,
   enforceUniquePrimaryKeywords,
@@ -18,6 +17,7 @@ import {
   useUpdateSeoChecklistPageMutation,
   seoChecklistKeys,
 } from './useSeoChecklistServerState';
+import { resolveModuleDataSource } from '../shared/data-hooks/backendSourceResolver';
 
 const loadLocalPages = (storageKey: string): SeoPage[] => {
   try {
@@ -44,7 +44,10 @@ export const useSeoChecklist = () => {
   const { settings } = useSeoChecklistSettings();
   const activeBrandTerms = useMemo(() => settings.brandTerms || [], [settings.brandTerms]);
   const storageKey = `mediaflow_seo_checklist_${currentClientId}`;
-  const useBackendSource = featureFlags.seoChecklistBackendSource;
+  const useBackendSource = resolveModuleDataSource({
+    module: 'seo_checklist',
+    tenantId: currentClientId || undefined,
+  });
 
   const [localPages, setLocalPages] = useState<SeoPage[]>(() =>
     currentClientId ? loadLocalPages(storageKey) : [],
@@ -59,7 +62,10 @@ export const useSeoChecklist = () => {
   const listQuery = useSeoChecklistQuery(currentClientId, activeBrandTerms, useBackendSource);
   const importMutation = useImportSeoChecklistPagesMutation(currentClientId, activeBrandTerms);
   const updateMutation = useUpdateSeoChecklistPageMutation(currentClientId, activeBrandTerms);
-  const bulkUpdateMutation = useBulkUpdateSeoChecklistPagesMutation(currentClientId, activeBrandTerms);
+  const bulkUpdateMutation = useBulkUpdateSeoChecklistPagesMutation(
+    currentClientId,
+    activeBrandTerms,
+  );
 
   const pages = useBackendSource ? listQuery.data || [] : localPages;
 
@@ -71,7 +77,10 @@ export const useSeoChecklist = () => {
       }
 
       setLocalPages((prev) => {
-        const updated = enforceUniquePrimaryKeywords(normalizeSeoPages([...prev, ...newPages]), activeBrandTerms);
+        const updated = enforceUniquePrimaryKeywords(
+          normalizeSeoPages([...prev, ...newPages]),
+          activeBrandTerms,
+        );
         localStorage.setItem(storageKey, JSON.stringify(updated));
         return updated;
       });
@@ -164,7 +173,8 @@ export const useSeoChecklist = () => {
   const deletePage = useCallback(
     (id: string) => {
       if (useBackendSource && currentClientId) {
-        const current = queryClient.getQueryData<SeoPage[]>(seoChecklistKeys.list(currentClientId)) || [];
+        const current =
+          queryClient.getQueryData<SeoPage[]>(seoChecklistKeys.list(currentClientId)) || [];
         const nextPages = current.filter((page) => page.id !== id);
         queryClient.setQueryData(seoChecklistKeys.list(currentClientId), nextPages);
         void importMutation.mutateAsync(nextPages);
@@ -183,7 +193,8 @@ export const useSeoChecklist = () => {
   const bulkDeletePages = useCallback(
     (ids: string[]) => {
       if (useBackendSource && currentClientId) {
-        const current = queryClient.getQueryData<SeoPage[]>(seoChecklistKeys.list(currentClientId)) || [];
+        const current =
+          queryClient.getQueryData<SeoPage[]>(seoChecklistKeys.list(currentClientId)) || [];
         const nextPages = current.filter((page) => !ids.includes(page.id));
         queryClient.setQueryData(seoChecklistKeys.list(currentClientId), nextPages);
         void importMutation.mutateAsync(nextPages);

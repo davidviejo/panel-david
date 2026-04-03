@@ -4,15 +4,16 @@ Objetivo: tener visibilidad operativa y criterio objetivo de salida a producció
 
 ## 1) Tablero de estado
 
-| Módulo | Estado | Fuente actual (mock/local/api) | Feature flag | Cobertura de tests | Riesgo | Owner |
-|---|---|---|---|---|---|---|
-| Portal clientes/proyectos | En progreso | api + local (mezcla en landing) | `portalBackendSource` (propuesto) | Media (smoke + integración parcial) | Medio | FE Platform + BE Core |
-| IA Visibility | En validación | api + mock local (`seedRows`) | `iaVisibilityBackendResults` | Media-Alta (servicio/mappers + smoke UI) | Alto | Growth FE + Data/AI BE |
-| SEO Checklist | En progreso | api + fallback local | `seoChecklistBackendSource` | Alta (hooks/mappers/mutaciones) | Alto | SEO FE + Content API |
-| Dashboard + GSC | No iniciado | api externa directa + localStorage | `gscBffSource` (propuesto) | Media (hook/servicio, falta e2e con BFF) | Medio | Analytics FE + Integrations BE |
-| Trends Media | En progreso | api proveedor + mock fallback | `trendsMediaBackendSource` (propuesto) | Baja-Media (servicio con fallback, falta contrato e2e) | Alto | Trends FE + Data Connectors BE |
+| Módulo                    | Estado        | Fuente actual (mock/local/api)     | Feature flag (`ff_<modulo>_backend_source`) | Activación por entorno                            | Cobertura de tests                            | Riesgo     | Owner                          |
+| ------------------------- | ------------- | ---------------------------------- | ------------------------------------------- | ------------------------------------------------- | --------------------------------------------- | ---------- | ------------------------------ |
+| Portal clientes/proyectos | En validación | api + fallback legacy controlado   | `ff_portal_overview_backend_source`         | dev=100% · staging=100% · prod=canary 5→25→50→100 | Media-Alta (servicio datasource + UI)         | Medio      | FE Platform + BE Core          |
+| IA Visibility             | En validación | api + legacy datasource controlado | `ff_ia_visibility_backend_source`           | dev=100% · staging=100% · prod=canary 5→25→50→100 | Alta (unit + integración servicio ON/OFF)     | Alto       | Growth FE + Data/AI BE         |
+| SEO Checklist             | En progreso   | api + fallback local               | `ff_seo_checklist_backend_source`           | dev=100% · staging=100% · prod=canary 5→25→50→100 | Alta (hooks/mappers/mutaciones)               | Alto       | SEO FE + Content API           |
+| Dashboard + GSC           | No iniciado   | api externa directa + localStorage | `ff_gsc_backend_source` (pendiente)         | dev=0% · staging=0% · prod=0%                     | Media (hook/servicio, falta e2e con BFF)      | Medio      | Analytics FE + Integrations BE |
+| Trends Media              | En validación | backend api + legacy solo no-prod  | `ff_trends_media_backend_source`            | dev=100% · staging=100% · prod=canary 5→25→50→100 | Media (servicio + mapper + tests de fallback) | Medio-Alto | Trends FE + Data Connectors BE |
 
 > Convención de estado:
+>
 > - **No iniciado**: sin integración con backend objetivo.
 > - **En progreso**: implementación parcial detrás de flag.
 > - **En validación**: integración lista y en smoke/QA.
@@ -42,13 +43,13 @@ Un módulo se considera **listo para producción** cuando cumple todos los crite
 
 ### Score inicial por módulo
 
-| Módulo | C (25) | I (25) | O (25) | Q (25) | Score total |
-|---|---:|---:|---:|---:|---:|
-| Portal clientes/proyectos | 16 | 14 | 12 | 11 | **53/100** |
-| IA Visibility | 20 | 18 | 14 | 15 | **67/100** |
-| SEO Checklist | 22 | 19 | 16 | 16 | **73/100** |
-| Dashboard + GSC | 10 | 8 | 9 | 8 | **35/100** |
-| Trends Media | 12 | 11 | 10 | 9 | **42/100** |
+| Módulo                    | C (25) | I (25) | O (25) | Q (25) | Score total |
+| ------------------------- | -----: | -----: | -----: | -----: | ----------: |
+| Portal clientes/proyectos |     16 |     14 |     12 |     11 |  **53/100** |
+| IA Visibility             |     20 |     18 |     14 |     15 |  **67/100** |
+| SEO Checklist             |     22 |     19 |     16 |     16 |  **73/100** |
+| Dashboard + GSC           |     10 |      8 |      9 |      8 |  **35/100** |
+| Trends Media              |     12 |     11 |     10 |      9 |  **42/100** |
 
 ### Interpretación operativa
 
@@ -70,21 +71,26 @@ Un módulo se considera **listo para producción** cuando cumple todos los crite
 ## 5) Riesgos abiertos y mitigaciones por módulo
 
 ### Portal clientes/proyectos
+
 - **Riesgo abierto**: divergencia por mezcla de datos locales y remotos en landing.
 - **Mitigación**: consolidar en un único selector de fuente (backend-first) detrás de `portalBackendSource`; bloquear merge de datos locales en modo productivo.
 
 ### IA Visibility
+
 - **Riesgo abierto**: inconsistencia entre tabla (seed local) e historial/schedule (backend).
 - **Mitigación**: migrar tabla principal a contrato backend tipado, mantener fallback solo en no-prod y cortar `seedRows` en release.
 
 ### SEO Checklist
+
 - **Riesgo abierto**: regresiones en reglas de negocio al retirar fallback local.
 - **Mitigación**: reforzar tests de normalización y mutaciones + rollout gradual con `seoChecklistBackendSource`.
 
 ### Dashboard + GSC
+
 - **Riesgo abierto**: dependencia de OAuth/API externa desde frontend (CORS/cupos/tokens).
 - **Mitigación**: mover a BFF backend para manejo server-side de credenciales y cuotas, con contrato estable para frontend.
 
 ### Trends Media
+
 - **Riesgo abierto**: fallback silencioso a mock puede ocultar fallas reales de proveedor.
 - **Mitigación**: endpoint backend único con observabilidad obligatoria y política explícita de fallo (sin mock en prod).
