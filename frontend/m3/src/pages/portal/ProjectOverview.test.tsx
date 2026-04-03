@@ -5,33 +5,32 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ProjectOverview from './ProjectOverview';
 import { HttpClientError } from '../../services/httpClient';
 
-const getProjectOverviewMock = vi.fn();
+const getOverviewMock = vi.fn();
 
 vi.mock('../../services/api', () => ({
-  api: {
-    getProjectOverview: (...args: unknown[]) => getProjectOverviewMock(...args),
-    logout: vi.fn(),
-  },
+  api: { logout: vi.fn() },
 }));
 
-vi.mock('../../config/featureFlags', () => ({
-  featureFlags: {
-    portalOverviewBackendSource: true,
+vi.mock('../../services/projectOverviewDataSource', () => ({
+  projectOverviewDataSource: {
+    getOverview: (...args: unknown[]) => getOverviewMock(...args),
   },
 }));
 
 describe('ProjectOverview', () => {
   beforeEach(() => {
-    getProjectOverviewMock.mockReset();
+    getOverviewMock.mockReset();
   });
 
   it('renders overview metrics on success', async () => {
-    getProjectOverviewMock.mockResolvedValue({
-      contract: { id: 'portal.project-overview.v1', version: '1.0' },
-      generated_at: '2026-04-02T00:00:00Z',
-      project: { slug: 'demo', project_id: '100' },
-      metrics: { urls_tracked: 12, urls_ok: 10, health_score: 85, issues_open: 3 },
-      recent_issues: [{ message: 'Missing H1', count: 2 }],
+    getOverviewMock.mockResolvedValue({
+      projectSlug: 'demo',
+      generatedAt: '2026-04-02T00:00:00Z',
+      urlsTracked: 12,
+      urlsOk: 10,
+      healthScore: 85,
+      issuesOpen: 3,
+      recentIssues: [{ message: 'Missing H1', count: 2 }],
     });
 
     render(
@@ -48,7 +47,7 @@ describe('ProjectOverview', () => {
   });
 
   it('renders loading state while request is in flight', async () => {
-    getProjectOverviewMock.mockImplementation(() => new Promise(() => undefined));
+    getOverviewMock.mockImplementation(() => new Promise(() => undefined));
 
     render(
       <MemoryRouter initialEntries={['/c/demo/overview']}>
@@ -62,7 +61,7 @@ describe('ProjectOverview', () => {
   });
 
   it('renders error state on API error', async () => {
-    getProjectOverviewMock.mockRejectedValue(
+    getOverviewMock.mockRejectedValue(
       new HttpClientError({
         status: 403,
         code: 'HTTP_403',
@@ -85,12 +84,14 @@ describe('ProjectOverview', () => {
   });
 
   it('renders empty state when response has no tracked urls', async () => {
-    getProjectOverviewMock.mockResolvedValue({
-      contract: { id: 'portal.project-overview.v1', version: '1.0' },
-      generated_at: '2026-04-02T00:00:00Z',
-      project: { slug: 'demo', project_id: '100' },
-      metrics: { urls_tracked: 0, urls_ok: 0, health_score: 0, issues_open: 0 },
-      recent_issues: [],
+    getOverviewMock.mockResolvedValue({
+      projectSlug: 'demo',
+      generatedAt: '2026-04-02T00:00:00Z',
+      urlsTracked: 0,
+      urlsOk: 0,
+      healthScore: 0,
+      issuesOpen: 0,
+      recentIssues: [],
     });
 
     render(
@@ -107,7 +108,7 @@ describe('ProjectOverview', () => {
   });
 
   it('retries fetch after error when clicking retry CTA', async () => {
-    getProjectOverviewMock
+    getOverviewMock
       .mockRejectedValueOnce(
         new HttpClientError({
           status: 500,
@@ -116,11 +117,13 @@ describe('ProjectOverview', () => {
         }),
       )
       .mockResolvedValueOnce({
-        contract: { id: 'portal.project-overview.v1', version: '1.0' },
-        generated_at: '2026-04-02T00:00:00Z',
-        project: { slug: 'demo', project_id: '100' },
-        metrics: { urls_tracked: 11, urls_ok: 9, health_score: 78, issues_open: 2 },
-        recent_issues: [{ message: 'Robots bloqueando', count: 1 }],
+        projectSlug: 'demo',
+        generatedAt: '2026-04-02T00:00:00Z',
+        urlsTracked: 11,
+        urlsOk: 9,
+        healthScore: 78,
+        issuesOpen: 2,
+        recentIssues: [{ message: 'Robots bloqueando', count: 1 }],
       });
 
     render(
@@ -138,6 +141,6 @@ describe('ProjectOverview', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
 
     expect(await screen.findByText('Robots bloqueando (1)')).toBeTruthy();
-    expect(getProjectOverviewMock).toHaveBeenCalledTimes(2);
+    expect(getOverviewMock).toHaveBeenCalledTimes(2);
   });
 });
