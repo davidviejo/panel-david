@@ -1,6 +1,7 @@
 import json
 import os
-from flask import Blueprint, request, jsonify, session, render_template, has_request_context
+import uuid
+from flask import Blueprint, request, jsonify, session, render_template, has_request_context, make_response
 from apps.tools.ai_hub import AI_MODELS, execute_ai_task, generate_ai_image
 from apps.core.database import (
     get_user_settings,
@@ -17,6 +18,44 @@ import logging
 logger = logging.getLogger(__name__)
 
 ai_bp = Blueprint('ai_tools', __name__)
+
+
+def _get_trace_id():
+    return request.headers.get('x-trace-id') or request.headers.get('x-request-id') or str(uuid.uuid4())
+
+
+def _json_response(payload, status_code=200):
+    response = make_response(jsonify(payload), status_code)
+    trace_id = _get_trace_id()
+    response.headers['x-trace-id'] = trace_id
+    response.headers['x-request-id'] = trace_id
+    return response
+
+
+def _ai_visibility_error_response(message, status_code, code):
+    trace_id = _get_trace_id()
+    payload = {
+        'code': code,
+        'error': message,
+        'traceId': trace_id,
+        'requestId': trace_id,
+    }
+    response = make_response(jsonify(payload), status_code)
+    response.headers['x-trace-id'] = trace_id
+    response.headers['x-request-id'] = trace_id
+    return response
+
+
+def _format_visibility_schedule(schedule):
+    return {
+        'frequency': schedule.get('frequency', 'daily'),
+        'timezone': schedule.get('timezone', 'UTC'),
+        'runHour': schedule.get('run_hour', 9),
+        'runMinute': schedule.get('run_minute', 0),
+        'status': schedule.get('status', 'paused'),
+        'lastRunAt': schedule.get('last_run_at'),
+        'updatedAt': schedule.get('updated_at'),
+    }
 
 
 def _build_visibility_prompt(payload):
@@ -336,13 +375,21 @@ def upsert_visibility_config(client_id):
     required = ['clientId', 'brand', 'competitors', 'promptTemplate', 'sources', 'providerPriority']
     missing = [field for field in required if field not in payload]
     if missing:
-        return jsonify({'error': f'Faltan campos requeridos: {", ".join(missing)}'}), 400
+        return _ai_visibility_error_response(
+            f'Faltan campos requeridos: {", ".join(missing)}',
+            400,
+            'AI_VISIBILITY_INVALID_REQUEST',
+        )
 
     if str(payload.get('clientId')) != str(client_id):
-        return jsonify({'error': 'clientId del payload debe coincidir con el parámetro de ruta'}), 400
+        return _ai_visibility_error_response(
+            'clientId del payload debe coincidir con el parámetro de ruta',
+            400,
+            'AI_VISIBILITY_CLIENT_MISMATCH',
+        )
 
     config = upsert_ai_visibility_config(client_id, payload)
-    return jsonify({
+    return _json_response({
         'status': 'ok',
         'config': {
             'clientId': config.get('client_id'),
@@ -359,7 +406,7 @@ def upsert_visibility_config(client_id):
 @ai_bp.route('/api/ai/visibility/history/<client_id>', methods=['GET'])
 def visibility_history(client_id):
     history = get_ai_visibility_history(client_id)
-    return jsonify({
+    return _json_response({
         'clientId': str(client_id),
         'runs': [
             {
@@ -386,7 +433,11 @@ def run_visibility_analysis():
     required = ['clientId', 'brand', 'competitors', 'promptTemplate', 'sources', 'providerPriority']
     missing = [field for field in required if field not in payload]
     if missing:
-        return jsonify({'error': f'Faltan campos requeridos: {", ".join(missing)}'}), 400
+        return _ai_visibility_error_response(
+            f'Faltan campos requeridos: {", ".join(missing)}',
+            400,
+            'AI_VISIBILITY_INVALID_REQUEST',
+        )
 
     if not payload.get('promptTemplate'):
         saved = get_ai_visibility_config(str(payload.get('clientId')))
@@ -396,7 +447,11 @@ def run_visibility_analysis():
     try:
         response = execute_visibility_analysis(payload)
     except Exception as exc:
-        return jsonify({'error': f'No fue posible ejecutar el análisis de visibilidad: {exc}'}), 502
+        return _ai_visibility_error_response(
+            f'No fue posible ejecutar el análisis de visibilidad: {exc}',
+            502,
+            'AI_VISIBILITY_UPSTREAM_FAILED',
+        )
 
     insert_ai_visibility_run(
         str(payload.get('clientId')),
@@ -412,7 +467,7 @@ def run_visibility_analysis():
         }
     )
 
-    return jsonify({'clientId': str(payload.get('clientId')), **response})
+    return _json_response({'clientId': str(payload.get('clientId')), **response})
 
 
 @ai_bp.route('/api/ai/visibility/schedule/<client_id>', methods=['GET'])
@@ -427,17 +482,9 @@ def get_visibility_schedule(client_id):
             'run_minute': 0,
             'status': 'paused',
         }
-    return jsonify({
+    return _json_response({
         'clientId': str(client_id),
-        'schedule': {
-            'frequency': schedule.get('frequency', 'daily'),
-            'timezone': schedule.get('timezone', 'UTC'),
-            'runHour': schedule.get('run_hour', 9),
-            'runMinute': schedule.get('run_minute', 0),
-            'status': schedule.get('status', 'paused'),
-            'lastRunAt': schedule.get('last_run_at'),
-            'updatedAt': schedule.get('updated_at'),
-        }
+        'schedule': _format_visibility_schedule(schedule),
     })
 
 
@@ -445,54 +492,30 @@ def get_visibility_schedule(client_id):
 def upsert_visibility_schedule(client_id):
     payload = request.get_json(silent=True) or {}
     schedule = upsert_ai_visibility_schedule(client_id, payload)
-    return jsonify({
+    return _json_response({
         'status': 'ok',
         'clientId': str(client_id),
-        'schedule': {
-            'frequency': schedule.get('frequency', 'daily'),
-            'timezone': schedule.get('timezone', 'UTC'),
-            'runHour': schedule.get('run_hour', 9),
-            'runMinute': schedule.get('run_minute', 0),
-            'status': schedule.get('status', 'paused'),
-            'lastRunAt': schedule.get('last_run_at'),
-            'updatedAt': schedule.get('updated_at'),
-        }
+        'schedule': _format_visibility_schedule(schedule),
     })
 
 
 @ai_bp.route('/api/ai/visibility/schedule/<client_id>/pause', methods=['POST'])
 def pause_visibility_schedule(client_id):
     schedule = upsert_ai_visibility_schedule(client_id, {'status': 'paused'})
-    return jsonify({
+    return _json_response({
         'status': 'ok',
         'clientId': str(client_id),
-        'schedule': {
-            'frequency': schedule.get('frequency', 'daily'),
-            'timezone': schedule.get('timezone', 'UTC'),
-            'runHour': schedule.get('run_hour', 9),
-            'runMinute': schedule.get('run_minute', 0),
-            'status': schedule.get('status', 'paused'),
-            'lastRunAt': schedule.get('last_run_at'),
-            'updatedAt': schedule.get('updated_at'),
-        }
+        'schedule': _format_visibility_schedule(schedule),
     })
 
 
 @ai_bp.route('/api/ai/visibility/schedule/<client_id>/resume', methods=['POST'])
 def resume_visibility_schedule(client_id):
     schedule = upsert_ai_visibility_schedule(client_id, {'status': 'active'})
-    return jsonify({
+    return _json_response({
         'status': 'ok',
         'clientId': str(client_id),
-        'schedule': {
-            'frequency': schedule.get('frequency', 'daily'),
-            'timezone': schedule.get('timezone', 'UTC'),
-            'runHour': schedule.get('run_hour', 9),
-            'runMinute': schedule.get('run_minute', 0),
-            'status': schedule.get('status', 'paused'),
-            'lastRunAt': schedule.get('last_run_at'),
-            'updatedAt': schedule.get('updated_at'),
-        }
+        'schedule': _format_visibility_schedule(schedule),
     })
 
 @ai_bp.route('/ai/seo-analysis', methods=['POST'])
