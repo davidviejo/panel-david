@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Permitir activación gradual por módulo y por entorno (dev/staging/prod), con rollback inmediato sin redeploy obligatorio del frontend.
+Permitir activación gradual por módulo y por entorno (dev/staging/prod), con rollback inmediato sin redeploy obligatorio del frontend cuando exista flag vigente.
 
 ## Convención de flags
 
@@ -13,7 +13,6 @@ Por cada módulo migrado se utiliza:
 Módulos activos actualmente:
 
 - `ff_seo_checklist_backend_source`
-- `ff_ia_visibility_backend_source`
 - `ff_portal_overview_backend_source`
 - `ff_trends_media_backend_source`
 
@@ -27,7 +26,7 @@ Ejemplo de override por tenant:
 
 ```json
 {
-  "ia_visibility": {
+  "portal_overview": {
     "cliente-a": true,
     "cliente-b": false
   }
@@ -71,7 +70,7 @@ Volver a flujo legacy del módulo afectado en minutos, sin redeploy.
 
 ### Pasos
 
-1. Identificar módulo degradado (ej: `ia_visibility`).
+1. Identificar módulo degradado (ej: `portal_overview`).
 2. Reducir rollout a `0` o forzar `legacy`:
    - preferente: `VITE_FF_<MODULO>_BACKEND_SOURCE_ROLLOUT=0`
    - alternativa temporal: `VITE_<MODULO>_DATA_SOURCE=legacy`
@@ -111,3 +110,6 @@ Por cada salto de canary:
 - incremento sostenido de error rate,
 - degradación significativa de p95,
 - regresiones funcionales en smoke.
+
+
+> Nota (2026-04-03): IA Visibility completó cleanup legacy y ya no utiliza flag de data source para rollback.

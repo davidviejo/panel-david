@@ -103,3 +103,24 @@ La decisión se toma en la revisión semanal y antes de cada subida de porcentaj
   - build/lint/tests frontend del módulo (`trendsMediaMapper`, `serp service`).
   - tests backend endpoint (`test_trends_media_news_endpoint.py`).
   - smoke mínimo: flujo Trends con estados loading/error/empty y trazabilidad visible en errores.
+
+
+## Cierre de cleanup legacy IA Visibility (2026-04-03)
+
+### Removed legacy paths
+
+- Eliminado datasource legacy `frontend/m3/src/services/iaVisibilityLegacySource.ts`.
+- `iaVisibilityService` consolidado a backend-only en list/run/history/config/schedule.
+- Retirado mecanismo de rollback por `ff_ia_visibility_backend_source` y `VITE_IA_VISIBILITY_DATA_SOURCE`.
+
+### Risk assessment
+
+- Riesgo principal: dependencia completa de disponibilidad backend.
+- Mitigaciones: tests de servicio backend-only, build en verde y smoke operativo del flujo crítico.
+
+### Rollback status
+
+- Rollback por flag ya **no aplica** para IA Visibility.
+- Estrategia vigente: rollback por reversión de release/deploy.
+
+Referencia técnica: `docs/legacy-cleanup-ia-visibility.md`.

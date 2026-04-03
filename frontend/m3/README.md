@@ -49,23 +49,13 @@ Comportamiento por defecto:
 - Si `VITE_PYTHON_ENGINE_URL` está definida, se usa para el servicio `engine`.
 - Si `VITE_PYTHON_ENGINE_URL` no está definida, el servicio `engine` reutiliza la base resuelta del servicio `api`.
 
-### Feature flag (piloto IA Visibility)
+### IA Visibility (backend como fuente de verdad)
 
-Para controlar el origen de datos del módulo piloto de **IA Visibility**:
+Desde el cleanup de legacy (2026-04-03), **IA Visibility consume exclusivamente backend**.
 
-```ini
-# Opcional: backend | legacy
-VITE_IA_VISIBILITY_DATA_SOURCE=backend
-
-# Fallback booleano (true por defecto si no se define el source explícito)
-VITE_FF_IA_VISIBILITY_BACKEND_SOURCE=true
-```
-
-Reglas de resolución:
-
-1. `VITE_IA_VISIBILITY_DATA_SOURCE=backend` fuerza backend.
-2. `VITE_IA_VISIBILITY_DATA_SOURCE=legacy` fuerza flujo legacy.
-3. Si no hay source explícito, se usa `VITE_FF_IA_VISIBILITY_BACKEND_SOURCE` (default `true`).
+- Ya no se usa `VITE_IA_VISIBILITY_DATA_SOURCE`.
+- Ya no se usa `VITE_FF_IA_VISIBILITY_BACKEND_SOURCE`.
+- El rollback del módulo se realiza por reversión de release, no por flag de data source.
 
 ### Variables de integraciones externas
 

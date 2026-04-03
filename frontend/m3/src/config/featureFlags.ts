@@ -25,7 +25,7 @@ const isProductionRuntime = (): boolean =>
   import.meta.env.MODE === 'production' ||
   import.meta.env.NODE_ENV === 'production';
 
-type BackendSourceModule = 'seo_checklist' | 'ia_visibility' | 'portal_overview' | 'trends_media';
+type BackendSourceModule = 'seo_checklist' | 'portal_overview' | 'trends_media';
 
 interface RuntimeTenantOverrides {
   [moduleName: string]: Record<string, boolean>;
@@ -52,11 +52,6 @@ const MODULE_CONFIG: Record<
     explicitSourceEnv: 'VITE_SEO_CHECKLIST_DATA_SOURCE',
     globalFlagEnv: 'VITE_FF_SEO_CHECKLIST_BACKEND_SOURCE',
     rolloutEnv: 'VITE_FF_SEO_CHECKLIST_BACKEND_SOURCE_ROLLOUT',
-  },
-  ia_visibility: {
-    explicitSourceEnv: 'VITE_IA_VISIBILITY_DATA_SOURCE',
-    globalFlagEnv: 'VITE_FF_IA_VISIBILITY_BACKEND_SOURCE',
-    rolloutEnv: 'VITE_FF_IA_VISIBILITY_BACKEND_SOURCE_ROLLOUT',
   },
   portal_overview: {
     explicitSourceEnv: 'VITE_PORTAL_OVERVIEW_DATA_SOURCE',
@@ -186,7 +181,6 @@ export const resolveBackendSource = (
 };
 
 export const featureFlags = {
-  iaVisibilityBackendSource: resolveBackendSource('ia_visibility').enabled,
   seoChecklistBackendSource: resolveBackendSource('seo_checklist').enabled,
   portalOverviewBackendSource: resolveBackendSource('portal_overview').enabled,
   trendsMediaBackendSource: resolveBackendSource('trends_media').enabled,
