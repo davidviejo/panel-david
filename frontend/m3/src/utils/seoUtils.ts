@@ -126,29 +126,50 @@ export const processAnalysisResult = (
   // If structured data sees LocalBusiness, GEOLOCALIZACION should also reflect it.
   if (result.items) {
     const structData = result.items.DATOS_ESTRUCTURADOS?.autoData;
-    if (structData?.schemasParsed && Array.isArray(structData.schemasParsed)) {
-      const hasLocalBusiness = structData.schemasParsed.some((s: any) => {
-        if (typeof s === 'string') return s.includes('LocalBusiness');
-        if (typeof s === 'object' && s !== null && s['@type']) {
-          const type = s['@type'];
-          if (typeof type === 'string') {
-            return type.includes('LocalBusiness');
-          }
-          if (Array.isArray(type)) {
-            return type.some((t: any) => typeof t === 'string' && t.includes('LocalBusiness'));
-          }
-        }
-        return false;
-      });
+    const geoData = result.items.GEOLOCALIZACION;
 
-      if (hasLocalBusiness) {
-        if (!result.items.GEOLOCALIZACION) {
-          result.items.GEOLOCALIZACION = {};
+    // Detection logic for LocalBusiness in structured data
+    const schemasParsed = Array.isArray(structData?.schemasParsed) ? structData.schemasParsed : [];
+    const detectedTypes = Array.isArray(structData?.detected_types) ? structData.detected_types : [];
+
+    const hasLocalBusinessInStruct = [...schemasParsed, ...detectedTypes].some((s: any) => {
+      if (typeof s === 'string') return s.includes('LocalBusiness');
+      if (typeof s === 'object' && s !== null && s['@type']) {
+        const type = s['@type'];
+        if (typeof type === 'string') return type.includes('LocalBusiness');
+        if (Array.isArray(type)) {
+          return type.some((t: any) => typeof t === 'string' && t.includes('LocalBusiness'));
         }
-        if (!result.items.GEOLOCALIZACION.autoData) {
-          result.items.GEOLOCALIZACION.autoData = {};
-        }
-        result.items.GEOLOCALIZACION.autoData.localBusiness = true;
+      }
+      return false;
+    });
+
+    // Backend might return hasLocalBusinessSchema or iframe_map_detected
+    const backendGeo = geoData?.autoData || {};
+    const shouldInitializeGeo =
+      hasLocalBusinessInStruct ||
+      backendGeo.hasLocalBusinessSchema ||
+      backendGeo.iframe_map_detected ||
+      backendGeo.hasGoogleMapsIframe;
+
+    if (shouldInitializeGeo) {
+      if (!result.items.GEOLOCALIZACION) {
+        result.items.GEOLOCALIZACION = {};
+      }
+      if (!result.items.GEOLOCALIZACION.autoData) {
+        result.items.GEOLOCALIZACION.autoData = {};
+      }
+
+      const targetGeo = result.items.GEOLOCALIZACION.autoData;
+
+      // Sync/Map LocalBusiness
+      if (hasLocalBusinessInStruct || backendGeo.hasLocalBusinessSchema) {
+        targetGeo.localBusiness = true;
+      }
+
+      // Map Google Maps
+      if (backendGeo.iframe_map_detected || backendGeo.hasGoogleMapsIframe) {
+        targetGeo.googleMaps = true;
       }
     }
   }
