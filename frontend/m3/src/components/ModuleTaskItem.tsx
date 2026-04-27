@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Task } from '../types';
-import { renderMarkdown } from '../utils/markdown';
+import { SafeMarkdown } from './SafeMarkdown';
 import {
   Check,
   ChevronDown,
@@ -147,10 +147,9 @@ const ModuleTaskItem: React.FC<ModuleTaskItemProps> = memo(
         {/* Expanded Details */}
         {isExpanded && (
           <div className="px-5 pb-5 pt-0 pl-[3.25rem]">
-            <div
-              className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4"
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(task.description) }}
-            />
+            <div className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4">
+              <SafeMarkdown content={task.description} />
+            </div>
 
             <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -220,7 +219,7 @@ const ModuleTaskItem: React.FC<ModuleTaskItemProps> = memo(
                   AI Insights
                 </h4>
                 <div className="text-slate-700 dark:text-slate-300 text-sm prose prose-sm max-w-none dark:prose-invert">
-                  <div dangerouslySetInnerHTML={{ __html: renderMarkdown(vitaminResult) }} />
+                  <SafeMarkdown content={vitaminResult} />
                 </div>
               </div>
             )}

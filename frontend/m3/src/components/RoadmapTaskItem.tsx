@@ -18,6 +18,7 @@ import {
 import { Link } from 'react-router-dom';
 import { useToast } from '../components/ui/ToastContext';
 import { Spinner } from '../components/ui/Spinner';
+import { SafeMarkdown } from './SafeMarkdown';
 
 interface RoadmapTaskItemProps {
   item: { task: Task; moduleId: number };
@@ -241,13 +242,7 @@ const RoadmapTaskItem: React.FC<RoadmapTaskItemProps> = memo(
                       {vitaminSource === 'mistral' ? 'Mistral Insights' : 'ChatGPT Insights'}
                     </h4>
                     <div className="text-slate-700 dark:text-slate-300 text-sm prose prose-sm max-w-none dark:prose-invert">
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: vitaminResult
-                            .replace(/\n/g, '<br/>')
-                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'),
-                        }}
-                      />
+                      <SafeMarkdown content={vitaminResult} />
                     </div>
                   </div>
                 )}
