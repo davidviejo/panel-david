@@ -10,6 +10,11 @@ class Config:
     # Database
     DATABASE_URL = os.environ.get('DATABASE_URL')
 
+    _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    PROJECTS_DB_PATH = os.environ.get('PROJECTS_DB_PATH', os.path.join(_BASE_DIR, 'data', 'projects.db'))
+    API_USAGE_DB_PATH = os.environ.get('API_USAGE_DB_PATH', os.path.join(_BASE_DIR, 'data', 'api_usage.db'))
+    TRENDS_JOBS_DB_PATH = os.environ.get('TRENDS_JOBS_DB_PATH', os.path.join(_BASE_DIR, 'data', 'trends_jobs.db'))
+
     # Frontend URL for CORS
     FRONTEND_URL = os.environ.get('FRONTEND_URL') or 'http://localhost:5173'
 

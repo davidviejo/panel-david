@@ -22,11 +22,11 @@ from apps.tools.credentials import (
     resolve_dataforseo_credentials,
 )
 from apps.core.database import get_user_settings
+from apps.core.config import Config
 
 trends_bp = Blueprint('trends_bp', __name__)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_FILE = os.path.join(BASE_DIR, '..', '..', '..', 'data', 'trends_jobs.db')
+DB_FILE = Config.TRENDS_JOBS_DB_PATH
 _DB_INITIALIZED = False
 
 
