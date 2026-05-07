@@ -27,6 +27,9 @@ sys.modules['anthropic'] = MagicMock()
 sys.modules['google.generativeai'] = MagicMock()
 sys.modules['openpyxl'] = MagicMock()
 sys.modules['lxml'] = MagicMock()
+sys.modules['playwright.async_api'] = MagicMock()
+sys.modules['requests.adapters'] = MagicMock()
+sys.modules['urllib3.util.retry'] = MagicMock()
 
 # Import the function to test
 try:

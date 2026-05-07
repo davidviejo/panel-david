@@ -16,14 +16,15 @@ import re
 from typing import List, Dict, Optional, Any
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
+from apps.core.config import Config
 
 # Database Configuration
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_FILE = os.path.join(BASE_DIR, '..', 'data', 'projects.db')
-JSON_SOURCE_FILE = os.path.join(BASE_DIR, '..', 'data', 'projects_db.json')
+DB_FILE = Config.PROJECTS_DB_PATH
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+JSON_SOURCE_FILE = os.path.join(_BASE_DIR, 'data', 'projects_db.json')
 
 # Check environment variable for database URL
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = Config.DATABASE_URL
 USE_POSTGRES = False
 if DATABASE_URL and DATABASE_URL.startswith("postgres"):
     USE_POSTGRES = True

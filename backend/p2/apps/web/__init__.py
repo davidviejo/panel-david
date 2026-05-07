@@ -87,9 +87,6 @@ from apps.auth_utils import hash_password
 from apps.job_runner import JobRunner
 
 def create_app(config_class=Config):
-    # Inicializar base de datos
-    init_db()
-
     app = Flask(__name__, template_folder='../../templates', static_folder='../../static')
     app.config.from_object(config_class)
 
@@ -217,6 +214,7 @@ def create_app(config_class=Config):
 
     # Iniciar el vigilante (solo si no estamos testeando, aunque no tenemos flag de testing aun)
     if not app.config.get('TESTING'):
+        init_db()
         start_monitor()
         JobRunner.start_worker()
 
