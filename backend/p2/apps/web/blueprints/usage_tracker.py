@@ -29,7 +29,6 @@ def init_db():
         logging.error(f"Error iniciando DB: {e}")
 
 def increment_api_usage(amount=1):
-    init_db()
     today = str(date.today())
     try:
         conn = sqlite3.connect(DB_FILE)
@@ -42,7 +41,6 @@ def increment_api_usage(amount=1):
         logging.error(f"Error update DB: {e}")
 
 def get_today_usage():
-    init_db()
     today = str(date.today())
     count = 0
     try:
