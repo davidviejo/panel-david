@@ -1,12 +1,11 @@
 from flask import Flask, render_template, jsonify, redirect, request
 from apps.core.config import Config
-from apps.core.database import init_db
 
 # --- IMPORTACIÓN DE TODAS LAS APPS EXISTENTES ---
 from apps.web.blueprints.seo_tool import seo_bp
 from apps.web.blueprints.ai_fixer import ai_bp as ai_fixer_bp
 from apps.web.blueprints.gsc_tool import gsc_bp
-from apps.monitor_daemon import start_monitor, GLOBAL_ALERTS
+from apps.monitor_daemon import GLOBAL_ALERTS
 from apps.web.blueprints.entity_tool import entity_bp
 from apps.web.blueprints.audit_tool import audit_bp
 from apps.web.blueprints.content_gap import gap_bp
@@ -84,11 +83,16 @@ from apps.web.api_routes_map import (
 from apps.web.auth_bp import auth_bp
 from apps.web.portal_bp import portal_bp
 from apps.auth_utils import hash_password
-from apps.job_runner import JobRunner
 
 def create_app(config_class=Config):
     # Inicializar base de datos
-    init_db()
+    from apps.core.database import init_db as core_init_db
+    from apps.web.blueprints.usage_tracker import init_db as usage_init_db
+    from apps.web.blueprints.trends_economy import init_db as trends_init_db
+
+    core_init_db()
+    usage_init_db()
+    trends_init_db()
 
     app = Flask(__name__, template_folder='../../templates', static_folder='../../static')
     app.config.from_object(config_class)
@@ -214,11 +218,6 @@ def create_app(config_class=Config):
     @app.route('/')
     def home():
         return render_template('portal.html')
-
-    # Iniciar el vigilante (solo si no estamos testeando, aunque no tenemos flag de testing aun)
-    if not app.config.get('TESTING'):
-        start_monitor()
-        JobRunner.start_worker()
 
     return app
 

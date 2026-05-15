@@ -163,7 +163,6 @@ def init_db():
 
 
 def get_job_status(job_id):
-    init_db()
     """
     Recupera el estado actual de un trabajo por su ID.
 
@@ -202,7 +201,6 @@ def update_job_status(job_id, updates, conn=None):
         updates (dict): Diccionario con los campos a actualizar (active, progress, log_append, data, error).
         conn (sqlite3.Connection, optional): Conexión existente a la base de datos. Si se proporciona, no se cierra al finalizar.
     """
-    init_db()
     should_close = False
     try:
         if conn is None:
@@ -251,7 +249,6 @@ def worker_realtime_trends(job_id, geo, category, focus_terms='', ranking_mode='
         category (str): Categoría de búsqueda.
         credentials_override (dict, optional): Override explícito de credenciales.
     """
-    init_db()
     conn = None
     try:
         conn = sqlite3.connect(DB_FILE)
@@ -313,7 +310,6 @@ def trends_media_assets(asset_path):
 @trends_bp.route('/trends/start', methods=['POST'])
 @trends_bp.route('/trends/start_realtime', methods=['POST'])
 def start_analysis():
-    init_db()
     job_id = str(uuid.uuid4())
     geo = request.form.get('geo', 'ES')
     category = request.form.get('category', 'h')
