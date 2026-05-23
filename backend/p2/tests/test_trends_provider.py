@@ -26,7 +26,7 @@ class TestTrendsProvider(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['topic'], "Test Topic")
         self.assertEqual(results[0]['traffic'], "10K+")
-        self.assertIn("google.com/search?q=Test Topic", results[0]['google_link'])
+        self.assertIn("google.com/search?q=Test+Topic", results[0]['google_link'])
 
     @patch('apps.web.blueprints.trends_provider.requests.get')
     def test_google_internal_provider(self, mock_get):
