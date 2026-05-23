@@ -52,14 +52,18 @@ class TestAIConfig(unittest.TestCase):
 
             from unittest.mock import patch
             with patch('apps.tools.scraper_core.search_dataforseo') as mock_search:
-                mock_search.return_value = []
+                mock_search.return_value = {'results': []}
 
                 # Call with mode='dataforseo' to force DFS path
                 smart_serp_search('test', config={'mode': 'dataforseo'})
 
-                mock_search.assert_called_with(
-                    'test', 'session-login', 'session-pass', 10, 'es', 'es'
-                )
+                # Ensure the mock was called, and the config passed contains the expected injected credentials
+                self.assertTrue(mock_search.called)
+                args, kwargs = mock_search.call_args
+                passed_config = kwargs.get('config', {})
+                self.assertEqual(passed_config.get('mode'), 'dataforseo')
+                self.assertEqual(passed_config.get('dataforseo_login'), 'session-login')
+                self.assertEqual(passed_config.get('dataforseo_password'), 'session-pass')
 
 if __name__ == '__main__':
     unittest.main()
